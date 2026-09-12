@@ -1,0 +1,63 @@
+name: Arus Dependency Lock Bootstrap
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ARUS_FLUTTER_INSTALL: ${{ runner.temp }}/arus-flutter-3.47.2
+
+jobs:
+  build-lock-candidate:
+    name: Generate review-only pubspec.lock candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Require lockfile to be absent
+        run: |
+          test ! -f pubspec.lock || {
+            echo 'FAIL: pubspec.lock is already committed; normal native verification must use it instead of regenerating.' >&2
+            exit 1
+          }
+
+      - name: Install pinned Flutter from official archive
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+
+      - name: Verify pinned Flutter/Dart
+        run: bash tool/native_toolchain_preflight.sh bootstrap
+
+      - name: Resolve one dependency-lock candidate
+        run: flutter pub get
+
+      - name: Hash candidate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('pubspec.lock')
+          assert p.exists(), 'pubspec.lock was not generated'
+          h=hashlib.sha256(p.read_bytes()).hexdigest()
+          Path('pubspec.lock.sha256').write_text(f'{h}  pubspec.lock\n')
+          Path('LOCK_CANDIDATE_README.txt').write_text(
+              'REVIEW REQUIRED. This artifact is NOT compile/release proof.\n'
+              'Review pubspec.lock, commit it to the repository, then run Arus Native Verification.\n'
+              f'SHA256: {h}\n')
+          PY
+
+      - name: Upload candidate for human review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-pubspec-lock-candidate-v26
+          path: |
+            pubspec.lock
+            pubspec.lock.sha256
+            LOCK_CANDIDATE_README.txt
+          if-no-files-found: error
+          retention-days: 7
