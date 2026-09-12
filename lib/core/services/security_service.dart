@@ -111,7 +111,10 @@ class SecurityService {
       return await _auth.authenticate(
         localizedReason: 'Buka Arus Finance',
         biometricOnly: true,
-        persistAcrossBackgrounding: true,
+        // Do not let the plugin re-open the biometric prompt after an OS
+        // lifecycle transition. Cancel must return control to Arus so the
+        // user can fall back to the app PIN. LockGate owns any later retry.
+        persistAcrossBackgrounding: false,
       );
     } catch (_) {
       return false;

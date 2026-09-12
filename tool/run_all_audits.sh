@@ -38,6 +38,7 @@ python3 tool/reference_v26_release_orchestration_audit.py
 find . -type d -name __pycache__ -prune -exec rm -rf {} +
 find . -type f -name '*.pyc' -delete
 python3 tool/deep_mine_v27_git_bootstrap_audit.py
+python3 tool/deep_mine_biometric_cancel_audit.py
 python3 tool/reference_v27_git_bootstrap_audit.py
 python3 tool/reference_v17_native_execution_audit.py
 python3 tool/version_continuity_audit.py

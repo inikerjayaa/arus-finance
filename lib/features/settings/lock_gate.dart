@@ -18,6 +18,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   bool _hasPin = false;
   bool _foreground = true;
   bool _biometricInFlight = false;
+  bool _biometricAutoSuppressed = false;
   bool _biometricAvailable = false;
   int _lifecycleGeneration = 0;
   final _pin = TextEditingController();
@@ -58,6 +59,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     _lifecycleGeneration++;
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
+      // Android's biometric prompt can emit inactive/resumed while the
+      // authenticate Future is still in flight. Never start a second
+      // biometric request from that synthetic resume.
+      if (_biometricInFlight) return;
       unawaited(_refreshPinStateOnResume(_lifecycleGeneration));
       return;
     }
@@ -67,6 +72,16 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
       _foreground = false;
+      // A real background transition starts a new activation, so one
+      // automatic biometric attempt is allowed again next time. Merely
+      // becoming inactive for the biometric system dialog does not reset
+      // cancellation suppression.
+      if (!_biometricInFlight &&
+          (state == AppLifecycleState.paused ||
+              state == AppLifecycleState.hidden ||
+              state == AppLifecycleState.detached)) {
+        _biometricAutoSuppressed = false;
+      }
       // Hide finance data immediately. Do not wait for secure-storage I/O;
       // otherwise an async lifecycle race can leave a sensitive frame visible
       // in the app switcher or re-lock after a successful resumed biometric.
@@ -91,25 +106,44 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       _locked = hasPin;
       if (!hasPin) _error = null;
     });
-    if (biometricEnabled) {
+    if (biometricEnabled && !_biometricAutoSuppressed) {
       if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
       await _tryBiometric();
     }
   }
 
-  Future<void> _tryBiometric() async {
+  Future<void> _tryBiometric({bool manual = false}) async {
     if (_biometricInFlight || !_foreground || !_hasPin) return;
+    if (manual) _biometricAutoSuppressed = false;
     _biometricInFlight = true;
     try {
       final ok = await widget.security.authenticateBiometric();
-      if (!mounted || !_foreground || !_hasPin) return;
-      if (ok) {
-        setState(() {
-          _locked = false;
-          _error = null;
-          _pin.clear();
-        });
+      if (!mounted || !_hasPin) return;
+      if (!ok) {
+        // false includes a normal user Cancel. Keep the gate locked and stop
+        // automatic biometric retries for this activation. PIN remains usable;
+        // the explicit biometric button is the only retry path until a genuine
+        // background/foreground cycle occurs.
+        _biometricAutoSuppressed = true;
+        if (_foreground) {
+          setState(() {
+            _locked = true;
+            _error = null;
+          });
+        }
+        return;
       }
+      if (!_foreground) {
+        // Never expose finance data because auth completed while Arus was not
+        // visibly foregrounded. Require PIN/manual biometric after resume.
+        _biometricAutoSuppressed = true;
+        return;
+      }
+      setState(() {
+        _locked = false;
+        _error = null;
+        _pin.clear();
+      });
     } finally {
       _biometricInFlight = false;
     }
@@ -182,7 +216,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                 if (_biometricAvailable) ...[
                   const SizedBox(height: 8),
                   TextButton.icon(
-                    onPressed: _tryBiometric,
+                    onPressed: () => _tryBiometric(manual: true),
                     icon: const Icon(Icons.fingerprint),
                     label: const Text('Gunakan biometrik'),
                   ),
