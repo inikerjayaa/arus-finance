@@ -14,7 +14,5 @@ void main() {
   final notifications = LocalNotificationService();
   final controller = AppController(repository, notifications: notifications);
   final security = SecurityService();
-  runApp(
-    ArusApp(controller: controller, database: database, security: security),
-  );
+  runApp(ArusApp(controller: controller, database: database, security: security));
 }

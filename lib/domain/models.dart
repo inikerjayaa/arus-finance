@@ -24,19 +24,14 @@ class Account {
 }
 
 class Category {
-  const Category({
-    required this.id,
-    required this.name,
-    required this.type,
-    this.parentId,
-    this.archivedAt,
-  });
+  const Category({required this.id, required this.name, required this.type, this.parentId, this.archivedAt});
   final String id;
   final String name;
   final CategoryType type;
   final String? parentId;
   final DateTime? archivedAt;
 }
+
 
 class TransactionFilter {
   const TransactionFilter({
@@ -94,12 +89,8 @@ class TransactionFilter {
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
       startDate: clearStartDate ? null : (startDate ?? this.startDate),
       endDate: clearEndDate ? null : (endDate ?? this.endDate),
-      minAmountMinor: clearMinAmount
-          ? null
-          : (minAmountMinor ?? this.minAmountMinor),
-      maxAmountMinor: clearMaxAmount
-          ? null
-          : (maxAmountMinor ?? this.maxAmountMinor),
+      minAmountMinor: clearMinAmount ? null : (minAmountMinor ?? this.minAmountMinor),
+      maxAmountMinor: clearMaxAmount ? null : (maxAmountMinor ?? this.maxAmountMinor),
     );
   }
 }
@@ -137,6 +128,7 @@ class TransactionView {
   final bool deleted;
 }
 
+
 class TransactionDetail {
   const TransactionDetail({
     required this.view,
@@ -153,8 +145,7 @@ class TransactionDetail {
 
   bool get canEditSimple =>
       view.groupId == null &&
-      (view.type == TransactionType.expense ||
-          view.type == TransactionType.income);
+      (view.type == TransactionType.expense || view.type == TransactionType.income);
   bool get canRefund =>
       view.type == TransactionType.expense &&
       view.status == TransactionStatus.posted &&
@@ -184,15 +175,7 @@ class DashboardData {
 }
 
 class BudgetModel {
-  const BudgetModel({
-    required this.id,
-    required this.name,
-    required this.limitMinor,
-    required this.actualMinor,
-    required this.start,
-    required this.end,
-    this.categoryId,
-  });
+  const BudgetModel({required this.id, required this.name, required this.limitMinor, required this.actualMinor, required this.start, required this.end, this.categoryId});
   final String id;
   final String name;
   final int limitMinor;
@@ -213,14 +196,7 @@ class BudgetModel {
 }
 
 class BillModel {
-  const BillModel({
-    required this.id,
-    required this.name,
-    required this.expectedAmountMinor,
-    required this.currency,
-    required this.dueDate,
-    required this.status,
-  });
+  const BillModel({required this.id, required this.name, required this.expectedAmountMinor, required this.currency, required this.dueDate, required this.status});
   final String id;
   final String name;
   final int expectedAmountMinor;
@@ -230,15 +206,7 @@ class BillModel {
 }
 
 class RecurringRuleModel {
-  const RecurringRuleModel({
-    required this.id,
-    required this.name,
-    required this.mode,
-    required this.amountMinor,
-    required this.currency,
-    required this.nextRun,
-    required this.active,
-  });
+  const RecurringRuleModel({required this.id, required this.name, required this.mode, required this.amountMinor, required this.currency, required this.nextRun, required this.active});
   final String id;
   final String name;
   final RecurringMode mode;
@@ -247,6 +215,7 @@ class RecurringRuleModel {
   final DateTime nextRun;
   final bool active;
 }
+
 
 class ImportTransactionDraft {
   const ImportTransactionDraft({

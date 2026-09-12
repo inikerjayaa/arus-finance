@@ -14,7 +14,7 @@ import '../../shared/money.dart';
 
 class LocalNotificationService {
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   final FlutterLocalNotificationsPlugin _plugin;
 
@@ -35,9 +35,7 @@ class LocalNotificationService {
       // A silent UTC fallback can move an 08:00 local reminder by many hours.
       // Failing closed is safer: finance writes remain unaffected and the
       // user can retry reminder setup after the platform timezone is readable.
-      throw StateError(
-        'Zona waktu perangkat tidak dapat dibaca untuk menjadwalkan pengingat lokal: $e',
-      );
+      throw StateError('Zona waktu perangkat tidak dapat dibaca untuk menjadwalkan pengingat lokal: $e');
     }
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -46,11 +44,7 @@ class LocalNotificationService {
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
-    const settings = InitializationSettings(
-      android: android,
-      iOS: darwin,
-      macOS: darwin,
-    );
+    const settings = InitializationSettings(android: android, iOS: darwin, macOS: darwin);
     await _plugin.initialize(settings: settings);
     await _cleanLegacyIdsOnce();
     _initialized = true;
@@ -71,19 +65,13 @@ class LocalNotificationService {
     if (value) {
       var granted = true;
       if (Platform.isAndroid) {
-        granted =
-            await _plugin
-                .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin
-                >()
+        granted = await _plugin
+                .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
                 ?.requestNotificationsPermission() ??
             true;
       } else if (Platform.isIOS) {
-        granted =
-            await _plugin
-                .resolvePlatformSpecificImplementation<
-                  IOSFlutterLocalNotificationsPlugin
-                >()
+        granted = await _plugin
+                .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
                 ?.requestPermissions(alert: true, sound: true, badge: false) ??
             false;
       }
@@ -141,14 +129,10 @@ class LocalNotificationService {
     final now = tz.TZDateTime.now(tz.local);
     final raw = <_ReminderDraft>[];
 
-    final billList =
-        bills
-            .where(
-              (b) =>
-                  b.status != BillStatus.paid && b.status != BillStatus.skipped,
-            )
-            .toList()
-          ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    final billList = bills
+        .where((b) => b.status != BillStatus.paid && b.status != BillStatus.skipped)
+        .toList()
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
 
     for (final bill in billList) {
       if (raw.length >= 32) break;
@@ -169,16 +153,14 @@ class LocalNotificationService {
         );
       }
       if (!scheduled.isAfter(now)) continue;
-      raw.add(
-        _ReminderDraft(
-          payload: 'bill:${bill.id}',
-          title: 'Tagihan mendekati jatuh tempo',
-          body: details
-              ? '${bill.name} • ${Money.format(bill.expectedAmountMinor, currency: bill.currency)}'
-              : 'Buka Arus untuk melihat detail tagihan.',
-          when: scheduled,
-        ),
-      );
+      raw.add(_ReminderDraft(
+        payload: 'bill:${bill.id}',
+        title: 'Tagihan mendekati jatuh tempo',
+        body: details
+            ? '${bill.name} • ${Money.format(bill.expectedAmountMinor, currency: bill.currency)}'
+            : 'Buka Arus untuk melihat detail tagihan.',
+        when: scheduled,
+      ));
     }
 
     final recurringList = recurring.where((r) => r.active).toList()
@@ -193,51 +175,43 @@ class LocalNotificationService {
         8,
       );
       if (!scheduled.isAfter(now)) continue;
-      raw.add(
-        _ReminderDraft(
-          payload: 'recurring:${rule.id}',
-          title: 'Transaksi berulang',
-          body: details
-              ? '${rule.name} • ${Money.format(rule.amountMinor, currency: rule.currency)}'
-              : 'Buka Arus untuk meninjau transaksi berulang.',
-          when: scheduled,
-        ),
-      );
+      raw.add(_ReminderDraft(
+        payload: 'recurring:${rule.id}',
+        title: 'Transaksi berulang',
+        body: details
+            ? '${rule.name} • ${Money.format(rule.amountMinor, currency: rule.currency)}'
+            : 'Buka Arus untuk meninjau transaksi berulang.',
+        when: scheduled,
+      ));
     }
 
     final used = <int>{};
-    return raw
-        .map((draft) {
-          var id = _stableId(draft.payload);
-          while (!used.add(id)) {
-            id = id >= 2000000000 ? 10000 : id + 1;
-          }
-          final signatureSource = [
-            draft.payload,
-            draft.title,
-            draft.body,
-            draft.when.toUtc().toIso8601String(),
-          ].join('|');
-          final signature = sha256
-              .convert(utf8.encode(signatureSource))
-              .toString();
-          return _ReminderSpec(
-            id: id,
-            title: draft.title,
-            body: draft.body,
-            when: draft.when,
-            payload: draft.payload,
-            signature: signature,
-          );
-        })
-        .toList(growable: false);
+    return raw.map((draft) {
+      var id = _stableId(draft.payload);
+      while (!used.add(id)) {
+        id = id >= 2000000000 ? 10000 : id + 1;
+      }
+      final signatureSource = [
+        draft.payload,
+        draft.title,
+        draft.body,
+        draft.when.toUtc().toIso8601String(),
+      ].join('|');
+      final signature = sha256.convert(utf8.encode(signatureSource)).toString();
+      return _ReminderSpec(
+        id: id,
+        title: draft.title,
+        body: draft.body,
+        when: draft.when,
+        payload: draft.payload,
+        signature: signature,
+      );
+    }).toList(growable: false);
   }
 
   int _stableId(String payload) {
     final bytes = sha256.convert(utf8.encode(payload)).bytes;
-    final raw =
-        ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) &
-        0x7fffffff;
+    final raw = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) & 0x7fffffff;
     return 10000 + (raw % 1999990000);
   }
 

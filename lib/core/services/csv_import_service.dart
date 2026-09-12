@@ -59,16 +59,13 @@ class CsvImportService {
   Future<CsvImportPreview> preview(File file) async {
     final size = await file.length();
     if (size <= 0) throw StateError('File CSV kosong.');
-    if (size > maxFileBytes)
-      throw StateError('File CSV terlalu besar. Maksimal 10 MB.');
+    if (size > maxFileBytes) throw StateError('File CSV terlalu besar. Maksimal 10 MB.');
 
     final text = await file.readAsString(encoding: utf8);
     final decoded = csv.decode(text);
     if (decoded.isEmpty) throw StateError('CSV tidak memiliki header.');
 
-    final header = decoded.first
-        .map((e) => e.toString().trim())
-        .toList(growable: false);
+    final header = decoded.first.map((e) => e.toString().trim()).toList(growable: false);
     const required = [
       'Date',
       'Type',
@@ -82,9 +79,7 @@ class CsvImportService {
     ];
     for (final column in required) {
       if (!header.contains(column)) {
-        throw StateError(
-          'Format CSV tidak cocok. Kolom "$column" tidak ditemukan.',
-        );
+        throw StateError('Format CSV tidak cocok. Kolom "$column" tidak ditemukan.');
       }
     }
     if (decoded.length - 1 > maxRows) {
@@ -93,21 +88,11 @@ class CsvImportService {
 
     int indexOf(String name) => header.indexOf(name);
     final accounts = await repository.listAccounts();
-    final expenseCategories = await repository.listCategories(
-      type: CategoryType.expense,
-    );
-    final incomeCategories = await repository.listCategories(
-      type: CategoryType.income,
-    );
-    final accountsByName = {
-      for (final a in accounts) a.name.trim().toLowerCase(): a,
-    };
-    final expenseByName = {
-      for (final c in expenseCategories) c.name.trim().toLowerCase(): c,
-    };
-    final incomeByName = {
-      for (final c in incomeCategories) c.name.trim().toLowerCase(): c,
-    };
+    final expenseCategories = await repository.listCategories(type: CategoryType.expense);
+    final incomeCategories = await repository.listCategories(type: CategoryType.income);
+    final accountsByName = {for (final a in accounts) a.name.trim().toLowerCase(): a};
+    final expenseByName = {for (final c in expenseCategories) c.name.trim().toLowerCase(): c};
+    final incomeByName = {for (final c in incomeCategories) c.name.trim().toLowerCase(): c};
 
     final seen = <String>{};
     final previewRows = <CsvImportPreviewRow>[];
@@ -116,9 +101,7 @@ class CsvImportService {
       final row = decoded[i];
       String value(String column) {
         final index = indexOf(column);
-        return index >= 0 && index < row.length
-            ? row[index].toString().trim()
-            : '';
+        return index >= 0 && index < row.length ? row[index].toString().trim() : '';
       }
 
       final dateRaw = value('Date');
@@ -160,8 +143,7 @@ class CsvImportService {
       if (error == null) {
         if (typeRaw == 'expense') type = TransactionType.expense;
         if (typeRaw == 'income') type = TransactionType.income;
-        if (type == null)
-          error = 'Import hanya mendukung expense/income sederhana.';
+        if (type == null) error = 'Import hanya mendukung expense/income sederhana.';
       }
 
       final account = accountsByName[accountRaw.toLowerCase()];
@@ -188,9 +170,7 @@ class CsvImportService {
               currency,
               note.trim(),
             ].join('|');
-      final fingerprint = sha256
-          .convert(utf8.encode(identitySource))
-          .toString();
+      final fingerprint = sha256.convert(utf8.encode(identitySource)).toString();
       final duplicate = !seen.add(fingerprint);
 
       ImportTransactionDraft? draft;
@@ -207,28 +187,24 @@ class CsvImportService {
         );
       }
 
-      previewRows.add(
-        CsvImportPreviewRow(
-          line: i + 1,
-          type: typeRaw,
-          account: accountRaw,
-          category: categoryRaw,
-          amountMinor: amount,
-          valid: error == null,
-          duplicate: duplicate,
-          note: note,
-          error: error ?? (duplicate ? 'Duplikat di file yang sama.' : null),
-          draft: draft,
-        ),
-      );
+      previewRows.add(CsvImportPreviewRow(
+        line: i + 1,
+        type: typeRaw,
+        account: accountRaw,
+        category: categoryRaw,
+        amountMinor: amount,
+        valid: error == null,
+        duplicate: duplicate,
+        note: note,
+        error: error ?? (duplicate ? 'Duplikat di file yang sama.' : null),
+        draft: draft,
+      ));
     }
 
     // Check fingerprints in one batched repository lookup. This keeps preview honest
     // without issuing one SQL query per CSV row.
     final known = await repository.existingImportFingerprints(
-      previewRows
-          .where((r) => r.draft != null)
-          .map((r) => r.draft!.fingerprint),
+      previewRows.where((r) => r.draft != null).map((r) => r.draft!.fingerprint),
     );
     if (known.isNotEmpty) {
       for (var i = 0; i < previewRows.length; i++) {

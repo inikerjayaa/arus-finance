@@ -67,11 +67,11 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                   Semantics(
                     header: true,
                     child: Text(
-                      'Mode Pemulihan Data',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    'Mode Pemulihan Data',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -105,8 +105,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
-                    onPressed:
-                        _busy || _checking || _latestLocalRecovery == null
+                    onPressed: _busy || _checking || _latestLocalRecovery == null
                         ? null
                         : _restoreLocal,
                     icon: const Icon(Icons.history_rounded),
@@ -114,8 +113,8 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                       _checking
                           ? 'Memeriksa titik pemulihan lokal…'
                           : _latestLocalRecovery == null
-                          ? 'Tidak ada titik pemulihan lokal'
-                          : 'Pulihkan titik lokal terbaru • ${_formatTime(_latestLocalRecovery!)}',
+                              ? 'Tidak ada titik pemulihan lokal'
+                              : 'Pulihkan titik lokal terbaru • ${_formatTime(_latestLocalRecovery!)}',
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -250,8 +249,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(
-        () => _status =
-            'Pemulihan belum berhasil. Data lama tidak sengaja dibuang. ${_message(e)}',
+        () => _status = 'Pemulihan belum berhasil. Data lama tidak sengaja dibuang. ${_message(e)}',
       );
       await _loadRecoveryState();
     } finally {
