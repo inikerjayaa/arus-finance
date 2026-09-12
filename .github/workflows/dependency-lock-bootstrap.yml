@@ -1,26 +1,30 @@
 name: Arus Dependency Lock Bootstrap
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/dependency-lock-bootstrap.yml
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-lock-candidate:
-    name: Generate review-only pubspec.lock candidate
+    name: Generate and commit verified pubspec.lock
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout exact source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Require lockfile to be absent
         run: |
           test ! -f pubspec.lock || {
-            echo 'FAIL: pubspec.lock is already committed; normal native verification must use it instead of regenerating.' >&2
+            echo 'FAIL: pubspec.lock is already committed; refusing to regenerate.' >&2
             exit 1
           }
 
@@ -33,28 +37,22 @@ jobs:
       - name: Resolve one dependency-lock candidate
         run: flutter pub get
 
-      - name: Hash candidate
+      - name: Verify exact reviewed lock hash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib
-          p=Path('pubspec.lock')
-          assert p.exists(), 'pubspec.lock was not generated'
-          h=hashlib.sha256(p.read_bytes()).hexdigest()
-          Path('pubspec.lock.sha256').write_text(f'{h}  pubspec.lock\n')
-          Path('LOCK_CANDIDATE_README.txt').write_text(
-              'REVIEW REQUIRED. This artifact is NOT compile/release proof.\n'
-              'Review pubspec.lock, commit it to the repository, then run Arus Native Verification.\n'
-              f'SHA256: {h}\n')
-          PY
+          ACTUAL="$(sha256sum pubspec.lock | awk '{print $1}')"
+          EXPECTED='44c58018c49d91259f5e52cf181806ab2c6daf5571d424f151b3c0c4be9c8756'
+          test "$ACTUAL" = "$EXPECTED" || {
+            echo "FAIL: regenerated lock hash changed: $ACTUAL" >&2
+            exit 1
+          }
+          echo "PASS: reviewed pubspec.lock hash = $ACTUAL"
 
-      - name: Upload candidate for human review
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: arus-pubspec-lock-candidate-v26
-          path: |
-            pubspec.lock
-            pubspec.lock.sha256
-            LOCK_CANDIDATE_README.txt
-          if-no-files-found: error
-          retention-days: 7
+      - name: Commit verified lockfile only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pubspec.lock
+          test "$(git diff --cached --name-only)" = 'pubspec.lock'
+          git commit -m 'Lock Flutter dependencies for Arus native verification'
+          git push origin HEAD:main
