@@ -14,9 +14,6 @@ concurrency:
   group: arus-native-verify-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  ARUS_FLUTTER_INSTALL: ${{ runner.temp }}/arus-flutter-3.47.2
-
 jobs:
   verify-lock:
     name: Verify committed lock + Dart/Flutter tests
@@ -36,7 +33,7 @@ jobs:
           }
 
       - name: Install pinned Flutter from official archive
-        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
 
       - name: Verify pinned Flutter/Dart
         run: bash tool/native_toolchain_preflight.sh bootstrap
@@ -92,7 +89,7 @@ jobs:
           java-version: '17'
 
       - name: Install pinned Flutter from official archive
-        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
 
       - name: Ensure Android API 36
         run: bash tool/ensure_android_sdk_36_ci.sh
@@ -145,7 +142,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pinned Flutter from official archive
-        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
 
       - name: Download committed lockfile evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
