@@ -1,4 +1,4 @@
-name: V28 One-Time Minimal Dart Fix
+name: V28 One-Time Analyzer Cleanup
 
 on:
   push:
@@ -10,52 +10,120 @@ permissions:
   contents: write
 
 jobs:
-  minimal-dart-fix:
+  analyzer-cleanup:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - name: Checkout current main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Install pinned Flutter
-        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
-
-      - name: Verify pinned toolchain and lock
-        run: |
-          bash tool/native_toolchain_preflight.sh bootstrap
-          flutter pub get --enforce-lockfile
-
-      - name: Apply SDK fixes without global formatting
+      - name: Apply exact minimal analyzer fixes
         run: |
           set -euo pipefail
-          dart fix --apply
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
 
-      - name: Guard minimal scope and commit
+          def replace(path, old, new, expected=1):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f'FAIL: {path}: expected {expected}, found {count} for {old!r}')
+              p.write_text(text.replace(old, new))
+
+          # sqlite3 API deprecation: close() replaces dispose().
+          replace('lib/core/db/app_database.dart', '      database?.dispose();', '      database?.close();')
+          replace('lib/core/db/app_database.dart', '    _db?.dispose();', '    _db?.close();')
+
+          # String interpolation lint only; SQL value is unchanged.
+          replace('lib/core/services/backup_service.dart', 'delta_minor<-${kMaxMoneyMinor}', 'delta_minor<-$kMaxMoneyMinor')
+
+          # Flutter 3.47 DropdownButtonFormField.value -> initialValue.
+          dropdown_expected = {
+              'lib/features/accounts/accounts_screen.dart': 1,
+              'lib/features/accounts/financial_actions_screen.dart': 3,
+              'lib/features/planning/planning_screen.dart': 4,
+              'lib/features/quick_add/quick_add_sheet.dart': 3,
+              'lib/features/transactions/transaction_detail_screen.dart': 3,
+              'lib/features/transactions/transactions_screen.dart': 4,
+          }
+          pattern = re.compile(r'(DropdownButtonFormField(?:<[^>]+>)?\(\s*)value:')
+          for path, expected in dropdown_expected.items():
+              p = Path(path)
+              text = p.read_text()
+              text2, count = pattern.subn(r'\1initialValue:', text)
+              if count != expected:
+                  raise SystemExit(f'FAIL: {path}: expected {expected} DropdownButtonFormField migrations, found {count}')
+              p.write_text(text2)
+
+          # Reorder API now adjusts newIndex itself.
+          replace(
+              'lib/features/home/customize_dashboard_screen.dart',
+              "          onReorder: (oldIndex, newIndex) {\n            setState(() {\n              if (newIndex > oldIndex) newIndex -= 1;\n              final item = _items.removeAt(oldIndex);\n              _items.insert(newIndex, item);\n            });\n          },",
+              "          onReorderItem: (oldIndex, newIndex) {\n            setState(() {\n              final item = _items.removeAt(oldIndex);\n              _items.insert(newIndex, item);\n            });\n          },",
+          )
+
+          # Flutter 3.47 RadioGroup owns selection/change state.
+          replace(
+              'lib/features/onboarding_screen.dart',
+              "                      ...goals.map(\n                        (g) => RadioListTile<String>(\n                          value: g,\n                          groupValue: _goal,\n                          title: Text(g),\n                          contentPadding: EdgeInsets.zero,\n                          onChanged: _saving\n                              ? null\n                              : (v) => setState(() => _goal = v ?? _goal),\n                        ),\n                      ),",
+              "                      RadioGroup<String>(\n                        groupValue: _goal,\n                        onChanged: (v) {\n                          if (!_saving && v != null) {\n                            setState(() => _goal = v);\n                          }\n                        },\n                        child: Column(\n                          children: goals\n                              .map(\n                                (g) => RadioListTile<String>(\n                                  value: g,\n                                  title: Text(g),\n                                  contentPadding: EdgeInsets.zero,\n                                  enabled: !_saving,\n                                ),\n                              )\n                              .toList(),\n                        ),\n                      ),",
+          )
+
+          # State.context and the BuildContext parameter must use the same mounted guard.
+          replace('lib/features/quick_add/quick_add_sheet.dart', '      if (mounted) Navigator.of(context).pop();', '      if (context.mounted) Navigator.of(context).pop();', expected=3)
+          replace('lib/features/quick_add/quick_add_sheet.dart', '    if (discard != true || !mounted) return;', '    if (discard != true || !context.mounted) return;')
+          replace('lib/features/quick_add/quick_add_sheet.dart', '    if (!mounted) return;\n    if (result != null) {', '    if (!context.mounted) return;\n    if (result != null) {')
+
+          settings = 'lib/features/settings/settings_screen.dart'
+          replace(settings, "import 'package:cross_file/cross_file.dart';\n", '')
+          replace(settings, '      if (!mounted) return;\n      if (value && !granted) {', '      if (!context.mounted) return;\n      if (value && !granted) {')
+          replace(settings, "    if (pass == null) return;\n    final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Ketik ulang passphrase', obscure: true);", "    if (pass == null || !context.mounted) return;\n    final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Ketik ulang passphrase', obscure: true);")
+          replace(settings, "    if (confirm == null) return;\n    if (pass != confirm) { _snack(context, 'Passphrase tidak sama. Backup dibatalkan.'); return; }", "    if (confirm == null || !context.mounted) return;\n    if (pass != confirm) { _snack(context, 'Passphrase tidak sama. Backup dibatalkan.'); return; }")
+          replace(settings, "    if (path == null) return;\n    final pass = await _askSecret(context, title: 'Buka backup', label: 'Passphrase', obscure: true);", "    if (path == null || !context.mounted) return;\n    final pass = await _askSecret(context, title: 'Buka backup', label: 'Passphrase', obscure: true);")
+          replace(settings, "      await _reloadRecovery();\n      _snack(context, 'Restore berhasil dan ledger lolos integrity check.');", "      await _reloadRecovery();\n      if (!context.mounted) return;\n      _snack(context, 'Restore berhasil dan ledger lolos integrity check.');")
+          replace(settings, "      await _reloadRecovery();\n      _snack(context, 'Titik pemulihan lokal berhasil diterapkan dan tervalidasi.');", "      await _reloadRecovery();\n      if (!context.mounted) return;\n      _snack(context, 'Titik pemulihan lokal berhasil diterapkan dan tervalidasi.');")
+
+          # Remove unused locals / wildcard naming lint.
+          replace('lib/features/settings/categories_screen.dart', '  Widget build(BuildContext context) {\n    final c = AppScope.of(context);\n    return DefaultTabController(', '  Widget build(BuildContext context) {\n    return DefaultTabController(')
+          replace('lib/features/settings/categories_screen.dart', '      separatorBuilder: (_, __) => const Divider(height: 1),', '      separatorBuilder: (_, _) => const Divider(height: 1),')
+          replace('lib/features/transactions/transactions_screen.dart', '                  separatorBuilder: (_, __) => const Divider(height: 1),', '                  separatorBuilder: (_, _) => const Divider(height: 1),')
+          replace('lib/features/transactions/transaction_detail_screen.dart', '          final result = await c.run(() => c.repository.updateSimpleTransaction(', '          await c.run(() => c.repository.updateSimpleTransaction(')
+
+          # Dart null-aware collection element.
+          replace('lib/shared/finance_widgets.dart', '    final spoken = [label, value, if (caption != null) caption!].join(\', \');', "    final spoken = [label, value, ?caption].join(', ');")
+
+          print('PASS: exact V28 analyzer cleanup patch applied')
+          PY
+
+      - name: Guard intended scope and commit
         run: |
           set -euo pipefail
-          CHANGED="$(git diff --name-only)"
-          test -n "$CHANGED" || {
-            echo 'FAIL: dart fix produced no changes.' >&2
+          CHANGED="$(git diff --name-only | sort)"
+          EXPECTED="$(printf '%s\n' \
+            lib/core/db/app_database.dart \
+            lib/core/services/backup_service.dart \
+            lib/features/accounts/accounts_screen.dart \
+            lib/features/accounts/financial_actions_screen.dart \
+            lib/features/home/customize_dashboard_screen.dart \
+            lib/features/onboarding_screen.dart \
+            lib/features/planning/planning_screen.dart \
+            lib/features/quick_add/quick_add_sheet.dart \
+            lib/features/settings/categories_screen.dart \
+            lib/features/settings/settings_screen.dart \
+            lib/features/transactions/transaction_detail_screen.dart \
+            lib/features/transactions/transactions_screen.dart \
+            lib/shared/finance_widgets.dart | sort)"
+          test "$CHANGED" = "$EXPECTED" || {
+            echo 'FAIL: unexpected analyzer cleanup file set' >&2
+            git status --short >&2
             exit 1
           }
-          BAD="$(printf '%s\n' "$CHANGED" | grep -Ev '^lib/' || true)"
-          test -z "$BAD" || {
-            echo 'FAIL: dart fix touched files outside lib/:' >&2
-            printf '%s\n' "$BAD" >&2
-            exit 1
-          }
-          FILES="$(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ')"
-          read -r ADDED DELETED < <(git diff --numstat | awk '{a+=$1; d+=$2} END {print a+0, d+0}')
-          CHURN=$((ADDED + DELETED))
-          echo "Changed files: $FILES"
-          echo "Line churn: $CHURN (+$ADDED/-$DELETED)"
-          printf '%s\n' "$CHANGED"
-          test "$FILES" -le 15 || { echo 'FAIL: too many files for minimal autofix.' >&2; exit 1; }
-          test "$CHURN" -le 250 || { echo 'FAIL: too much line churn for minimal autofix.' >&2; exit 1; }
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add lib
-          git commit -m 'Apply minimal Dart analyzer autofixes'
+          git commit -m 'Clean Flutter 3.47 analyzer findings'
           git push origin HEAD:main
