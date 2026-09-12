@@ -20,7 +20,9 @@ trap 'rm -rf "$verify_repo"' EXIT
 git -C "$verify_repo" init -q -b main
 git -C "$verify_repo" bundle verify "$bundle" >/dev/null
 
-readarray -t expected < <(python3 - "$manifest" <<'PY'
+# Bash 3.2 (the macOS system Bash) has indexed arrays but no `readarray`.
+# Capture the five newline-delimited values and select them portably with sed.
+expected="$(python3 - "$manifest" <<'PY'
 import json, sys
 from pathlib import Path
 m=json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
@@ -35,12 +37,16 @@ print(m['bundle_sha256'])
 print(m['tracked_files_manifest_sha256'])
 print(m['tracked_file_count'])
 PY
-)
-commit_sha="${expected[0]}"
-tree_sha="${expected[1]}"
-expected_bundle_sha="${expected[2]}"
-expected_files_sha="${expected[3]}"
-expected_count="${expected[4]}"
+)"
+commit_sha="$(printf '%s\n' "$expected" | sed -n '1p')"
+tree_sha="$(printf '%s\n' "$expected" | sed -n '2p')"
+expected_bundle_sha="$(printf '%s\n' "$expected" | sed -n '3p')"
+expected_files_sha="$(printf '%s\n' "$expected" | sed -n '4p')"
+expected_count="$(printf '%s\n' "$expected" | sed -n '5p')"
+[ -n "$commit_sha" ] && [ -n "$tree_sha" ] && [ -n "$expected_bundle_sha" ] && [ -n "$expected_files_sha" ] && [ -n "$expected_count" ] || {
+  echo 'FAIL: incomplete Git bootstrap manifest values.' >&2
+  exit 1
+}
 
 actual_bundle_sha="$(sha256sum "$bundle" | awk '{print $1}')"
 actual_files_sha="$(sha256sum "$files_manifest" | awk '{print $1}')"
