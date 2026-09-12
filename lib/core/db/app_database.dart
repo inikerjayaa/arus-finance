@@ -23,18 +23,19 @@ class FreshRecoverySession {
 
 class AppDatabase {
   AppDatabase({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(resetOnError: false),
-              iOptions: IOSOptions(
-                accessibility: KeychainAccessibility.unlocked_this_device,
-              ),
+    : _secureStorage =
+          secureStorage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(resetOnError: false),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.unlocked_this_device,
             ),
-        _inMemory = false;
+          ),
+      _inMemory = false;
 
   AppDatabase.inMemory()
-      : _secureStorage = const FlutterSecureStorage(),
-        _inMemory = true;
+    : _secureStorage = const FlutterSecureStorage(),
+      _inMemory = true;
 
   static const _databaseKeyStorageKey = 'arus_db_key_v1';
   static const _localRecoveryKeyStorageKey = 'arus_local_recovery_key_v1';
@@ -103,11 +104,13 @@ class AppDatabase {
   }
 
   void _initializeSchema(Database database) {
-    final metaExists = database
-        .select(
-          "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='app_meta'",
-        )
-        .first['c'] as int;
+    final metaExists =
+        database
+                .select(
+                  "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='app_meta'",
+                )
+                .first['c']
+            as int;
 
     if (metaExists == 0) {
       database.execute('BEGIN IMMEDIATE');
@@ -193,11 +196,13 @@ class AppDatabase {
   }
 
   void _ensureDerivedSearchIndex(Database database) {
-    final exists = database
-        .select(
-          "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='transaction_search'",
-        )
-        .first['c'] as int;
+    final exists =
+        database
+                .select(
+                  "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='transaction_search'",
+                )
+                .first['c']
+            as int;
     if (exists == 0) return;
 
     var needsRebuild = false;
@@ -205,12 +210,14 @@ class AppDatabase {
       database.execute(
         "INSERT INTO transaction_search(transaction_search) VALUES('integrity-check')",
       );
-      final txCount = database
-          .select('SELECT COUNT(*) AS c FROM transactions')
-          .first['c'] as int;
-      final searchCount = database
-          .select('SELECT COUNT(*) AS c FROM transaction_search')
-          .first['c'] as int;
+      final txCount =
+          database.select('SELECT COUNT(*) AS c FROM transactions').first['c']
+              as int;
+      final searchCount =
+          database
+                  .select('SELECT COUNT(*) AS c FROM transaction_search')
+                  .first['c']
+              as int;
       needsRebuild = txCount != searchCount;
     } catch (_) {
       needsRebuild = true;
@@ -272,11 +279,11 @@ class AppDatabase {
     return value;
   }
 
-
-
   Future<List<int>?> localRecoveryKey({bool createIfMissing = true}) async {
     if (_inMemory) return null;
-    final existing = await _secureStorage.read(key: _localRecoveryKeyStorageKey);
+    final existing = await _secureStorage.read(
+      key: _localRecoveryKeyStorageKey,
+    );
     if (existing != null && existing.isNotEmpty) {
       try {
         final decoded = base64Url.decode(existing);
@@ -307,14 +314,17 @@ class AppDatabase {
 
   Future<FreshRecoverySession> beginFreshRecovery() async {
     if (_inMemory) {
-      throw StateError('Fresh recovery hanya tersedia untuk database perangkat.');
+      throw StateError(
+        'Fresh recovery hanya tersedia untuk database perangkat.',
+      );
     }
     close();
     final dir = await getApplicationSupportDirectory();
     final dbFile = File(p.join(dir.path, 'arus_finance.db'));
     final hadDatabase = dbFile.existsSync() && dbFile.lengthSync() > 0;
     final hadDatabaseKey =
-        (await _secureStorage.read(key: _databaseKeyStorageKey))?.isNotEmpty == true;
+        (await _secureStorage.read(key: _databaseKeyStorageKey))?.isNotEmpty ==
+        true;
     final quarantineRoot = Directory(p.join(dir.path, 'recovery_quarantine'));
     await quarantineRoot.create(recursive: true);
     final quarantine = Directory(
@@ -330,29 +340,25 @@ class AppDatabase {
       hadDatabase: hadDatabase,
       hadDatabaseKey: hadDatabaseKey,
     );
-    await _writeRecoveryMarker(
-      <String, Object?>{
+    await _writeRecoveryMarker(<String, Object?>{
+      'version': 1,
+      'state': 'preparing',
+      'quarantine_directory': quarantine.path,
+      'had_database': hadDatabase,
+      'had_database_key': hadDatabaseKey,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    try {
+      await _moveDatabaseFamilyToQuarantine(quarantine);
+      await _writeRecoveryMarker(<String, Object?>{
         'version': 1,
-        'state': 'preparing',
+        'state': 'quarantined',
         'quarantine_directory': quarantine.path,
         'had_database': hadDatabase,
         'had_database_key': hadDatabaseKey,
         'created_at': DateTime.now().toUtc().toIso8601String(),
-      },
-    );
-
-    try {
-      await _moveDatabaseFamilyToQuarantine(quarantine);
-      await _writeRecoveryMarker(
-        <String, Object?>{
-          'version': 1,
-          'state': 'quarantined',
-          'quarantine_directory': quarantine.path,
-          'had_database': hadDatabase,
-          'had_database_key': hadDatabaseKey,
-          'created_at': DateTime.now().toUtc().toIso8601String(),
-        },
-      );
+      });
       return session;
     } catch (_) {
       await _rollbackRecoveryFiles(session);
@@ -362,16 +368,14 @@ class AppDatabase {
 
   Future<void> markFreshRecoveryValidated(FreshRecoverySession session) async {
     if (_inMemory) return;
-    await _writeRecoveryMarker(
-      <String, Object?>{
-        'version': 1,
-        'state': 'replacement_validated',
-        'quarantine_directory': session.quarantineDirectory,
-        'had_database': session.hadDatabase,
-        'had_database_key': session.hadDatabaseKey,
-        'validated_at': DateTime.now().toUtc().toIso8601String(),
-      },
-    );
+    await _writeRecoveryMarker(<String, Object?>{
+      'version': 1,
+      'state': 'replacement_validated',
+      'quarantine_directory': session.quarantineDirectory,
+      'had_database': session.hadDatabase,
+      'had_database_key': session.hadDatabaseKey,
+      'validated_at': DateTime.now().toUtc().toIso8601String(),
+    });
   }
 
   Future<void> finalizeFreshRecovery(FreshRecoverySession session) async {
@@ -393,7 +397,9 @@ class AppDatabase {
     if (_inMemory) return;
     final dir = await getApplicationSupportDirectory();
     final marker = File(p.join(dir.path, _recoveryMarkerName));
-    final markerPending = File(p.join(dir.path, '$_recoveryMarkerName.pending'));
+    final markerPending = File(
+      p.join(dir.path, '$_recoveryMarkerName.pending'),
+    );
     if (await marker.exists()) await marker.delete();
     if (await markerPending.exists()) await markerPending.delete();
     final quarantine = Directory(p.join(dir.path, 'recovery_quarantine'));
@@ -428,10 +434,10 @@ class AppDatabase {
     final quarantinePath = data['quarantine_directory'];
     final hadDatabase = data['had_database'];
     final hadKey = data['had_database_key'];
-    if (quarantinePath is! String ||
-        hadDatabase is! bool ||
-        hadKey is! bool) {
-      throw StateError('Recovery marker tidak lengkap; data lama tidak akan ditimpa.');
+    if (quarantinePath is! String || hadDatabase is! bool || hadKey is! bool) {
+      throw StateError(
+        'Recovery marker tidak lengkap; data lama tidak akan ditimpa.',
+      );
     }
     final session = FreshRecoverySession(
       quarantineDirectory: quarantinePath,
@@ -598,9 +604,9 @@ class AppDatabase {
       );
       final txCount =
           db.select('SELECT COUNT(*) AS c FROM transactions').first['c'] as int;
-      final searchCount = db
-          .select('SELECT COUNT(*) AS c FROM transaction_search')
-          .first['c'] as int;
+      final searchCount =
+          db.select('SELECT COUNT(*) AS c FROM transaction_search').first['c']
+              as int;
       if (txCount != searchCount) {
         throw StateError('Search index tidak sinkron dengan transaksi.');
       }

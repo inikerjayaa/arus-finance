@@ -14,7 +14,12 @@ import 'features/settings/lock_gate.dart';
 import 'shared/app_theme.dart';
 
 class ArusApp extends StatefulWidget {
-  const ArusApp({super.key, required this.controller, required this.database, required this.security});
+  const ArusApp({
+    super.key,
+    required this.controller,
+    required this.database,
+    required this.security,
+  });
   final AppController controller;
   final AppDatabase database;
   final SecurityService security;
@@ -82,7 +87,8 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   }
 
   void _checkpointRecoveryOnBackground() {
-    if (widget.controller.initializing || widget.controller.errorMessage != null) {
+    if (widget.controller.initializing ||
+        widget.controller.errorMessage != null) {
       return;
     }
     unawaited(
@@ -97,14 +103,17 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   void _captureRootControllerState() {
     _lastInitializing = widget.controller.initializing;
     _lastFatalRecovery =
-        widget.controller.errorMessage != null && widget.controller.dashboardData == null;
+        widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
   }
 
   void _controllerChanged() {
     final initializing = widget.controller.initializing;
     final fatalRecovery =
-        widget.controller.errorMessage != null && widget.controller.dashboardData == null;
-    if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery) {
+        widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
+    if (initializing == _lastInitializing &&
+        fatalRecovery == _lastFatalRecovery) {
       // AppScope/InheritedNotifier owns normal in-app state propagation. Avoid
       // rebuilding MaterialApp/Navigator for search, pagination, busy, notices,
       // dashboard values, or other routine controller notifications.
@@ -122,9 +131,9 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     await widget.controller.initialize();
     if (widget.controller.errorMessage == null) {
       unawaited(
-        BackupService(widget.database)
-            .createLocalRecoveryGeneration()
-            .catchError((_) {}),
+        BackupService(
+          widget.database,
+        ).createLocalRecoveryGeneration().catchError((_) {}),
       );
     }
   }
@@ -153,7 +162,11 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
               container: true,
               label: 'Arus disembunyikan saat aplikasi tidak aktif',
               child: Center(
-                child: Icon(Icons.lock_outline, color: Colors.white70, size: 36),
+                child: Icon(
+                  Icons.lock_outline,
+                  color: Colors.white70,
+                  size: 36,
+                ),
               ),
             ),
           ),
@@ -174,9 +187,12 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       );
     }
     if (_onboardingDone == false) {
-      return OnboardingScreen(onDone: () => setState(() => _onboardingDone = true));
+      return OnboardingScreen(
+        onDone: () => setState(() => _onboardingDone = true),
+      );
     }
-    if (widget.controller.errorMessage != null && widget.controller.dashboardData == null) {
+    if (widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null) {
       return LockGate(
         security: widget.security,
         child: RecoveryScreen(
@@ -188,7 +204,11 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     }
     return LockGate(
       security: widget.security,
-      child: AppShell(controller: widget.controller, database: widget.database, security: widget.security),
+      child: AppShell(
+        controller: widget.controller,
+        database: widget.database,
+        security: widget.security,
+      ),
     );
   }
 }

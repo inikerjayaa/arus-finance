@@ -39,8 +39,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   Future<void> _checkInitial() async {
     final hasPin = await widget.security.hasPin();
-    final biometricAvailable = hasPin && await widget.security.canUseBiometrics();
-    final biometricEnabled = biometricAvailable && await widget.security.biometricEnabled();
+    final biometricAvailable =
+        hasPin && await widget.security.canUseBiometrics();
+    final biometricEnabled =
+        biometricAvailable && await widget.security.biometricEnabled();
     if (!mounted) return;
     setState(() {
       _hasPin = hasPin;
@@ -82,8 +84,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   Future<void> _refreshPinStateOnResume(int generation) async {
     final hasPin = await widget.security.hasPin();
-    final biometricAvailable = hasPin && await widget.security.canUseBiometrics();
-    final biometricEnabled = biometricAvailable && await widget.security.biometricEnabled();
+    final biometricAvailable =
+        hasPin && await widget.security.canUseBiometrics();
+    final biometricEnabled =
+        biometricAvailable && await widget.security.biometricEnabled();
     if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
     setState(() {
       _hasPin = hasPin;
@@ -92,7 +96,8 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       if (!hasPin) _error = null;
     });
     if (biometricEnabled) {
-      if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
+      if (!mounted || !_foreground || generation != _lifecycleGeneration)
+        return;
       await _tryBiometric();
     }
   }
@@ -126,7 +131,8 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         _error = null;
         _pin.clear();
       } else if (lockUntil != null) {
-        final seconds = lockUntil.difference(DateTime.now().toUtc()).inSeconds + 1;
+        final seconds =
+            lockUntil.difference(DateTime.now().toUtc()).inSeconds + 1;
         _error = 'Terlalu banyak percobaan. Coba lagi sekitar $seconds detik.';
       } else {
         _error = 'PIN tidak cocok.';
@@ -155,39 +161,63 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
             constraints: const BoxConstraints(maxWidth: 420),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(28),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Icon(Icons.lock_outline_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 18),
-                Text('Arus terkunci', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text('Masukkan PIN untuk membuka data keuangan.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _pin,
-                  autofocus: true,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(labelText: 'PIN', errorText: _error),
-                  onSubmitted: (_) => _unlockPin(),
-                ),
-                if (_error != null)
-                  Semantics(
-                    liveRegion: true,
-                    label: _error!,
-                    child: const SizedBox.shrink(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 56,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                const SizedBox(height: 14),
-                FilledButton(onPressed: _unlockPin, child: const Text('Buka')),
-                if (_biometricAvailable) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    'Arus terkunci',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: _tryBiometric,
-                    icon: const Icon(Icons.fingerprint),
-                    label: const Text('Gunakan biometrik'),
+                  Text(
+                    'Masukkan PIN untuk membuka data keuangan.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _pin,
+                    autofocus: true,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      labelText: 'PIN',
+                      errorText: _error,
+                    ),
+                    onSubmitted: (_) => _unlockPin(),
+                  ),
+                  if (_error != null)
+                    Semantics(
+                      liveRegion: true,
+                      label: _error!,
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(height: 14),
+                  FilledButton(
+                    onPressed: _unlockPin,
+                    child: const Text('Buka'),
+                  ),
+                  if (_biometricAvailable) ...[
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: _tryBiometric,
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Gunakan biometrik'),
+                    ),
+                  ],
                 ],
-              ]),
+              ),
             ),
           ),
         ),

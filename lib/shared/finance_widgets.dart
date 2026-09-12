@@ -19,7 +19,7 @@ class MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final spoken = [label, value, if (caption != null) caption!].join(', ');
+    final spoken = [label, value, ?caption].join(', ');
     return Semantics(
       container: true,
       label: spoken,
@@ -73,11 +73,7 @@ class MetricCard extends StatelessWidget {
 }
 
 class TransactionTile extends StatelessWidget {
-  const TransactionTile({
-    super.key,
-    required this.transaction,
-    this.onTap,
-  });
+  const TransactionTile({super.key, required this.transaction, this.onTap});
   final TransactionView transaction;
   final VoidCallback? onTap;
 
@@ -130,10 +126,16 @@ class TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isExpense = transaction.type == TransactionType.expense;
-    final isIncome = transaction.type == TransactionType.income ||
+    final isIncome =
+        transaction.type == TransactionType.income ||
         transaction.type == TransactionType.refund;
-    final prefix = isExpense ? '−' : isIncome ? '+' : '';
-    final amount = '$prefix${Money.format(transaction.amountMinor, currency: transaction.currency)}';
+    final prefix = isExpense
+        ? '−'
+        : isIncome
+        ? '+'
+        : '';
+    final amount =
+        '$prefix${Money.format(transaction.amountMinor, currency: transaction.currency)}';
     final subtitleParts = <String>[transaction.accountName];
     if (transaction.destinationAccountName != null) {
       subtitleParts.add('ke ${transaction.destinationAccountName}');
@@ -145,8 +147,8 @@ class TransactionTile extends StatelessWidget {
       final childLabel = transaction.type == TransactionType.transfer
           ? 'Biaya transfer'
           : transaction.type == TransactionType.loanPayment
-              ? 'Bunga/biaya'
-              : 'Biaya tambahan';
+          ? 'Bunga/biaya'
+          : 'Biaya tambahan';
       subtitleParts.add(
         '$childLabel ${Money.format(transaction.childExpenseMinor, currency: transaction.currency)}',
       );
@@ -160,7 +162,10 @@ class TransactionTile extends StatelessWidget {
       child: ExcludeSemantics(
         child: ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 6,
+          ),
           leading: CircleAvatar(
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
             child: Icon(icon, color: theme.colorScheme.primary),

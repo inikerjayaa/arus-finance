@@ -9,7 +9,7 @@ import 'domain/models.dart';
 
 class AppController extends ChangeNotifier {
   AppController(this.repository, {LocalNotificationService? notifications})
-      : notifications = notifications ?? LocalNotificationService();
+    : notifications = notifications ?? LocalNotificationService();
 
   final FinanceRepository repository;
   final LocalNotificationService notifications;
@@ -133,8 +133,10 @@ class AppController extends ChangeNotifier {
     }
   }
 
-
-  Future<void> refreshTransactions({String? query, TransactionFilter? filter}) async {
+  Future<void> refreshTransactions({
+    String? query,
+    TransactionFilter? filter,
+  }) async {
     // Query/filter are presentation state for the currently visible result set.
     // Do not commit them until the matching database request succeeds; otherwise
     // an error can leave chips/search state describing rows that were never loaded.
@@ -199,10 +201,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> clearTransactionFilters() async {
-    await refreshTransactions(
-      query: '',
-      filter: const TransactionFilter(),
-    );
+    await refreshTransactions(query: '', filter: const TransactionFilter());
   }
 
   void setNavigation(int index) {
@@ -210,7 +209,10 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<T?> run<T>(Future<T> Function() operation, {bool refreshAfter = true}) async {
+  Future<T?> run<T>(
+    Future<T> Function() operation, {
+    bool refreshAfter = true,
+  }) async {
     if (busy) return null;
     busy = true;
     errorMessage = null;

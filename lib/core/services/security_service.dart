@@ -7,11 +7,15 @@ import 'package:local_auth/local_auth.dart';
 
 class SecurityService {
   SecurityService({FlutterSecureStorage? storage, LocalAuthentication? auth})
-      : _storage = storage ?? const FlutterSecureStorage(
-          aOptions: AndroidOptions(resetOnError: false),
-          iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
-        ),
-        _auth = auth ?? LocalAuthentication();
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            aOptions: AndroidOptions(resetOnError: false),
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.unlocked_this_device,
+            ),
+          ),
+      _auth = auth ?? LocalAuthentication();
 
   final FlutterSecureStorage _storage;
   final LocalAuthentication _auth;
@@ -22,8 +26,10 @@ class SecurityService {
   static const _failedAttemptsKey = 'arus_pin_failed_attempts_v1';
   static const _lockUntilKey = 'arus_pin_lock_until_v1';
 
-  Future<bool> hasPin() async => (await _storage.read(key: _pinHashKey))?.isNotEmpty == true;
-  Future<bool> biometricEnabled() async => (await _storage.read(key: _bioKey)) == '1';
+  Future<bool> hasPin() async =>
+      (await _storage.read(key: _pinHashKey))?.isNotEmpty == true;
+  Future<bool> biometricEnabled() async =>
+      (await _storage.read(key: _bioKey)) == '1';
 
   Future<bool> canUseBiometrics() async {
     try {
@@ -53,7 +59,8 @@ class SecurityService {
 
   Future<bool> verifyPin(String pin) async {
     final lockUntil = await pinLockedUntil();
-    if (lockUntil != null && lockUntil.isAfter(DateTime.now().toUtc())) return false;
+    if (lockUntil != null && lockUntil.isAfter(DateTime.now().toUtc()))
+      return false;
 
     final saltRaw = await _storage.read(key: _pinSaltKey);
     final storedRaw = await _storage.read(key: _pinHashKey);
@@ -68,7 +75,10 @@ class SecurityService {
       return true;
     }
 
-    final attempts = (int.tryParse(await _storage.read(key: _failedAttemptsKey) ?? '') ?? 0) + 1;
+    final attempts =
+        (int.tryParse(await _storage.read(key: _failedAttemptsKey) ?? '') ??
+            0) +
+        1;
     await _storage.write(key: _failedAttemptsKey, value: '$attempts');
     if (attempts >= 5) {
       final exponent = (attempts - 5).clamp(0, 5).toInt();

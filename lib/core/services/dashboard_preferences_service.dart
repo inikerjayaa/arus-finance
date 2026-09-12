@@ -1,12 +1,20 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardWidgetConfig {
-  const DashboardWidgetConfig({required this.id, required this.label, required this.enabled});
+  const DashboardWidgetConfig({
+    required this.id,
+    required this.label,
+    required this.enabled,
+  });
   final String id;
   final String label;
   final bool enabled;
 
-  DashboardWidgetConfig copyWith({bool? enabled}) => DashboardWidgetConfig(id: id, label: label, enabled: enabled ?? this.enabled);
+  DashboardWidgetConfig copyWith({bool? enabled}) => DashboardWidgetConfig(
+    id: id,
+    label: label,
+    enabled: enabled ?? this.enabled,
+  );
 }
 
 class DashboardPreferencesService {
@@ -36,17 +44,29 @@ class DashboardPreferencesService {
   Future<List<DashboardWidgetConfig>> load() async {
     final prefs = await SharedPreferences.getInstance();
     final storedOrder = prefs.getStringList(_orderKey) ?? const <String>[];
-    final hidden = (prefs.getStringList(_hiddenKey) ?? const <String>[]).toSet();
+    final hidden = (prefs.getStringList(_hiddenKey) ?? const <String>[])
+        .toSet();
     final validStored = storedOrder.where(labels.containsKey).toList();
     final missing = defaultOrder.where((id) => !validStored.contains(id));
     final order = [...validStored, ...missing];
-    return order.map((id) => DashboardWidgetConfig(id: id, label: labels[id]!, enabled: !hidden.contains(id))).toList();
+    return order
+        .map(
+          (id) => DashboardWidgetConfig(
+            id: id,
+            label: labels[id]!,
+            enabled: !hidden.contains(id),
+          ),
+        )
+        .toList();
   }
 
   Future<void> save(List<DashboardWidgetConfig> config) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_orderKey, config.map((e) => e.id).toList());
-    await prefs.setStringList(_hiddenKey, config.where((e) => !e.enabled).map((e) => e.id).toList());
+    await prefs.setStringList(
+      _hiddenKey,
+      config.where((e) => !e.enabled).map((e) => e.id).toList(),
+    );
   }
 
   Future<void> reset() async {

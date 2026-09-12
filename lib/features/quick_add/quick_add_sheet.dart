@@ -9,7 +9,10 @@ import '../../shared/money.dart';
 class QuickAddSheet extends StatefulWidget {
   const QuickAddSheet({super.key});
 
-  static Future<void> show(BuildContext context, AppController controller) async {
+  static Future<void> show(
+    BuildContext context,
+    AppController controller,
+  ) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -17,10 +20,8 @@ class QuickAddSheet extends StatefulWidget {
       isDismissible: false,
       enableDrag: false,
       showDragHandle: false,
-      builder: (_) => AppScope(
-        controller: controller,
-        child: const QuickAddSheet(),
-      ),
+      builder: (_) =>
+          AppScope(controller: controller, child: const QuickAddSheet()),
     );
   }
 
@@ -72,16 +73,22 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   }
 
   void _normalizeSelections(AppController controller) {
-    final categories =
-        _mode == 1 ? controller.incomeCategories : controller.expenseCategories;
+    final categories = _mode == 1
+        ? controller.incomeCategories
+        : controller.expenseCategories;
     final eligible = _eligibleAccounts(controller.accounts);
     if (!eligible.any((a) => a.id == _accountId)) {
       _accountId = eligible.firstOrNull?.id;
     }
     if (_mode == 2) {
-      if (!_eligibleAccounts(controller.accounts).any((a) => a.id == _destinationId) ||
+      if (!_eligibleAccounts(
+            controller.accounts,
+          ).any((a) => a.id == _destinationId) ||
           _destinationId == _accountId) {
-        _destinationId = eligible.where((a) => a.id != _accountId).firstOrNull?.id;
+        _destinationId = eligible
+            .where((a) => a.id != _accountId)
+            .firstOrNull
+            ?.id;
       }
     } else {
       _destinationId = null;
@@ -95,8 +102,9 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   Widget build(BuildContext context) {
     final controller = AppScope.of(context);
     _normalizeSelections(controller);
-    final categories =
-        _mode == 1 ? controller.incomeCategories : controller.expenseCategories;
+    final categories = _mode == 1
+        ? controller.incomeCategories
+        : controller.expenseCategories;
     final eligibleAccounts = _eligibleAccounts(controller.accounts);
 
     return PopScope<void>(
@@ -111,123 +119,95 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           bottom: MediaQuery.viewInsetsOf(context).bottom + 18,
         ),
         child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      'Catat transaksi',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'Catat transaksi',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Tutup pencatatan transaksi',
-                  onPressed: _submitting ? null : () => _requestClose(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(
-                  value: 0,
-                  label: Text('Keluar'),
-                  icon: Icon(Icons.arrow_upward_rounded),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  label: Text('Masuk'),
-                  icon: Icon(Icons.arrow_downward_rounded),
-                ),
-                ButtonSegment(
-                  value: 2,
-                  label: Text('Transfer'),
-                  icon: Icon(Icons.swap_horiz_rounded),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (value) => setState(() {
-                _mode = value.first;
-                _dirty = true;
-                _accountId = null;
-                _categoryId = null;
-                _destinationId = null;
-                _amountError = null;
-                _accountError = null;
-                _categoryError = null;
-                _destinationError = null;
-                _feeError = null;
-                _submitError = null;
-              }),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: _amount,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  IconButton(
+                    tooltip: 'Tutup pencatatan transaksi',
+                    onPressed: _submitting
+                        ? null
+                        : () => _requestClose(context),
+                    icon: const Icon(Icons.close),
                   ),
-              decoration: InputDecoration(
-                prefixText: 'Rp ',
-                hintText: '0',
-                labelText: 'Nominal',
-                errorText: _amountError,
+                ],
               ),
-              onChanged: (_) {
-                setState(() {
+              const SizedBox(height: 16),
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(
+                    value: 0,
+                    label: Text('Keluar'),
+                    icon: Icon(Icons.arrow_upward_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 1,
+                    label: Text('Masuk'),
+                    icon: Icon(Icons.arrow_downward_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 2,
+                    label: Text('Transfer'),
+                    icon: Icon(Icons.swap_horiz_rounded),
+                  ),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (value) => setState(() {
+                  _mode = value.first;
                   _dirty = true;
+                  _accountId = null;
+                  _categoryId = null;
+                  _destinationId = null;
                   _amountError = null;
+                  _accountError = null;
+                  _categoryError = null;
+                  _destinationError = null;
+                  _feeError = null;
                   _submitError = null;
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _accountId,
-              decoration: InputDecoration(
-                labelText: _mode == 2 ? 'Dari account' : 'Account',
-                errorText: _accountError,
+                }),
               ),
-              items: eligibleAccounts
-                  .map(
-                    (a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Text(a.name, overflow: TextOverflow.ellipsis),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() {
-                _dirty = true;
-                _accountId = value;
-                _accountError = null;
-                if (_mode == 2 && _destinationId == value) {
-                  _destinationId = eligibleAccounts
-                      .where((a) => a.id != value)
-                      .firstOrNull
-                      ?.id;
-                }
-              }),
-            ),
-            if (_mode == 2) ...[
+              const SizedBox(height: 18),
+              TextField(
+                controller: _amount,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                decoration: InputDecoration(
+                  prefixText: 'Rp ',
+                  hintText: '0',
+                  labelText: 'Nominal',
+                  errorText: _amountError,
+                ),
+                onChanged: (_) {
+                  setState(() {
+                    _dirty = true;
+                    _amountError = null;
+                    _submitError = null;
+                  });
+                },
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _destinationId,
+                initialValue: _accountId,
                 decoration: InputDecoration(
-                  labelText: 'Ke account',
-                  errorText: _destinationError,
+                  labelText: _mode == 2 ? 'Dari account' : 'Account',
+                  errorText: _accountError,
                 ),
                 items: eligibleAccounts
-                    .where((a) => a.id != _accountId)
                     .map(
                       (a) => DropdownMenuItem(
                         value: a.id,
@@ -237,119 +217,157 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                     .toList(),
                 onChanged: (value) => setState(() {
                   _dirty = true;
-                  _destinationId = value;
-                  _destinationError = null;
+                  _accountId = value;
+                  _accountError = null;
+                  if (_mode == 2 && _destinationId == value) {
+                    _destinationId = eligibleAccounts
+                        .where((a) => a.id != value)
+                        .firstOrNull
+                        ?.id;
+                  }
                 }),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Biaya transfer (opsional)',
-                  prefixText: 'Rp ',
-                  errorText: _feeError,
-                ),
-                onChanged: (value) {
-                  final trimmed = value.trim();
-                  final parsed = trimmed.isEmpty ? 0 : Money.parseIdr(trimmed);
-                  setState(() {
+              if (_mode == 2) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _destinationId,
+                  decoration: InputDecoration(
+                    labelText: 'Ke account',
+                    errorText: _destinationError,
+                  ),
+                  items: eligibleAccounts
+                      .where((a) => a.id != _accountId)
+                      .map(
+                        (a) => DropdownMenuItem(
+                          value: a.id,
+                          child: Text(a.name, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() {
                     _dirty = true;
-                    _feeMinor = parsed ?? 0;
-                    _feeError = parsed == null ? 'Masukkan biaya yang valid.' : null;
-                  });
-                },
-              ),
-            ] else ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _categoryId,
-                decoration: InputDecoration(
-                  labelText: 'Kategori',
-                  errorText: _categoryError,
+                    _destinationId = value;
+                    _destinationError = null;
+                  }),
                 ),
-                items: categories
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Text(c.name, overflow: TextOverflow.ellipsis),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() {
-                  _dirty = true;
-                  _categoryId = value;
-                  _categoryError = null;
-                }),
-              ),
-            ],
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime.now(),
-                  initialDate: _date,
-                );
-                if (picked != null && mounted) {
-                  final now = DateTime.now();
-                  setState(
-                    () {
+                const SizedBox(height: 12),
+                TextFormField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Biaya transfer (opsional)',
+                    prefixText: 'Rp ',
+                    errorText: _feeError,
+                  ),
+                  onChanged: (value) {
+                    final trimmed = value.trim();
+                    final parsed = trimmed.isEmpty
+                        ? 0
+                        : Money.parseIdr(trimmed);
+                    setState(() {
+                      _dirty = true;
+                      _feeMinor = parsed ?? 0;
+                      _feeError = parsed == null
+                          ? 'Masukkan biaya yang valid.'
+                          : null;
+                    });
+                  },
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _categoryId,
+                  decoration: InputDecoration(
+                    labelText: 'Kategori',
+                    errorText: _categoryError,
+                  ),
+                  items: categories
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c.id,
+                          child: Text(c.name, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() {
+                    _dirty = true;
+                    _categoryId = value;
+                    _categoryError = null;
+                  }),
+                ),
+              ],
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                    initialDate: _date,
+                  );
+                  if (picked != null && mounted) {
+                    final now = DateTime.now();
+                    setState(() {
                       _dirty = true;
                       _date = DateTime(
-                      picked.year,
-                      picked.month,
-                      picked.day,
-                      now.hour,
-                      now.minute,
-                    );
-                    },
-                  );
-                }
-              },
-              icon: const Icon(Icons.calendar_today_outlined),
-              label: Text(
-                '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _note,
-              maxLines: 2,
-              textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
-              onChanged: (_) => setState(() => _dirty = true),
-            ),
-            if (_submitError != null) ...[
-              const SizedBox(height: 12),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  _submitError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        picked.year,
+                        picked.month,
+                        picked.day,
+                        now.hour,
+                        now.minute,
+                      );
+                    });
+                  }
+                },
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text(
+                  '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}',
                 ),
               ),
-            ],
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: controller.busy || _submitting || eligibleAccounts.isEmpty
-                  ? null
-                  : () => _save(context),
-              icon: const Icon(Icons.check_rounded),
-              label: Text(controller.busy || _submitting ? 'Menyimpan…' : 'Simpan'),
-            ),
-            if (eligibleAccounts.isEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Belum ada account yang dapat dipakai untuk tipe transaksi ini.',
-                textAlign: TextAlign.center,
+              const SizedBox(height: 12),
+              TextField(
+                controller: _note,
+                maxLines: 2,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'Catatan (opsional)',
+                ),
+                onChanged: (_) => setState(() => _dirty = true),
               ),
+              if (_submitError != null) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _submitError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed:
+                    controller.busy || _submitting || eligibleAccounts.isEmpty
+                    ? null
+                    : () => _save(context),
+                icon: const Icon(Icons.check_rounded),
+                label: Text(
+                  controller.busy || _submitting ? 'Menyimpan…' : 'Simpan',
+                ),
+              ),
+              if (eligibleAccounts.isEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Belum ada account yang dapat dipakai untuk tipe transaksi ini.',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 6),
             ],
-            const SizedBox(height: 6),
-          ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -473,7 +491,8 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     }
     setState(() {
       _submitting = false;
-      _submitError = controller.errorMessage ?? 'Transaksi belum berhasil disimpan.';
+      _submitError =
+          controller.errorMessage ?? 'Transaksi belum berhasil disimpan.';
     });
   }
 }

@@ -23,19 +23,21 @@ class CsvExportService {
     );
     final sink = file.openWrite(encoding: utf8);
 
-    sink.write(_codec.encode([
-      [
-        'Date',
-        'Type',
-        'Account',
-        'Destination Account',
-        'Category',
-        'Amount Minor',
-        'Currency',
-        'Note',
-        'Transaction ID',
-      ],
-    ]));
+    sink.write(
+      _codec.encode([
+        [
+          'Date',
+          'Type',
+          'Account',
+          'Destination Account',
+          'Category',
+          'Amount Minor',
+          'Currency',
+          'Note',
+          'Transaction ID',
+        ],
+      ]),
+    );
 
     const pageSize = 500;
     var offset = 0;
@@ -47,17 +49,19 @@ class CsvExportService {
       if (txs.isEmpty) break;
 
       final rows = txs
-          .map((t) => [
-                t.occurredAt.toUtc().toIso8601String(),
-                t.type.name,
-                t.accountName,
-                t.destinationAccountName ?? '',
-                t.categoryName ?? '',
-                t.amountMinor,
-                t.currency,
-                t.note ?? '',
-                t.id,
-              ])
+          .map(
+            (t) => [
+              t.occurredAt.toUtc().toIso8601String(),
+              t.type.name,
+              t.accountName,
+              t.destinationAccountName ?? '',
+              t.categoryName ?? '',
+              t.amountMinor,
+              t.currency,
+              t.note ?? '',
+              t.id,
+            ],
+          )
           .toList(growable: false);
       sink.write(_codec.encode(rows));
 

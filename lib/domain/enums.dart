@@ -1,9 +1,34 @@
 enum AccountClass { asset, liability }
-enum AccountType { cash, bank, ewallet, creditCard, loan, investment, otherAsset, otherLiability }
-enum TransactionType { expense, income, transfer, refund, adjustment, openingBalance, creditCardPayment, loanDisbursement, loanPayment }
+
+enum AccountType {
+  cash,
+  bank,
+  ewallet,
+  creditCard,
+  loan,
+  investment,
+  otherAsset,
+  otherLiability,
+}
+
+enum TransactionType {
+  expense,
+  income,
+  transfer,
+  refund,
+  adjustment,
+  openingBalance,
+  creditCardPayment,
+  loanDisbursement,
+  loanPayment,
+}
+
 enum TransactionStatus { posted, draft, scheduled, voided }
+
 enum CategoryType { expense, income }
+
 enum RecurringMode { reminderOnly, autoCreate, autoCreateDraft }
+
 enum BillStatus { upcoming, due, paid, skipped, overdue }
 
 String enumDbName(Enum value) {
