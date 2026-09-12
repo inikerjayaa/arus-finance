@@ -1,0 +1,45 @@
+name: V28 One-Time Historical Audit API Migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/v28-audit-api-migration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-audit-token:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Update exact V13 continuity token
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tool/version_continuity_audit.py')
+          text=p.read_text()
+          old="'databaseAlreadyExists', 'Kunci database lokal tidak tersedia', 'database?.dispose();'"
+          new="'databaseAlreadyExists', 'Kunci database lokal tidak tersedia', 'database?.close();'"
+          count=text.count(old)
+          if count != 1:
+              raise SystemExit(f'FAIL: expected exactly one stale V13 continuity token, found {count}')
+          p.write_text(text.replace(old,new))
+          PY
+          test "$(git diff --name-only)" = 'tool/version_continuity_audit.py'
+
+      - name: Commit audit compatibility migration
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tool/version_continuity_audit.py
+          git commit -m 'Update V13 continuity check for sqlite close API'
+          git push origin HEAD:main
