@@ -1,0 +1,59 @@
+name: V28 One-Time Minimal Dart Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/v28-dart-fix-minimal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  minimal-dart-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install and verify pinned Flutter
+        run: |
+          python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
+          bash tool/native_toolchain_preflight.sh bootstrap
+          flutter pub get --enforce-lockfile
+
+      - name: Apply SDK fixes without global formatting
+        run: |
+          set -euo pipefail
+          dart fix --apply
+
+      - name: Guard minimal scope and commit
+        run: |
+          set -euo pipefail
+          CHANGED="$(git diff --name-only)"
+          test -n "$CHANGED" || {
+            echo 'FAIL: dart fix produced no changes.' >&2
+            exit 1
+          }
+          BAD="$(printf '%s\n' "$CHANGED" | grep -Ev '^lib/' || true)"
+          test -z "$BAD" || {
+            echo 'FAIL: dart fix touched files outside lib/:' >&2
+            printf '%s\n' "$BAD" >&2
+            exit 1
+          }
+          FILES="$(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ')"
+          read -r ADDED DELETED < <(git diff --numstat | awk '{a+=$1; d+=$2} END {print a+0, d+0}')
+          CHURN=$((ADDED + DELETED))
+          echo "Changed files: $FILES"
+          echo "Line churn: $CHURN (+$ADDED/-$DELETED)"
+          printf '%s\n' "$CHANGED"
+          test "$FILES" -le 15 || { echo 'FAIL: too many files for minimal autofix.' >&2; exit 1; }
+          test "$CHURN" -le 250 || { echo 'FAIL: too much line churn for minimal autofix.' >&2; exit 1; }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib
+          git commit -m 'Apply minimal Dart analyzer autofixes'
+          git push origin HEAD:main
