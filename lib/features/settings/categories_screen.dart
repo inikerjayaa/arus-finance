@@ -8,7 +8,6 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppScope.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(

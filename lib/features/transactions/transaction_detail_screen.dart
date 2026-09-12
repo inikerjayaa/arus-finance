@@ -177,7 +177,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         FilledButton(onPressed: () async {
           final parsed = Money.parseIdr(amount.text);
           if (parsed == null || parsed <= 0 || accountId == null || categoryId == null) return;
-          final result = await c.run(() => c.repository.updateSimpleTransaction(transactionId: widget.transactionId, amountMinor: parsed, accountId: accountId!, categoryId: categoryId!, occurredAt: date, note: note.text.trim().isEmpty ? null : note.text.trim()));
+          await c.run(() => c.repository.updateSimpleTransaction(transactionId: widget.transactionId, amountMinor: parsed, accountId: accountId!, categoryId: categoryId!, occurredAt: date, note: note.text.trim().isEmpty ? null : note.text.trim()));
           if (ctx.mounted && c.errorMessage == null) Navigator.pop(ctx, true);
         }, child: const Text('Simpan perubahan')),
       ])),

@@ -97,7 +97,7 @@ class AppDatabase {
     } catch (_) {
       // open() must never leak a live/locked handle when key validation,
       // schema migration, or startup hardening fails.
-      database?.dispose();
+      database?.close();
       rethrow;
     }
   }
@@ -640,7 +640,7 @@ class AppDatabase {
   }
 
   void close() {
-    _db?.dispose();
+    _db?.close();
     _db = null;
   }
 }

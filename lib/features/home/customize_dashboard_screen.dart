@@ -35,9 +35,8 @@ class _CustomizeDashboardScreenState extends State<CustomizeDashboardScreen> {
         Expanded(child: ReorderableListView.builder(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 110),
           itemCount: _items.length,
-          onReorder: (oldIndex, newIndex) {
+          onReorderItem: (oldIndex, newIndex) {
             setState(() {
-              if (newIndex > oldIndex) newIndex -= 1;
               final item = _items.removeAt(oldIndex);
               _items.insert(newIndex, item);
             });

@@ -226,11 +226,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _setReminders(BuildContext context, bool value) async {
     try {
       final granted = await widget.notifications.setEnabled(value);
-      if (!mounted) return;
+      if (!context.mounted) return;
       if (value && !granted) {
         _snack(context, 'Izin notifikasi tidak diberikan.');
       }
       await _reloadNotifications();
+      if (!context.mounted) return;
       final controller = AppScope.of(context);
       await widget.notifications.syncSchedules(
         bills: controller.bills,
@@ -344,9 +345,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _backup(BuildContext context) async {
     final pass = await _askSecret(context, title: 'Passphrase backup', label: 'Minimal 8 karakter', obscure: true);
-    if (pass == null) return;
+    if (pass == null || !context.mounted) return;
     final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Ketik ulang passphrase', obscure: true);
-    if (confirm == null) return;
+    if (confirm == null || !context.mounted) return;
     if (pass != confirm) { _snack(context, 'Passphrase tidak sama. Backup dibatalkan.'); return; }
     File? tempFile;
     try {
@@ -364,7 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _restore(BuildContext context) async {
     final pick = await FilePicker.pickFile(type: FileType.any);
     final path = pick?.path;
-    if (path == null) return;
+    if (path == null || !context.mounted) return;
     final pass = await _askSecret(context, title: 'Buka backup', label: 'Passphrase', obscure: true);
     if (pass == null) return;
     if (!context.mounted) return;
@@ -379,6 +380,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!context.mounted) return;
       await AppScope.of(context).refresh();
       await _reloadRecovery();
+      if (!context.mounted) return;
       _snack(context, 'Restore berhasil dan ledger lolos integrity check.');
     } catch (e) { if (context.mounted) _snack(context, 'Restore gagal. Data lama tidak diubah. $e'); }
   }
@@ -415,6 +417,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!context.mounted) return;
       await AppScope.of(context).refresh();
       await _reloadRecovery();
+      if (!context.mounted) return;
       _snack(context, 'Titik pemulihan lokal berhasil diterapkan dan tervalidasi.');
     } catch (e) {
       if (context.mounted) _snack(context, 'Pemulihan lokal gagal: $e');

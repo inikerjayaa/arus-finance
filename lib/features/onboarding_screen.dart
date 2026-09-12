@@ -75,15 +75,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ...goals.map(
-                        (g) => RadioListTile<String>(
-                          value: g,
-                          groupValue: _goal,
-                          title: Text(g),
-                          contentPadding: EdgeInsets.zero,
-                          onChanged: _saving
-                              ? null
-                              : (v) => setState(() => _goal = v ?? _goal),
+                      RadioGroup<String>(
+                        groupValue: _goal,
+                        onChanged: (v) {
+                          if (!_saving && v != null) {
+                            setState(() => _goal = v);
+                          }
+                        },
+                        child: Column(
+                          children: goals
+                              .map(
+                                (g) => RadioListTile<String>(
+                                  value: g,
+                                  title: Text(g),
+                                  contentPadding: EdgeInsets.zero,
+                                  enabled: !_saving,
+                                ),
+                              )
+                              .toList(),
                         ),
                       ),
                       const SizedBox(height: 10),

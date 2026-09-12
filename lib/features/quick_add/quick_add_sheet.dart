@@ -359,7 +359,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       _allowPop = true;
       setState(() {});
       await Future<void>.delayed(Duration.zero);
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
       return;
     }
     _closePromptOpen = true;
@@ -387,11 +387,11 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     } finally {
       _closePromptOpen = false;
     }
-    if (discard != true || !mounted) return;
+    if (discard != true || !context.mounted) return;
     _allowPop = true;
     setState(() {});
     await Future<void>.delayed(Duration.zero);
-    if (mounted) Navigator.of(context).pop();
+    if (context.mounted) Navigator.of(context).pop();
   }
 
   Future<void> _save(BuildContext context) async {
@@ -461,14 +461,14 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         ),
       );
     }
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (result != null) {
       _dirty = false;
       _allowPop = true;
       _submitting = false;
       setState(() {});
       await Future<void>.delayed(Duration.zero);
-      if (mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
       return;
     }
     setState(() {
