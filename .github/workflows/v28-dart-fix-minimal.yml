@@ -19,9 +19,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install and verify pinned Flutter
+      - name: Install pinned Flutter
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
+
+      - name: Verify pinned toolchain and lock
         run: |
-          python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
           bash tool/native_toolchain_preflight.sh bootstrap
           flutter pub get --enforce-lockfile
 
