@@ -1,13 +1,14 @@
 name: Arus Dependency Lock Bootstrap
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/dependency-lock-bootstrap.yml
   workflow_dispatch:
 
 permissions:
   contents: read
-
-env:
-  ARUS_FLUTTER_INSTALL: ${{ runner.temp }}/arus-flutter-3.47.2
 
 jobs:
   build-lock-candidate:
@@ -28,7 +29,7 @@ jobs:
           }
 
       - name: Install pinned Flutter from official archive
-        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
 
       - name: Verify pinned Flutter/Dart
         run: bash tool/native_toolchain_preflight.sh bootstrap
