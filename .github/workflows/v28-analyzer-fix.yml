@@ -1,0 +1,89 @@
+name: V28 One-Time Analyzer Compile Fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/v28-analyzer-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Apply exact compile-blocker fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, expected=1):
+              p = Path(path)
+              text = p.read_text()
+              found = text.count(old)
+              if found != expected:
+                  raise SystemExit(f'FAIL: {path}: expected {expected} occurrence(s), found {found}: {old!r}')
+              p.write_text(text.replace(old, new, expected))
+
+          replace('lib/app.dart', '          const ColoredBox(\n', '          ColoredBox(\n')
+          replace('lib/app.dart', '      return const Scaffold(\n', '      return Scaffold(\n')
+          replace('lib/app_controller.dart', "import 'package:flutter/foundation.dart';", "import 'package:flutter/foundation.dart' show ChangeNotifier;")
+          replace('lib/data/local_finance_repository.dart', "    if (dueDate < today) return 'OVERDUE';", "    if (dueDate.compareTo(today) < 0) return 'OVERDUE';")
+          replace('lib/data/local_finance_repository.dart', "    final today = DateTime(current.year, current.month, current.day);\n\n    // Heal a recurring cursor", "    // Heal a recurring cursor")
+          replace('lib/features/home/home_screen.dart', '      return const Center(\n', '      return Center(\n')
+          replace('lib/features/insights/insights_screen.dart', '      return const Center(\n', '      return Center(\n')
+          replace('lib/features/settings/lock_gate.dart', '      return const Scaffold(\n', '      return Scaffold(\n')
+          replace('lib/features/transactions/transaction_detail_screen.dart', '      return const Scaffold(\n', '      return Scaffold(\n')
+          replace('lib/features/recovery/recovery_screen.dart', '                    const Semantics(\n', '                    Semantics(\n')
+          replace(
+              'lib/features/recovery/recovery_screen.dart',
+              "    final pick = await FilePicker.platform.pickFiles(\n      type: FileType.any,\n      allowMultiple: false,\n    );\n    final path = pick?.files.single.path;",
+              "    final pick = await FilePicker.pickFile(type: FileType.any);\n    final path = pick?.path;",
+          )
+          replace(
+              'lib/features/settings/settings_screen.dart',
+              "    final pick = await FilePicker.platform.pickFiles(\n      type: FileType.custom,\n      allowedExtensions: const ['csv'],\n      allowMultiple: false,\n    );\n    final path = pick?.files.single.path;",
+              "    final pick = await FilePicker.pickFile(\n      type: FileType.custom,\n      allowedExtensions: const ['csv'],\n    );\n    final path = pick?.path;",
+          )
+          replace(
+              'lib/features/settings/settings_screen.dart',
+              "    final pick = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);\n    final path = pick?.files.single.path;",
+              "    final pick = await FilePicker.pickFile(type: FileType.any);\n    final path = pick?.path;",
+          )
+          print('PASS: exact V28 analyzer compile-blocker patch applied')
+          PY
+
+      - name: Prove only intended files changed and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTUAL="$(git diff --name-only | sort)"
+          EXPECTED="$(printf '%s\n' \
+            lib/app.dart \
+            lib/app_controller.dart \
+            lib/data/local_finance_repository.dart \
+            lib/features/home/home_screen.dart \
+            lib/features/insights/insights_screen.dart \
+            lib/features/recovery/recovery_screen.dart \
+            lib/features/settings/lock_gate.dart \
+            lib/features/settings/settings_screen.dart \
+            lib/features/transactions/transaction_detail_screen.dart | sort)"
+          test "$ACTUAL" = "$EXPECTED" || {
+            echo 'FAIL: unexpected patch file set' >&2
+            git status --short >&2
+            exit 1
+          }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- $EXPECTED
+          git commit -m 'Fix first Flutter analyzer compile blockers'
+          git push origin HEAD:main
