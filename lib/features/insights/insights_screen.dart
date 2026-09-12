@@ -11,7 +11,7 @@ class InsightsScreen extends StatelessWidget {
     final d = c.dashboardData;
     final theme = Theme.of(context);
     if (d == null) {
-      return const Center(
+      return Center(
         child: Semantics(
           label: 'Memuat insight',
           liveRegion: true,

@@ -125,7 +125,7 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                   ),
                   if (_busy) ...[
                     const SizedBox(height: 18),
-                    const Semantics(
+                    Semantics(
                       label: 'Pemulihan sedang berjalan',
                       liveRegion: true,
                       child: LinearProgressIndicator(),
@@ -199,11 +199,8 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   }
 
   Future<void> _restorePortable() async {
-    final pick = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-      allowMultiple: false,
-    );
-    final path = pick?.files.single.path;
+    final pick = await FilePicker.pickFile(type: FileType.any);
+    final path = pick?.path;
     if (path == null || !mounted) return;
     final passphrase = await _askPassphrase();
     if (passphrase == null || !mounted) return;

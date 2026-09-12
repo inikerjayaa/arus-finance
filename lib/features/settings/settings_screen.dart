@@ -257,12 +257,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _importCsv(BuildContext context) async {
-    final pick = await FilePicker.platform.pickFiles(
+    final pick = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const ['csv'],
-      allowMultiple: false,
     );
-    final path = pick?.files.single.path;
+    final path = pick?.path;
     if (path == null) return;
 
     try {
@@ -364,8 +363,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _restore(BuildContext context) async {
-    final pick = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
-    final path = pick?.files.single.path;
+    final pick = await FilePicker.pickFile(type: FileType.any);
+    final path = pick?.path;
     if (path == null) return;
     final pass = await _askSecret(context, title: 'Buka backup', label: 'Passphrase', obscure: true);
     if (pass == null) return;

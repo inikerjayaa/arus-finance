@@ -1201,7 +1201,7 @@ class LocalFinanceRepository implements FinanceRepository {
 
   String _derivedUnpaidBillStatus(String dueDate, {DateTime? now}) {
     final today = _localDate(now ?? _clock());
-    if (dueDate < today) return 'OVERDUE';
+    if (dueDate.compareTo(today) < 0) return 'OVERDUE';
     if (dueDate == today) return 'DUE';
     return 'UPCOMING';
   }
@@ -1403,8 +1403,6 @@ class LocalFinanceRepository implements FinanceRepository {
   @override
   Future<int> generateDueRecurring({DateTime? now}) async {
     final current = now ?? _clock();
-    final today = DateTime(current.year, current.month, current.day);
-
     // Heal a recurring cursor that was pushed years ahead by a bad device clock.
     // Recurring rules in the current product do not support an intentional far-future start date,
     // so a cursor >2 months ahead is considered clock-drift state, not user intent.

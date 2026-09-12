@@ -137,7 +137,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     if (_checking) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Semantics(
             label: 'Memeriksa keamanan Arus',

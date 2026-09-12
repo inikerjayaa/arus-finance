@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final data = controller.dashboardData;
     final theme = Theme.of(context);
     if (data == null || _config == null) {
-      return const Center(
+      return Center(
         child: Semantics(
           label: 'Memuat dashboard',
           liveRegion: true,

@@ -147,7 +147,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       children: [
         _buildHome(),
         if (_privacyShielded)
-          const ColoredBox(
+          ColoredBox(
             color: Color(0xFF101114),
             child: Semantics(
               container: true,
@@ -163,7 +163,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
 
   Widget _buildHome() {
     if (_onboardingDone == null || widget.controller.initializing) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Semantics(
             label: 'Memuat Arus Finance',
