@@ -1,0 +1,35 @@
+name: Apply V29 UX Patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v29-apply.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: true
+      - name: Apply guarded patch
+        run: python3 tool/apply_v29_ux_patch.py
+      - name: Reject whitespace errors
+        run: git diff --check
+      - name: Commit V29 source
+        run: |
+          git config user.name 'Arus CI'
+          git config user.email 'arus-ci@users.noreply.github.com'
+          git add lib test tool docs
+          if git diff --cached --quiet; then
+            echo 'No source changes to commit.'
+            exit 0
+          fi
+          git commit -m 'V29 improve money input categories and home composition'
+          git push origin HEAD:main
