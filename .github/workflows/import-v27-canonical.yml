@@ -1,0 +1,56 @@
+name: Import Arus Finance V27 Canonical Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - arus_finance_v27_canonical.bundle
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arus-v27-canonical-import
+  cancel-in-progress: false
+
+jobs:
+  import-canonical-v27:
+    name: Verify and replace bootstrap with canonical V27
+    if: github.repository == 'inikerjayaa/arus-finance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout bootstrap repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Verify uploaded bundle bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f arus_finance_v27_canonical.bundle
+          echo 'ba8e2242e2a758066c7ffbf7acaa0111b8c5d4dfd77aeeefd2b280f21b2f9093  arus_finance_v27_canonical.bundle' | sha256sum -c -
+          git bundle verify arus_finance_v27_canonical.bundle
+
+      - name: Import and verify canonical Git identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch ./arus_finance_v27_canonical.bundle 'refs/heads/main:refs/remotes/v27/main'
+          COMMIT="$(git rev-parse refs/remotes/v27/main)"
+          TREE="$(git rev-parse refs/remotes/v27/main^{tree})"
+          test "$COMMIT" = 'a014ab585003845ed7625c16f6a133b011779036'
+          test "$TREE" = '91faab47c15172158f4948ebd955290d24fe2de3'
+          COUNT="$(git ls-tree -r --name-only refs/remotes/v27/main | wc -l | tr -d ' ')"
+          test "$COUNT" = '168'
+          echo "Verified canonical commit: $COMMIT"
+          echo "Verified canonical tree:   $TREE"
+          echo "Verified tracked files:    $COUNT"
+
+      - name: Replace bootstrap main with exact canonical V27 history
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push --force origin refs/remotes/v27/main:refs/heads/main
