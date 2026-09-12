@@ -114,6 +114,24 @@ jobs:
       - name: Android compile gate
         run: bash tool/native_compile_gate.sh android
 
+      - name: Build installable Android device-UAT APK
+        run: |
+          flutter build apk --release
+          APK='build/app/outputs/flutter-apk/app-release.apk'
+          test -f "$APK" || {
+            echo 'FAIL: expected Android device-UAT APK is missing.' >&2
+            exit 1
+          }
+          mkdir -p build/arus_evidence
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          test -x "$APKSIGNER" || {
+            echo 'FAIL: apksigner 36.0.0 is unavailable.' >&2
+            exit 1
+          }
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee build/arus_evidence/android-device-uat-apk-signing.txt
+          sha256sum "$APK" | tee build/arus_evidence/android-device-uat-apk.sha256
+          echo 'NOTE: this APK is for physical-device UAT only. It is not a Play Store release artifact.'
+
       - name: Upload Android compile evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -127,6 +145,17 @@ jobs:
         with:
           name: arus-android-aab-compile-only
           path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Android device-UAT APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-android-device-uat-apk-compile-only
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/arus_evidence/android-device-uat-apk.sha256
+            build/arus_evidence/android-device-uat-apk-signing.txt
           if-no-files-found: error
           retention-days: 14
 
