@@ -1,0 +1,213 @@
+name: Arus Native Verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: arus-native-verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARUS_FLUTTER_INSTALL: ${{ runner.temp }}/arus-flutter-3.47.2
+
+jobs:
+  verify-lock:
+    name: Verify committed lock + Dart/Flutter tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Reject unresolved dependency graph
+        run: |
+          test -f pubspec.lock || {
+            echo 'FAIL: committed pubspec.lock is required. Run the manual Dependency Lock Bootstrap workflow, review the candidate, and commit it.' >&2
+            exit 1
+          }
+
+      - name: Install pinned Flutter from official archive
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+
+      - name: Verify pinned Flutter/Dart
+        run: bash tool/native_toolchain_preflight.sh bootstrap
+
+      - name: Verify committed dependency graph without re-resolution
+        run: flutter pub get --enforce-lockfile
+
+      - name: Freeze committed lockfile hash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('pubspec.lock')
+          h=hashlib.sha256(p.read_bytes()).hexdigest()
+          Path('pubspec.lock.sha256').write_text(f'{h}  pubspec.lock\n')
+          print('PUBSPEC_LOCK_SHA256=' + h)
+          PY
+
+      - name: Non-native regression suite
+        run: bash tool/run_all_audits.sh
+
+      - name: Flutter analyzer
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test
+
+      - name: Upload immutable dependency lock evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-pubspec-lock-v26
+          path: |
+            pubspec.lock
+            pubspec.lock.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  android-compile:
+    name: Android release-mode compile proof
+    needs: verify-lock
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install JDK 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install pinned Flutter from official archive
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+
+      - name: Ensure Android API 36
+        run: bash tool/ensure_android_sdk_36_ci.sh
+
+      - name: Download committed lockfile evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: arus-pubspec-lock-v26
+          path: .ci/lock
+
+      - name: Verify exact committed lockfile
+        run: |
+          cmp --silent pubspec.lock .ci/lock/pubspec.lock || {
+            echo 'FAIL: checked-out pubspec.lock differs from verified lock artifact.' >&2
+            exit 1
+          }
+          python3 tool/verify_lock_artifact.py pubspec.lock .ci/lock/pubspec.lock.sha256
+
+      - name: Generate hardened native shells
+        run: bash bootstrap.sh
+
+      - name: Android compile gate
+        run: bash tool/native_compile_gate.sh android
+
+      - name: Upload Android compile evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-android-compile-evidence
+          path: build/arus_evidence/android-compile.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Android AAB compile artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-android-aab-compile-only
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
+  ios-compile:
+    name: iOS release-mode no-codesign compile proof
+    needs: verify-lock
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Flutter from official archive
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$ARUS_FLUTTER_INSTALL"
+
+      - name: Download committed lockfile evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: arus-pubspec-lock-v26
+          path: .ci/lock
+
+      - name: Verify exact committed lockfile
+        run: |
+          cmp --silent pubspec.lock .ci/lock/pubspec.lock || {
+            echo 'FAIL: checked-out pubspec.lock differs from verified lock artifact.' >&2
+            exit 1
+          }
+          python3 tool/verify_lock_artifact.py pubspec.lock .ci/lock/pubspec.lock.sha256
+
+      - name: Generate hardened native shells
+        run: bash bootstrap.sh
+
+      - name: iOS compile gate
+        run: bash tool/native_compile_gate.sh ios
+
+      - name: Upload iOS compile evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-ios-compile-evidence
+          path: build/arus_evidence/ios-compile.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload iOS Runner.app compile artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arus-ios-runner-app-compile-only
+          path: build/ios/iphoneos/Runner.app
+          if-no-files-found: error
+          retention-days: 14
+
+  evidence-consistency:
+    name: Cross-platform evidence consistency
+    needs: [android-compile, ios-compile]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download Android evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: arus-android-compile-evidence
+          path: .ci/evidence/android
+
+      - name: Download iOS evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: arus-ios-compile-evidence
+          path: .ci/evidence/ios
+
+      - name: Prove both platforms compiled the same canonical source and committed lockfile
+        run: >-
+          python3 tool/verify_ci_native_evidence.py
+          .ci/evidence/android/android-compile.json
+          .ci/evidence/ios/ios-compile.json
