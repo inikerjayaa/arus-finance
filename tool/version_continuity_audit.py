@@ -155,7 +155,7 @@ checks = {
         'Metadata versi database hilang/ambigu', 'Metadata versi database rusak'
     ]),
     'V13 existing encrypted DB without key fails closed': all(x in db for x in [
-        'databaseAlreadyExists', 'Kunci database lokal tidak tersedia', 'database?.dispose();'
+        'databaseAlreadyExists', 'Kunci database lokal tidak tersedia', 'database?.close();'
     ]),
     'V13 quick integrity includes foreign-key check': "PRAGMA foreign_key_check" in db,
     'V13 consistent backup snapshot retained': 'T readSnapshot<T>' in db and 'database.readSnapshot((db)' in backup,
