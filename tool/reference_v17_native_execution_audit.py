@@ -52,14 +52,17 @@ with tempfile.TemporaryDirectory() as td:
     ios = subprocess.run(['bash', 'tool/native_toolchain_preflight.sh', 'ios'], cwd=root, env=env, capture_output=True, text=True)
     assert ios.returncode == 0 and 'Swift Package Manager path' in ios.stdout, ios.stdout + ios.stderr
 
-    # But a real Podfile fallback must require `pod`.
+    # But a real Podfile fallback must require `pod`. Isolate PATH so a CocoaPods
+    # installation on the host runner cannot invalidate the negative fixture.
     (root / 'ios').mkdir()
     (root / 'ios/Podfile').write_text("platform :ios, '15.0'\n")
-    no_pod = subprocess.run(['bash', 'tool/native_toolchain_preflight.sh', 'ios'], cwd=root, env=env, capture_output=True, text=True)
-    assert no_pod.returncode != 0 and 'CocoaPods' in (no_pod.stdout + no_pod.stderr)
+    no_pod_env = env.copy()
+    no_pod_env['PATH'] = os.pathsep.join([str(fake), '/usr/bin', '/bin', '/usr/sbin', '/sbin'])
+    no_pod = subprocess.run(['/bin/bash', 'tool/native_toolchain_preflight.sh', 'ios'], cwd=root, env=no_pod_env, capture_output=True, text=True)
+    assert no_pod.returncode != 0 and 'CocoaPods' in (no_pod.stdout + no_pod.stderr), no_pod.stdout + no_pod.stderr
     write_exec(fake / 'pod', 'echo 1.16.2\n')
-    pod_ok = subprocess.run(['bash', 'tool/native_toolchain_preflight.sh', 'ios'], cwd=root, env=env, capture_output=True, text=True)
-    assert pod_ok.returncode == 0 and 'fallback detected' in pod_ok.stdout
+    pod_ok = subprocess.run(['/bin/bash', 'tool/native_toolchain_preflight.sh', 'ios'], cwd=root, env=no_pod_env, capture_output=True, text=True)
+    assert pod_ok.returncode == 0 and 'fallback detected' in pod_ok.stdout, pod_ok.stdout + pod_ok.stderr
 
 with tempfile.TemporaryDirectory() as td:
     root = Path(td)
