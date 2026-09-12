@@ -3,13 +3,13 @@
 from __future__ import annotations
 from pathlib import Path
 import hashlib
-import io
 import json
 import os
+import platform
+import re
 import subprocess
-import tarfile
 import tempfile
-import yaml
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PIN = json.loads((ROOT/'toolchain/flutter_release_pin.json').read_text())
@@ -19,14 +19,38 @@ WORKFLOW = ROOT/'.github/workflows/native-verify.yml'
 def run(args, **kwargs):
     return subprocess.run(args, cwd=ROOT, capture_output=True, text=True, **kwargs)
 
+
+def yaml_section_keys(text: str, section: str) -> set[str]:
+    """Return direct mapping keys for a simple top-level YAML section.
+
+    This audit intentionally avoids a PyYAML runtime dependency so it runs on
+    both GitHub Ubuntu and macOS images using only the Python standard library.
+    The canonical workflow uses plain mapping keys, so indentation is enough
+    for the trust-boundary assertions below.
+    """
+    lines = text.splitlines()
+    marker = f'{section}:'
+    try:
+        start = lines.index(marker) + 1
+    except ValueError as exc:
+        raise AssertionError(f'missing workflow section: {section}') from exc
+    keys: set[str] = set()
+    for line in lines[start:]:
+        if line and not line.startswith(' '):
+            break
+        match = re.match(r'^  ([A-Za-z0-9_-]+):(?:\s.*)?$', line)
+        if match:
+            keys.add(match.group(1))
+    return keys
+
+
 # 1) Workflow structure / trust boundary.
-wf = yaml.load(WORKFLOW.read_text(), Loader=yaml.BaseLoader)
-assert set(wf['jobs']) == {'verify-lock','android-compile','ios-compile','evidence-consistency'}
-on = wf['on']
-assert {'workflow_dispatch','push','pull_request'} <= set(on)
-assert 'pull_request_target' not in on and 'workflow_run' not in on
-assert wf['permissions'] == {'contents':'read'}
 text = WORKFLOW.read_text()
+assert yaml_section_keys(text, 'jobs') == {'verify-lock','android-compile','ios-compile','evidence-consistency'}
+triggers = yaml_section_keys(text, 'on')
+assert {'workflow_dispatch','push','pull_request'} <= triggers
+assert 'pull_request_target' not in triggers and 'workflow_run' not in triggers
+assert 'permissions:\n  contents: read\n' in text
 assert '${{ secrets.' not in text, 'compile CI must not consume signing secrets'
 for token in ['actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1','actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6','actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a','actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c']:
     assert token in text, token
@@ -40,23 +64,22 @@ assert 'test -f pubspec.lock' in text
 # 2) Offline positive/negative installer fixtures.
 with tempfile.TemporaryDirectory(prefix='arus-v25-installer-') as td:
     td=Path(td)
-    src=td/'archive_src/flutter/bin'
-    src.mkdir(parents=True)
-    flutter=src/'flutter'
-    flutter.write_text('#!/bin/sh\necho fixture\n')
-    flutter.chmod(0o755)
-    archive=td/'flutter_fixture.tar.xz'
-    with tarfile.open(archive,'w:xz') as tf:
-        tf.add(td/'archive_src/flutter', arcname='flutter')
+    machine = platform.machine().lower()
+    fixture_arch = 'arm64' if machine in {'arm64', 'aarch64'} else 'x64'
+    archive=td/'flutter_fixture.zip'
+    with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        info = zipfile.ZipInfo('flutter/bin/flutter')
+        info.external_attr = 0o100755 << 16
+        zf.writestr(info, '#!/bin/sh\necho fixture\n')
     sha=hashlib.sha256(archive.read_bytes()).hexdigest()
     manifest={
         'base_url':'https://example.invalid/flutter',
         'current_release':{'stable':PIN['release_hash']},
         'releases':[{
             'hash':PIN['release_hash'], 'channel':'stable', 'version':PIN['flutter_version'],
-            'dart_sdk_version':PIN['dart_version'], 'dart_sdk_arch':'x64',
+            'dart_sdk_version':PIN['dart_version'], 'dart_sdk_arch':fixture_arch,
             'release_date':'2026-08-27T17:48:28Z',
-            'archive':'stable/linux/flutter_fixture.tar.xz', 'sha256':sha,
+            'archive':'stable/test/flutter_fixture.zip', 'sha256':sha,
         }]
     }
     manifest_path=td/'manifest.json'; manifest_path.write_text(json.dumps(manifest))
@@ -64,6 +87,7 @@ with tempfile.TemporaryDirectory(prefix='arus-v25-installer-') as td:
     p=run(['python3','tool/install_pinned_flutter_ci.py','--install-dir',str(install),'--manifest-file',str(manifest_path),'--archive-file',str(archive)])
     assert p.returncode == 0, p.stdout+p.stderr
     assert (install/'bin/flutter').exists()
+    assert os.access(install/'bin/flutter', os.X_OK), 'installer must preserve/restore Flutter executable bit'
 
     bad=dict(manifest); bad['releases']=[dict(manifest['releases'][0], hash='0'*40)]
     bad_path=td/'bad-hash.json'; bad_path.write_text(json.dumps(bad))
