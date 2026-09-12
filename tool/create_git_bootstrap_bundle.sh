@@ -22,26 +22,52 @@ need sha256sum
 need tar
 
 # Never package known secret/signing/runtime-output files into canonical Git history.
+# Search untracked workspace content too, but prune Git/build/cache directories that
+# are normal in an active development checkout.
 forbidden_names=(
   '.env' 'key.properties' 'ExportOptions.plist'
 )
 for name in "${forbidden_names[@]}"; do
-  if find "$ROOT" -type f -name "$name" -print -quit | grep -q .; then
+  if find "$ROOT" \
+      -type d \( -name '.git' -o -name '.dart_tool' -o -name 'build' -o -name '__pycache__' \) -prune -o \
+      -type f -name "$name" -print -quit | grep -q .; then
     echo "FAIL: forbidden secret/config file present in canonical source: $name" >&2
     exit 1
   fi
 done
-if find "$ROOT" -type f \( -name '*.jks' -o -name '*.keystore' -o -name '*.p12' -o -name '*.mobileprovision' -o -name '*.pem' -o -name '*.key' \) -print -quit | grep -q .; then
+if find "$ROOT" \
+    -type d \( -name '.git' -o -name '.dart_tool' -o -name 'build' -o -name '__pycache__' \) -prune -o \
+    -type f \( -name '*.jks' -o -name '*.keystore' -o -name '*.p12' -o -name '*.mobileprovision' -o -name '*.pem' -o -name '*.key' \) -print -quit | grep -q .; then
   echo 'FAIL: private signing/key material present in canonical source.' >&2
   exit 1
 fi
-if find "$ROOT" -type d \( -name '.git' -o -name '__pycache__' -o -name '.dart_tool' -o -name 'build' \) -print -quit | grep -q .; then
-  echo 'FAIL: transient VCS/build/cache directory present in canonical source.' >&2
-  exit 1
-fi
-if find "$ROOT" -type f \( -name '*.pyc' -o -name '*.tmp' -o -name '*.bak' -o -name '*.orig' \) -print -quit | grep -q .; then
-  echo 'FAIL: transient/cache file present in canonical source.' >&2
-  exit 1
+
+is_git=0
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  is_git=1
+  # A canonical bootstrap from a live repository is defined by tracked HEAD bytes,
+  # not by runner metadata/cache. Refuse tracked transient or secret material.
+  tracked_bad="$(git -C "$ROOT" ls-files | grep -E '(^|/)(__pycache__|\.dart_tool|build)(/|$)|(^|/)\.git(/|$)|\.pyc$|\.tmp$|\.bak$|\.orig$|(^|/)\.env$|(^|/)key\.properties$|(^|/)ExportOptions\.plist$|\.(jks|keystore|p12|mobileprovision|pem|key)$' || true)"
+  if [ -n "$tracked_bad" ]; then
+    echo 'FAIL: forbidden transient/secret material is tracked in canonical Git source:' >&2
+    printf '%s\n' "$tracked_bad" >&2
+    exit 1
+  fi
+  if ! git -C "$ROOT" diff --quiet || ! git -C "$ROOT" diff --cached --quiet; then
+    echo 'FAIL: tracked working tree differs from HEAD; commit/revert changes before canonical bootstrap.' >&2
+    exit 1
+  fi
+else
+  # Legacy/non-Git source folders must still be physically clean because no tracked
+  # source-of-truth exists to separate canonical bytes from transient workspace data.
+  if find "$ROOT" -type d \( -name '.git' -o -name '__pycache__' -o -name '.dart_tool' -o -name 'build' \) -print -quit | grep -q .; then
+    echo 'FAIL: transient VCS/build/cache directory present in canonical source.' >&2
+    exit 1
+  fi
+  if find "$ROOT" -type f \( -name '*.pyc' -o -name '*.tmp' -o -name '*.bak' -o -name '*.orig' \) -print -quit | grep -q .; then
+    echo 'FAIL: transient/cache file present in canonical source.' >&2
+    exit 1
+  fi
 fi
 
 tmp="$(mktemp -d)"
@@ -49,8 +75,13 @@ trap 'rm -rf "$tmp"' EXIT
 stage="$tmp/repo"
 mkdir -p "$stage" "$OUT_DIR"
 
-# Copy only the current canonical tree; never mutate ROOT or include parent artifacts.
-tar -C "$ROOT" -cf - . | tar -C "$stage" -xf -
+# Copy only canonical bytes. In a real Git checkout, HEAD is authoritative and
+# automatically excludes .git, .dart_tool, build outputs and other untracked CI files.
+if [ "$is_git" -eq 1 ]; then
+  git -C "$ROOT" archive --format=tar HEAD | tar -C "$stage" -xf -
+else
+  tar -C "$ROOT" -cf - . | tar -C "$stage" -xf -
+fi
 
 cd "$stage"
 git init -q -b main
