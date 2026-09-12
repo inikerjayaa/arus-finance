@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - arus_finance_v27_canonical.bundle
+      - .github/workflows/import-v27-canonical.yml
   workflow_dispatch:
 
 permissions:
@@ -16,7 +17,7 @@ concurrency:
 
 jobs:
   import-canonical-v27:
-    name: Verify and replace bootstrap with canonical V27
+    name: Verify and stage canonical V27 source
     if: github.repository == 'inikerjayaa/arus-finance'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -49,8 +50,43 @@ jobs:
           echo "Verified canonical tree:   $TREE"
           echo "Verified tracked files:    $COUNT"
 
-      - name: Replace bootstrap main with exact canonical V27 history
+      - name: Materialize canonical non-workflow source
         shell: bash
         run: |
           set -euo pipefail
-          git push --force origin refs/remotes/v27/main:refs/heads/main
+          TMP="$(mktemp -d)"
+          git archive refs/remotes/v27/main | tar -x -C "$TMP"
+
+          # Keep this temporary importer unchanged because the Actions token is
+          # intentionally not allowed to create/update workflow files.
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github -exec rm -rf {} +
+          mkdir -p .github/workflows
+          find .github -mindepth 1 -maxdepth 1 ! -name workflows -exec rm -rf {} +
+          find .github/workflows -mindepth 1 -maxdepth 1 -type f ! -name import-v27-canonical.yml -delete
+
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude '.github/workflows/' \
+            "$TMP/" ./
+
+          # The canonical V27 tree has exactly two workflow files. All other
+          # files must now match the canonical archive byte-for-byte.
+          test "$(find "$TMP" -type f ! -path "$TMP/.github/workflows/*" | wc -l | tr -d ' ')" = '166'
+          while IFS= read -r -d '' src; do
+            rel="${src#"$TMP"/}"
+            test -f "$rel"
+            cmp -s "$src" "$rel"
+          done < <(find "$TMP" -type f ! -path "$TMP/.github/workflows/*" -print0)
+
+          rm -rf "$TMP"
+
+      - name: Commit canonical non-workflow source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          test -n "$(git status --porcelain)"
+          git commit -m 'Import verified Arus Finance V27 canonical source'
+          git push origin HEAD:main
