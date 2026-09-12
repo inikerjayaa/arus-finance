@@ -9,16 +9,16 @@ void main() {
     final handle = tester.ensureSemantics();
     try {
       await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light(),
-        home: OnboardingScreen(onDone: () {}),
-      ),
-    );
-    await tester.pumpAndSettle();
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: OnboardingScreen(onDone: () {}),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-    await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
-    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       await expectLater(tester, meetsGuideline(textContrastGuideline));
     } finally {
       handle.dispose();
@@ -52,18 +52,31 @@ void main() {
   });
 
   testWidgets('metric card preserves scaled text instead of shrinking it', (tester) async {
+    tester.view.physicalSize = const Size(320, 320);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
         home: const Scaffold(
-          body: SizedBox(
-            width: 260,
-            child: MediaQuery(
-              data: MediaQueryData(textScaler: TextScaler.linear(2.0)),
-              child: MetricCard(
-                label: 'Saldo tersedia',
-                value: 'Rp 9.000.000.000.000',
-                caption: 'Contoh nominal besar',
+          body: SingleChildScrollView(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 260,
+                child: MediaQuery(
+                  data: MediaQueryData(
+                    size: Size(320, 320),
+                    textScaler: TextScaler.linear(2.0),
+                  ),
+                  child: MetricCard(
+                    label: 'Saldo tersedia',
+                    value: 'Rp 9.000.000.000.000',
+                    caption: 'Contoh nominal besar',
+                  ),
+                ),
               ),
             ),
           ),
