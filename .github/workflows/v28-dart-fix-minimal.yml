@@ -53,13 +53,13 @@ jobs:
 
           # BuildContext safety across async gaps.
           quick = 'lib/features/quick_add/quick_add_sheet.dart'
-          replace(quick, '      if (mounted) Navigator.of(context).pop();', '      if (context.mounted) Navigator.of(context).pop();', expected=3)
+          replace(quick, '      if (mounted) Navigator.of(context).pop();', '      if (context.mounted) Navigator.of(context).pop();', expected=2)
           replace(quick, '    if (discard != true || !mounted) return;', '    if (discard != true || !context.mounted) return;')
           replace(quick, '    if (!mounted) return;\n    if (result != null) {', '    if (!context.mounted) return;\n    if (result != null) {')
 
           settings = 'lib/features/settings/settings_screen.dart'
           replace(settings, '      if (!mounted) return;\n      if (value && !granted) {', '      if (!context.mounted) return;\n      if (value && !granted) {')
-          replace(settings, "    if (pass == null) return;\n    final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Ketik ulang passphrase', obscure: true);", "    if (pass == null || !context.mounted) return;\n    final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Ketik ulang passphrase', obscure: true);")
+          replace(settings, "    if (pass == null) return;\n    final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Minimal 8 karakter', obscure: true);", "    if (pass == null || !context.mounted) return;\n    final confirm = await _askSecret(context, title: 'Konfirmasi passphrase', label: 'Minimal 8 karakter', obscure: true);")
           replace(settings, "    if (confirm == null) return;\n    if (pass != confirm) { _snack(context, 'Passphrase tidak sama. Backup dibatalkan.'); return; }", "    if (confirm == null || !context.mounted) return;\n    if (pass != confirm) { _snack(context, 'Passphrase tidak sama. Backup dibatalkan.'); return; }")
           replace(settings, "    if (path == null) return;\n    final pass = await _askSecret(context, title: 'Buka backup', label: 'Passphrase', obscure: true);", "    if (path == null || !context.mounted) return;\n    final pass = await _askSecret(context, title: 'Buka backup', label: 'Passphrase', obscure: true);")
           replace(settings, "      await _reloadRecovery();\n      _snack(context, 'Restore berhasil dan ledger lolos integrity check.');", "      await _reloadRecovery();\n      if (!context.mounted) return;\n      _snack(context, 'Restore berhasil dan ledger lolos integrity check.');")
