@@ -14,11 +14,24 @@ with tempfile.TemporaryDirectory(prefix='arus-v26-pin-') as td:
     wf.write_text(text)
     p=run(['python3','tool/verify_ci_action_pins.py'],repo)
     assert p.returncode!=0 and 'full 40-char commit SHA' in (p.stdout+p.stderr)
-# 3) Readiness report on canonical pre-native source must truthfully block on missing committed lock.
+# 3) Preserve the V26 historical transition contract: without a committed lock,
+# readiness must block. Once the reviewed lock is committed, current readiness
+# must advance to PASS instead of freezing the project forever in BLOCKED.
+with tempfile.TemporaryDirectory(prefix='arus-v26-lock-state-') as td:
+    td=Path(td); shutil.copytree(ROOT,td/'repo',dirs_exist_ok=True); repo=td/'repo'
+    lock=repo/'pubspec.lock'
+    if lock.exists(): lock.unlink()
+    p=run(['python3','tool/release_readiness_report.py','--source-pass'],repo)
+    assert p.returncode==0,p.stdout+p.stderr
+    assert 'DEPENDENCY_LOCK: **BLOCKED**' in p.stdout
+    assert 'CROSS_PLATFORM_COMPILE: **UNPROVEN**' in p.stdout
+    assert 'DEVICE_VALIDATION: **UNPROVEN**' in p.stdout
 p=run(['python3','tool/release_readiness_report.py','--source-pass'])
 assert p.returncode==0,p.stdout+p.stderr
-assert 'DEPENDENCY_LOCK: **BLOCKED**' in p.stdout
-assert 'CROSS_PLATFORM_COMPILE: **UNPROVEN**' in p.stdout
+if (ROOT/'pubspec.lock').exists():
+    assert 'DEPENDENCY_LOCK: **PASS**' in p.stdout
+else:
+    assert 'DEPENDENCY_LOCK: **BLOCKED**' in p.stdout
 assert 'DEVICE_VALIDATION: **UNPROVEN**' in p.stdout
 # 4) Workflow shape: no ephemeral resolution in native verification, separate manual candidate flow.
 main=(ROOT/'.github/workflows/native-verify.yml').read_text()
@@ -27,4 +40,4 @@ assert 'flutter pub get --enforce-lockfile' in main
 assert "test -f pubspec.lock" in main
 assert 'flutter pub get\n' in boot and 'workflow_dispatch:' in boot
 assert 'pull_request:' not in boot and 'push:' not in boot
-print('PASS: V26 immutable CI + committed-lock + readiness-state reference contract')
+print('PASS: V26 immutable CI + committed-lock + readiness-state transition contract')
