@@ -78,6 +78,29 @@ def safe_extract_zip(archive: Path, dest: Path) -> None:
             if target != dest_resolved and dest_resolved not in target.parents:
                 raise SystemExit(f"FAIL: unsafe zip member: {info.filename}")
         zf.extractall(dest)
+        # zipfile.extractall() does not reliably restore Unix executable bits.
+        # Flutter's macOS SDK is a ZIP, so restore archived permission metadata
+        # before the toolchain is invoked by bootstrap/preflight.
+        for info in zf.infolist():
+            target = dest / info.filename
+            mode = (info.external_attr >> 16) & 0o777
+            if mode and target.exists() and not target.is_symlink():
+                target.chmod(mode)
+
+
+def ensure_flutter_launchers_executable(flutter_root: Path) -> None:
+    # Fail-safe for ZIP producers/runtimes that omit permission metadata.
+    launchers = [
+        flutter_root / "bin/flutter",
+        flutter_root / "bin/dart",
+        flutter_root / "bin/cache/dart-sdk/bin/dart",
+        flutter_root / "bin/cache/dart-sdk/bin/dartaotruntime",
+    ]
+    for launcher in launchers:
+        if launcher.exists():
+            launcher.chmod(launcher.stat().st_mode | 0o111)
+    if not os.access(flutter_root / "bin/flutter", os.X_OK):
+        raise SystemExit("FAIL: verified Flutter launcher is not executable after extraction.")
 
 
 def main() -> None:
@@ -148,8 +171,10 @@ def main() -> None:
         flutter_root = extracted / "flutter"
         if not (flutter_root / "bin/flutter").exists():
             raise SystemExit("FAIL: verified archive does not contain flutter/bin/flutter.")
+        ensure_flutter_launchers_executable(flutter_root)
         shutil.move(str(flutter_root), str(install_dir))
 
+    ensure_flutter_launchers_executable(install_dir)
     github_path = os.environ.get("GITHUB_PATH")
     if github_path:
         with open(github_path, "a", encoding="utf-8") as f:
