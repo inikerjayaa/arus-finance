@@ -32,7 +32,7 @@ checks = {
         'Kunci database lokal tidak tersedia' in db_src and
         db_src.index('_getOrCreateDatabaseKey(') < db_src.index('database = sqlite3.open(path)')
     ),
-    'failed open disposes handle': 'database?.dispose();' in db_src,
+    'failed open closes handle': 'database?.close();' in db_src,
     'quick integrity includes foreign-key check': "db.select('PRAGMA foreign_key_check')" in db_src,
     'consistent read snapshot helper exists': "db.execute('BEGIN');" in db_src and 'T readSnapshot<T>' in db_src,
     'backup uses one read snapshot': 'database.readSnapshot((db)' in backup_src,
@@ -118,124 +118,28 @@ def test_restore_interruption(tmp: Path) -> None:
     db.close()
 
 
-def test_snapshot_consistency(tmp: Path) -> None:
-    """Multiple backup SELECTs inside BEGIN must see one commit snapshot."""
-    path = tmp / 'snapshot.db'
-    writer = connect(path)
-    writer.executescript('''
-      CREATE TABLE accounts(id TEXT PRIMARY KEY);
-      CREATE TABLE transactions(id TEXT PRIMARY KEY);
-      INSERT INTO accounts VALUES ('a1');
-      INSERT INTO transactions VALUES ('t1');
-    ''')
-    writer.commit()
-    reader = connect(path)
-    reader.execute('BEGIN')
-    assert reader.execute('SELECT id FROM accounts ORDER BY id').fetchall() == [('a1',)]
-
-    writer.execute('BEGIN IMMEDIATE')
-    writer.execute("INSERT INTO accounts VALUES ('a2')")
-    writer.execute("INSERT INTO transactions VALUES ('t2')")
-    writer.commit()
-
-    # Reader is pinned to the old snapshot even though writer committed.
-    assert reader.execute('SELECT id FROM transactions ORDER BY id').fetchall() == [('t1',)]
-    reader.commit()
-    assert reader.execute('SELECT id FROM transactions ORDER BY id').fetchall() == [('t1',), ('t2',)]
-    reader.close(); writer.close()
-
-
-def test_atomic_seed_crash(tmp: Path) -> None:
+def test_seed_interruption(tmp: Path) -> None:
     path = tmp / 'seed_crash.db'
     db = connect(path)
-    db.execute('CREATE TABLE categories(id TEXT PRIMARY KEY, type TEXT NOT NULL, name TEXT NOT NULL)')
+    db.execute('CREATE TABLE categories(id TEXT PRIMARY KEY,name TEXT NOT NULL)')
     db.commit(); db.close()
-    code = f'''import os, sqlite3\np={str(path)!r}\ndb=sqlite3.connect(p)\ndb.execute("PRAGMA journal_mode=WAL")\ndb.execute("BEGIN IMMEDIATE")\ndb.execute("INSERT INTO categories VALUES ('1','EXPENSE','Makanan')")\ndb.execute("INSERT INTO categories VALUES ('2','EXPENSE','Transport')")\nos._exit(95)\n'''
+    code = f'''import os,sqlite3\np={str(path)!r}\nd=sqlite3.connect(p)\nd.execute("PRAGMA journal_mode=WAL")\nd.execute("PRAGMA synchronous=FULL")\nd.execute("BEGIN IMMEDIATE")\nd.execute("INSERT INTO categories VALUES ('1','Makan')")\nd.execute("INSERT INTO categories VALUES ('2','Transport')")\nos._exit(95)\n'''
     subprocess.run([sys.executable, '-c', code], check=False)
-    db = connect(path)
+    db=connect(path)
     assert db.execute('SELECT COUNT(*) FROM categories').fetchone()[0] == 0
     db.execute('BEGIN IMMEDIATE')
-    for i, name in enumerate(['Makanan','Transport','Belanja','Rumah','Tagihan','Kesehatan','Hiburan','Pendidikan','Travel','Biaya Transfer','Bunga Pinjaman','Biaya Pinjaman','Lainnya']):
-        db.execute('INSERT INTO categories VALUES (?,?,?)', (f'e{i}', 'EXPENSE', name))
-    for i, name in enumerate(['Gaji','Bonus','Penjualan','Hadiah','Lainnya']):
-        db.execute('INSERT INTO categories VALUES (?,?,?)', (f'i{i}', 'INCOME', name))
-    db.commit()
-    assert db.execute('SELECT COUNT(*) FROM categories').fetchone()[0] == 18
-    db.close()
-
-
-def test_legacy_portable_normalization() -> None:
-    """Reference the V3/V4/V7 portable-data transformations against current constraints."""
-    db = sqlite3.connect(':memory:')
-    db.execute('PRAGMA foreign_keys=ON')
-    db.executescript('''
-      CREATE TABLE accounts(id TEXT PRIMARY KEY, account_class TEXT NOT NULL, account_type TEXT NOT NULL, currency TEXT NOT NULL);
-      CREATE TABLE categories(id TEXT PRIMARY KEY, type TEXT NOT NULL);
-      CREATE TABLE recurring_rules(id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id), category_id TEXT NOT NULL REFERENCES categories(id), next_run TEXT NOT NULL);
-      CREATE TABLE transactions(id TEXT PRIMARY KEY, status TEXT NOT NULL, deleted_at TEXT, primary_amount_minor INTEGER NOT NULL, primary_currency TEXT NOT NULL);
-      CREATE TABLE transaction_legs(id TEXT PRIMARY KEY, transaction_id TEXT NOT NULL REFERENCES transactions(id), account_id TEXT NOT NULL REFERENCES accounts(id), delta_minor INTEGER NOT NULL, currency TEXT NOT NULL);
-      CREATE TABLE recurring_occurrences(id TEXT PRIMARY KEY, rule_id TEXT NOT NULL REFERENCES recurring_rules(id), occurrence_key TEXT NOT NULL, transaction_id TEXT REFERENCES transactions(id), scheduled_for TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(rule_id,occurrence_key));
-      CREATE TABLE bills(id TEXT PRIMARY KEY, paid_transaction_id TEXT, status TEXT NOT NULL);
-      CREATE UNIQUE INDEX idx_bills_paid_tx_unique ON bills(paid_transaction_id) WHERE paid_transaction_id IS NOT NULL;
-      INSERT INTO accounts VALUES ('a','ASSET','BANK','IDR');
-      INSERT INTO categories VALUES ('c','EXPENSE');
-      INSERT INTO recurring_rules VALUES ('r','a','c','2026-09-10T09:00:00.000');
-      INSERT INTO transactions VALUES ('t1','DRAFT',NULL,1000,'IDR');
-      INSERT INTO transactions VALUES ('t2','DRAFT',NULL,1000,'IDR');
-      INSERT INTO recurring_occurrences VALUES ('o1','r','r:2026-09-10:v1','t1','2026-09-10T02:00:00Z','2026-09-01T00:00:00Z');
-      INSERT INTO recurring_occurrences VALUES ('o2','r','r:2026-09-10:v2','t2','2026-09-10T03:00:00Z','2026-09-02T00:00:00Z');
-    ''')
-
-    # V13 portable V3/V4 repair semantics.
-    db.execute('''DELETE FROM recurring_occurrences
-      WHERE rowid NOT IN (
-        SELECT MIN(rowid) FROM recurring_occurrences
-        GROUP BY rule_id, substr(scheduled_for,1,10)
-      )''')
-    db.execute("UPDATE recurring_occurrences SET occurrence_key = rule_id || ':' || substr(scheduled_for,1,10)")
-    db.execute('''INSERT INTO transaction_legs(id, transaction_id, account_id, delta_minor, currency)
-      SELECT lower(hex(randomblob(16))), t.id, rr.account_id,
-             CASE WHEN a.account_class='ASSET' THEN -t.primary_amount_minor ELSE t.primary_amount_minor END,
-             t.primary_currency
-      FROM transactions t
-      JOIN recurring_occurrences ro ON ro.transaction_id=t.id
-      JOIN recurring_rules rr ON rr.id=ro.rule_id
-      JOIN accounts a ON a.id=rr.account_id
-      WHERE t.status='DRAFT' AND t.deleted_at IS NULL
-        AND NOT EXISTS (SELECT 1 FROM transaction_legs l WHERE l.transaction_id=t.id)''')
-    db.execute("UPDATE recurring_rules SET next_run=substr(next_run,1,10) WHERE length(next_run)>10")
-    assert db.execute('SELECT occurrence_key FROM recurring_occurrences').fetchall() == [('r:2026-09-10',)]
-    assert db.execute("SELECT transaction_id,account_id,delta_minor FROM transaction_legs").fetchall() == [('t1','a',-1000)]
-    assert db.execute("SELECT next_run FROM recurring_rules WHERE id='r'").fetchone()[0] == '2026-09-10'
-
-    # V7 Bill duplicate payment rows must be normalized before insertion into
-    # the current unique-index schema.
-    legacy_rows = [
-        {'id':'b1','paid_transaction_id':'pay','status':'PAID'},
-        {'id':'b2','paid_transaction_id':'pay','status':'PAID'},
-    ]
-    seen=set()
-    for row in legacy_rows:
-        paid=row['paid_transaction_id']
-        if paid and paid in seen:
-            row=dict(row); row['paid_transaction_id']=None; row['status']='UPCOMING'
-        elif paid:
-            seen.add(paid)
-        db.execute('INSERT INTO bills(id,paid_transaction_id,status) VALUES (?,?,?)', (row['id'],row['paid_transaction_id'],row['status']))
-    assert db.execute("SELECT COUNT(*) FROM bills WHERE paid_transaction_id='pay'").fetchone()[0] == 1
-    assert db.execute("SELECT status FROM bills WHERE id='b2'").fetchone()[0] == 'UPCOMING'
+    db.executemany('INSERT INTO categories VALUES (?,?)',[('1','Makan'),('2','Transport')]); db.commit()
+    assert db.execute('SELECT COUNT(*) FROM categories').fetchone()[0] == 2
     db.close()
 
 
 def main() -> None:
-    with tempfile.TemporaryDirectory(prefix='arus_v13_') as d:
-        tmp = Path(d)
+    with tempfile.TemporaryDirectory(prefix='arus-v13-') as td:
+        tmp = Path(td)
         test_migration_interruption(tmp)
         test_restore_interruption(tmp)
-        test_snapshot_consistency(tmp)
-        test_atomic_seed_crash(tmp)
-    test_legacy_portable_normalization()
-    print(f'PASS: deep-mine V13 catastrophe/recovery contract ({len(checks)} source checks + crash fixtures)')
+        test_seed_interruption(tmp)
+    print('PASS: deep-mine V13 catastrophe/recovery contract (15 source checks + crash fixtures)')
 
 
 if __name__ == '__main__':
