@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "flutter_version": "3.47.2",
+  "dart_version": "3.13.2",
+  "release_hash": "d3b14c876900e553bc736ca19295fc09e3853e8e",
+  "official_manifest_base": "https://storage.googleapis.com/flutter_infra_release/releases",
+  "linux_x64_sha256": "447878859d01ca9bfdb99a85f245af07ed8a15fedcd9d189c4749e8e92d1f185"
+}

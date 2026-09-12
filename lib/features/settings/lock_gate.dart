@@ -1,0 +1,197 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import '../../core/services/security_service.dart';
+
+class LockGate extends StatefulWidget {
+  const LockGate({super.key, required this.security, required this.child});
+  final SecurityService security;
+  final Widget child;
+
+  @override
+  State<LockGate> createState() => _LockGateState();
+}
+
+class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
+  bool _checking = true;
+  bool _locked = false;
+  bool _hasPin = false;
+  bool _foreground = true;
+  bool _biometricInFlight = false;
+  bool _biometricAvailable = false;
+  int _lifecycleGeneration = 0;
+  final _pin = TextEditingController();
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkInitial();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pin.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkInitial() async {
+    final hasPin = await widget.security.hasPin();
+    final biometricAvailable = hasPin && await widget.security.canUseBiometrics();
+    final biometricEnabled = biometricAvailable && await widget.security.biometricEnabled();
+    if (!mounted) return;
+    setState(() {
+      _hasPin = hasPin;
+      _biometricAvailable = biometricAvailable;
+      _locked = hasPin;
+      _checking = false;
+    });
+    if (biometricEnabled && _foreground) {
+      await _tryBiometric();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleGeneration++;
+    if (state == AppLifecycleState.resumed) {
+      _foreground = true;
+      unawaited(_refreshPinStateOnResume(_lifecycleGeneration));
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _foreground = false;
+      // Hide finance data immediately. Do not wait for secure-storage I/O;
+      // otherwise an async lifecycle race can leave a sensitive frame visible
+      // in the app switcher or re-lock after a successful resumed biometric.
+      if (_hasPin && !_locked && mounted) {
+        setState(() {
+          _locked = true;
+          _error = null;
+          _pin.clear();
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshPinStateOnResume(int generation) async {
+    final hasPin = await widget.security.hasPin();
+    final biometricAvailable = hasPin && await widget.security.canUseBiometrics();
+    final biometricEnabled = biometricAvailable && await widget.security.biometricEnabled();
+    if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
+    setState(() {
+      _hasPin = hasPin;
+      _biometricAvailable = biometricAvailable;
+      _locked = hasPin;
+      if (!hasPin) _error = null;
+    });
+    if (biometricEnabled) {
+      if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
+      await _tryBiometric();
+    }
+  }
+
+  Future<void> _tryBiometric() async {
+    if (_biometricInFlight || !_foreground || !_hasPin) return;
+    _biometricInFlight = true;
+    try {
+      final ok = await widget.security.authenticateBiometric();
+      if (!mounted || !_foreground || !_hasPin) return;
+      if (ok) {
+        setState(() {
+          _locked = false;
+          _error = null;
+          _pin.clear();
+        });
+      }
+    } finally {
+      _biometricInFlight = false;
+    }
+  }
+
+  Future<void> _unlockPin() async {
+    if (!_foreground) return;
+    final ok = await widget.security.verifyPin(_pin.text);
+    final lockUntil = ok ? null : await widget.security.pinLockedUntil();
+    if (!mounted || !_foreground) return;
+    setState(() {
+      _locked = !ok;
+      if (ok) {
+        _error = null;
+        _pin.clear();
+      } else if (lockUntil != null) {
+        final seconds = lockUntil.difference(DateTime.now().toUtc()).inSeconds + 1;
+        _error = 'Terlalu banyak percobaan. Coba lagi sekitar $seconds detik.';
+      } else {
+        _error = 'PIN tidak cocok.';
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checking) {
+      return const Scaffold(
+        body: Center(
+          child: Semantics(
+            label: 'Memeriksa keamanan Arus',
+            liveRegion: true,
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+    if (!_locked) return widget.child;
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(28),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Icon(Icons.lock_outline_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 18),
+                Text('Arus terkunci', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                Text('Masukkan PIN untuk membuka data keuangan.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: _pin,
+                  autofocus: true,
+                  obscureText: true,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(labelText: 'PIN', errorText: _error),
+                  onSubmitted: (_) => _unlockPin(),
+                ),
+                if (_error != null)
+                  Semantics(
+                    liveRegion: true,
+                    label: _error!,
+                    child: const SizedBox.shrink(),
+                  ),
+                const SizedBox(height: 14),
+                FilledButton(onPressed: _unlockPin, child: const Text('Buka')),
+                if (_biometricAvailable) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: _tryBiometric,
+                    icon: const Icon(Icons.fingerprint),
+                    label: const Text('Gunakan biometrik'),
+                  ),
+                ],
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

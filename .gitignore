@@ -1,0 +1,13 @@
+.dart_tool/
+.packages
+.pub/
+build/
+android/.gradle/
+ios/Pods/
+.env
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+android/key.properties
+ios/ExportOptions.plist
