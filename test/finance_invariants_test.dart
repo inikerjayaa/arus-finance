@@ -119,6 +119,7 @@ void main() {
   });
 
   test('recurring occurrence is generated once', () async {
+    fakeNow = DateTime(2026, 9, 1, 9);
     final bank = await repo.createAccount(name: 'Bank', accountClass: AccountClass.asset, accountType: AccountType.bank, openingBalanceMinor: 500000);
     await repo.createRecurringExpenseDraft(name: 'Internet', amountMinor: 100000, accountId: bank, categoryId: await expenseCategory('Tagihan'), dayOfMonth: 8);
     final first = await repo.generateDueRecurring(now: DateTime(2026, 9, 8, 23));
@@ -188,11 +189,13 @@ void main() {
     final detail = await repo.getTransactionDetail(drafts.single.id);
     expect(detail.accountId, bank);
     expect((await repo.listAccounts()).firstWhere((a) => a.id == bank).balanceMinor, 500000);
+    fakeNow = DateTime(2026, 9, 8, 23);
     await repo.postDraftTransaction(drafts.single.id);
     expect((await repo.listAccounts()).firstWhere((a) => a.id == bank).balanceMinor, 400000);
   });
 
   test('deleting a bill payment reopens the bill', () async {
+    fakeNow = DateTime(2026, 9, 10, 12);
     final bank = await repo.createAccount(name: 'Bill Bank', accountClass: AccountClass.asset, accountType: AccountType.bank, openingBalanceMinor: 500000);
     final bill = await repo.createBill(name: 'Internet Bill', expectedAmountMinor: 100000, dueDate: DateTime(2026, 9, 20));
     final tx = await repo.payBill(billId: bill, amountMinor: 100000, accountId: bank, categoryId: await expenseCategory('Tagihan'), occurredAt: DateTime(2026, 9, 10));
@@ -242,6 +245,7 @@ void main() {
   });
 
   test('VOID bill payment reopens bill', () async {
+    fakeNow = DateTime(2026, 9, 10, 12);
     final bank = await repo.createAccount(name: 'Void Bill Bank', accountClass: AccountClass.asset, accountType: AccountType.bank, openingBalanceMinor: 500000);
     final bill = await repo.createBill(name: 'Void Bill', expectedAmountMinor: 100000, dueDate: DateTime(2026, 9, 20));
     final tx = await repo.payBill(billId: bill, amountMinor: 100000, accountId: bank, categoryId: await expenseCategory('Tagihan'), occurredAt: DateTime(2026, 9, 10));
@@ -380,6 +384,7 @@ void main() {
       500000,
     );
 
+    fakeNow = DateTime(2026, 9, 8, 23);
     await repo.postDraftTransaction(tx['id'] as String);
     expect(
       (await repo.listAccounts()).firstWhere((a) => a.id == bank).balanceMinor,

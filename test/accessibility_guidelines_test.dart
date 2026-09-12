@@ -7,9 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('onboarding follows core accessibility guidelines', (tester) async {
     final handle = tester.ensureSemantics();
-    addTearDown(handle.dispose);
-
-    await tester.pumpWidget(
+    try {
+      await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
         home: OnboardingScreen(onDone: () {}),
@@ -20,7 +19,10 @@ void main() {
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
     await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    await expectLater(tester, meetsGuideline(textContrastGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('onboarding remains usable with large text on a small phone', (tester) async {
