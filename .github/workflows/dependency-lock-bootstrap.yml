@@ -1,10 +1,6 @@
 name: Arus Dependency Lock Bootstrap
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/dependency-lock-bootstrap.yml
   workflow_dispatch:
 
 permissions:
