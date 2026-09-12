@@ -165,8 +165,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Edit transaksi', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
         TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
-        DropdownButtonFormField<String>(value: accountId, decoration: const InputDecoration(labelText: 'Account'), items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v)), const SizedBox(height: 12),
-        DropdownButtonFormField<String>(value: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: categories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v)), const SizedBox(height: 12),
+        DropdownButtonFormField<String>(initialValue: accountId, decoration: const InputDecoration(labelText: 'Account'), items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v)), const SizedBox(height: 12),
+        DropdownButtonFormField<String>(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: categories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v)), const SizedBox(height: 12),
         OutlinedButton.icon(onPressed: () async {
           final lastDate = d.view.status == TransactionStatus.posted ? DateTime.now() : DateTime(2100);
           final initialDate = date.isAfter(lastDate) ? lastDate : date;
@@ -198,7 +198,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Text('Maksimal ${Money.format(remaining, currency: d.view.currency)}'), const SizedBox(height: 12),
         TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal refund', prefixText: 'Rp ')), const SizedBox(height: 12),
-        DropdownButtonFormField<String>(value: destinationId, decoration: const InputDecoration(labelText: 'Refund masuk ke'), items: assetsAndCards.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => destinationId = v)),
+        DropdownButtonFormField<String>(initialValue: destinationId, decoration: const InputDecoration(labelText: 'Refund masuk ke'), items: assetsAndCards.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => destinationId = v)),
       ]),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')), FilledButton(onPressed: () async {
         final parsed = Money.parseIdr(amount.text);

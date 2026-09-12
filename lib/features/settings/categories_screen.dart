@@ -60,7 +60,7 @@ class _CategoryList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
       itemCount: list.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (_, index) {
         final category = list[index];
         return ListTile(

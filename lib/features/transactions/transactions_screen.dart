@@ -120,7 +120,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(18, 4, 18, 120),
                   itemCount: controller.transactions.length + (controller.hasMoreTransactions ? 1 : 0),
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, index) {
                     if (index == controller.transactions.length) {
                       return Padding(
@@ -215,7 +215,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ]),
             const SizedBox(height: 12),
             DropdownButtonFormField<TransactionType?>(
-              value: filter.type,
+              initialValue: filter.type,
               decoration: const InputDecoration(labelText: 'Tipe transaksi'),
               items: [
                 const DropdownMenuItem<TransactionType?>(value: null, child: Text('Semua tipe')),
@@ -234,7 +234,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<TransactionStatus?>(
-              value: filter.status,
+              initialValue: filter.status,
               decoration: const InputDecoration(labelText: 'Status'),
               items: [
                 const DropdownMenuItem<TransactionStatus?>(value: null, child: Text('Semua status')),
@@ -244,7 +244,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              value: filter.accountId,
+              initialValue: filter.accountId,
               decoration: const InputDecoration(labelText: 'Account'),
               items: [
                 const DropdownMenuItem<String?>(value: null, child: Text('Semua account')),
@@ -254,7 +254,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              value: categories.any((c) => c.id == filter.categoryId) ? filter.categoryId : null,
+              initialValue: categories.any((c) => c.id == filter.categoryId) ? filter.categoryId : null,
               decoration: const InputDecoration(labelText: 'Kategori'),
               items: [
                 const DropdownMenuItem<String?>(value: null, child: Text('Semua kategori')),

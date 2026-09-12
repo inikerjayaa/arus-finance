@@ -19,7 +19,7 @@ class MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final spoken = [label, value, if (caption != null) caption!].join(', ');
+    final spoken = [label, value, ?caption].join(', ');
     return Semantics(
       container: true,
       label: spoken,

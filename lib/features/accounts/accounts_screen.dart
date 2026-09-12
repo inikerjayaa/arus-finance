@@ -191,7 +191,7 @@ class AccountsScreen extends StatelessWidget {
             TextField(controller: name, autofocus: true, decoration: const InputDecoration(labelText: 'Nama account')),
             const SizedBox(height: 12),
             DropdownButtonFormField<AccountType>(
-              value: type,
+              initialValue: type,
               decoration: const InputDecoration(labelText: 'Tipe'),
               items: AccountType.values.map((v) => DropdownMenuItem(value: v, child: Text(v.name))).toList(),
               onChanged: (v) => setState(() => type = v ?? type),

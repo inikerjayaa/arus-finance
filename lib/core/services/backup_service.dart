@@ -511,7 +511,7 @@ class BackupService {
       """).first['c'] as int;
     final invalidMoneyRange = db.select("""SELECT (
       (SELECT COUNT(*) FROM transactions WHERE primary_amount_minor<=0 OR primary_amount_minor>$kMaxMoneyMinor) +
-      (SELECT COUNT(*) FROM transaction_legs WHERE delta_minor<-${kMaxMoneyMinor} OR delta_minor>$kMaxMoneyMinor) +
+      (SELECT COUNT(*) FROM transaction_legs WHERE delta_minor<-$kMaxMoneyMinor OR delta_minor>$kMaxMoneyMinor) +
       (SELECT COUNT(*) FROM transaction_splits WHERE amount_minor<=0 OR amount_minor>$kMaxMoneyMinor) +
       (SELECT COUNT(*) FROM budgets WHERE limit_minor<=0 OR limit_minor>$kMaxMoneyMinor) +
       (SELECT COUNT(*) FROM bills WHERE expected_amount_minor<=0 OR expected_amount_minor>$kMaxMoneyMinor) +

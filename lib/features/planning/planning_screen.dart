@@ -138,8 +138,8 @@ class PlanningScreen extends StatelessWidget {
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Bayar $billName', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
         TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal aktual', prefixText: 'Rp ')), const SizedBox(height: 12),
-        DropdownButtonFormField<String>(value: accountId, decoration: const InputDecoration(labelText: 'Bayar dari'), items: paymentAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
-        DropdownButtonFormField<String>(value: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: c.expenseCategories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v ?? categoryId)), const SizedBox(height: 18),
+        DropdownButtonFormField<String>(initialValue: accountId, decoration: const InputDecoration(labelText: 'Bayar dari'), items: paymentAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
+        DropdownButtonFormField<String>(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: c.expenseCategories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v ?? categoryId)), const SizedBox(height: 18),
         FilledButton(onPressed: () async {
           final parsed = Money.parseIdr(amount.text);
           if (parsed == null || parsed <= 0) return;
@@ -187,8 +187,8 @@ class PlanningScreen extends StatelessWidget {
         Text('Recurring expense', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
         TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama')), const SizedBox(height: 12),
         TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
-        DropdownButtonFormField(value: accountId, decoration: const InputDecoration(labelText: 'Account'), items: recurringAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
-        DropdownButtonFormField(value: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: c.expenseCategories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v ?? categoryId)), const SizedBox(height: 12),
+        DropdownButtonFormField(initialValue: accountId, decoration: const InputDecoration(labelText: 'Account'), items: recurringAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
+        DropdownButtonFormField(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: c.expenseCategories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v ?? categoryId)), const SizedBox(height: 12),
         TextField(controller: day, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Tanggal tiap bulan (1–31)')), const SizedBox(height: 18),
         FilledButton(onPressed: () async { final result = await c.run(() => c.repository.createRecurringExpenseDraft(name: name.text, amountMinor: Money.parseIdr(amount.text) ?? 0, accountId: accountId, categoryId: categoryId, dayOfMonth: int.tryParse(day.text) ?? 1)); if (ctx.mounted && result != null) Navigator.pop(ctx); }, child: const Text('Simpan sebagai draft otomatis')),
       ])),

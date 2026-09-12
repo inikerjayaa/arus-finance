@@ -177,14 +177,14 @@ class FinancialActionsScreen extends StatelessWidget {
           _accountDropdown('Pinjaman', loans, loanId, (v) => setState(() => loanId = v)),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: interestCategoryId,
+            initialValue: interestCategoryId,
             decoration: const InputDecoration(labelText: 'Kategori bunga'),
             items: categories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(),
             onChanged: (v) => setState(() => interestCategoryId = v ?? interestCategoryId),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: feeCategoryId,
+            initialValue: feeCategoryId,
             decoration: const InputDecoration(labelText: 'Kategori fee'),
             items: categories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(),
             onChanged: (v) => setState(() => feeCategoryId = v ?? feeCategoryId),
@@ -231,7 +231,7 @@ class FinancialActionsScreen extends StatelessWidget {
   );
 
   Widget _accountDropdown(String label, List<Account> values, String value, ValueChanged<String> onChanged) => DropdownButtonFormField<String>(
-    value: value,
+    initialValue: value,
     decoration: InputDecoration(labelText: label),
     items: values.map((a) => DropdownMenuItem(value: a.id, child: Text('${a.name} • ${Money.format(a.balanceMinor, currency: a.currency)}'))).toList(),
     onChanged: (v) { if (v != null) onChanged(v); },

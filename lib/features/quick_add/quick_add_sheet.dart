@@ -193,7 +193,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _accountId,
+              initialValue: _accountId,
               decoration: InputDecoration(
                 labelText: _mode == 2 ? 'Dari account' : 'Account',
                 errorText: _accountError,
@@ -221,7 +221,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             if (_mode == 2) ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _destinationId,
+                initialValue: _destinationId,
                 decoration: InputDecoration(
                   labelText: 'Ke account',
                   errorText: _destinationError,
@@ -262,7 +262,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             ] else ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _categoryId,
+                initialValue: _categoryId,
                 decoration: InputDecoration(
                   labelText: 'Kategori',
                   errorText: _categoryError,
