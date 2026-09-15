@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/services/category_maintenance_controller_access.dart';
 import '../../core/services/visual_identity_controller_access.dart';
 import '../../core/services/visual_identity_store.dart';
 import '../../domain/enums.dart';
@@ -35,16 +36,18 @@ class CategoriesScreen extends StatelessWidget {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            final index = DefaultTabController.of(context).index;
-            _add(
-              context,
-              index == 0 ? CategoryType.expense : CategoryType.income,
-            );
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Kategori'),
+        floatingActionButton: Builder(
+          builder: (tabContext) => FloatingActionButton.extended(
+            onPressed: () {
+              final index = DefaultTabController.of(tabContext).index;
+              _add(
+                tabContext,
+                index == 0 ? CategoryType.expense : CategoryType.income,
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Kategori'),
+          ),
         ),
       ),
     );
@@ -53,7 +56,7 @@ class CategoriesScreen extends StatelessWidget {
   Future<void> _add(BuildContext context, CategoryType type) async {
     final controller = AppScope.of(context);
     final visuals = controller.visualIdentityStore;
-    final input = TextEditingController();
+    var inputValue = '';
     var identity = visuals?.suggestCategory('', type) ??
         VisualIdentity(
           iconKey: type == CategoryType.income
@@ -76,51 +79,53 @@ class CategoriesScreen extends StatelessWidget {
                   ? 'Kategori pengeluaran'
                   : 'Kategori pemasukan',
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: input,
-                  autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Nama kategori'),
-                  onChanged: (value) {
-                    if (visuals != null && !customized) {
-                      setDialogState(
-                        () => identity = visuals.suggestCategory(value, type),
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: color.withValues(alpha: .14),
-                    foregroundColor: color,
-                    child: Icon(entry.fallbackIcon),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    autofocus: true,
+                    decoration: const InputDecoration(labelText: 'Nama kategori'),
+                    onChanged: (value) {
+                      inputValue = value;
+                      if (visuals != null && !customized) {
+                        setDialogState(
+                          () => identity = visuals.suggestCategory(value, type),
+                        );
+                      }
+                    },
                   ),
-                  title: const Text('Ikon & warna'),
-                  subtitle: Text(
-                    '${entry.label} • ${VisualPalette.fallbackFor(identity.colorKey).label}',
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: color.withValues(alpha: .14),
+                      foregroundColor: color,
+                      child: Icon(entry.fallbackIcon),
+                    ),
+                    title: const Text('Ikon & warna'),
+                    subtitle: Text(
+                      '${entry.label} • ${VisualPalette.fallbackFor(identity.colorKey).label}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: visuals == null
+                        ? null
+                        : () async {
+                            final picked = await IconPickerSheet.show(
+                              dialogContext,
+                              initial: identity,
+                              suggestionText: inputValue,
+                            );
+                            if (picked != null && dialogContext.mounted) {
+                              setDialogState(() {
+                                identity = picked;
+                                customized = true;
+                              });
+                            }
+                          },
                   ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: visuals == null
-                      ? null
-                      : () async {
-                          final picked = await IconPickerSheet.show(
-                            dialogContext,
-                            initial: identity,
-                            suggestionText: input.text,
-                          );
-                          if (picked != null && dialogContext.mounted) {
-                            setDialogState(() {
-                              identity = picked;
-                              customized = true;
-                            });
-                          }
-                        },
-                ),
-              ],
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -131,7 +136,7 @@ class CategoriesScreen extends StatelessWidget {
                 onPressed: () async {
                   final id = await controller.run(
                     () => controller.repository.createCategory(
-                      name: input.text,
+                      name: inputValue,
                       type: type,
                     ),
                     refreshAfter: false,
@@ -173,7 +178,6 @@ class CategoriesScreen extends StatelessWidget {
         },
       ),
     );
-    input.dispose();
   }
 }
 
@@ -210,13 +214,19 @@ class _CategoryList extends StatelessWidget {
           trailing: PopupMenuButton<String>(
             tooltip: 'Aksi kategori ${category.name}',
             onSelected: (value) async {
-              if (value == 'visual') {
+              if (value == 'rename') {
+                await _rename(context, category);
+              } else if (value == 'visual') {
                 await _changeVisual(context, category);
               } else if (value == 'archive') {
                 await _archive(context, category);
               }
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'rename',
+                child: Text('Ubah nama'),
+              ),
               PopupMenuItem(
                 value: 'visual',
                 child: Text('Ubah ikon & warna'),
@@ -226,6 +236,67 @@ class _CategoryList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _rename(BuildContext context, Category category) async {
+    final controller = AppScope.of(context);
+    final maintenance = controller.categoryMaintenanceService;
+    if (maintenance == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fitur ubah nama kategori belum tersedia.')),
+      );
+      return;
+    }
+
+    final formKey = GlobalKey<FormState>();
+    var nextValue = category.name;
+    final nextName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ubah nama kategori'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            initialValue: category.name,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(labelText: 'Nama kategori'),
+            validator: (value) => value == null || value.trim().isEmpty
+                ? 'Nama kategori wajib diisi.'
+                : null,
+            onChanged: (value) => nextValue = value,
+            onFieldSubmitted: (value) {
+              nextValue = value;
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(ctx, nextValue);
+              }
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(ctx, nextValue);
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    if (nextName == null || !context.mounted) return;
+
+    await controller.run(
+      () => maintenance.renameCategory(
+        categoryId: category.id,
+        name: nextName,
+      ),
     );
   }
 
