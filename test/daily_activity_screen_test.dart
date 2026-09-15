@@ -13,90 +13,134 @@ void main() {
     await initializeDateFormatting('id_ID');
   });
 
-  testWidgets('calendar opens a selected day with spending, incoming and neutral activity', (tester) async {
-    final database = AppDatabase.inMemory();
-    addTearDown(database.close);
-    final repository = LocalFinanceRepository(
-      database,
-      clock: () => DateTime(2026, 9, 15, 12),
-    );
-    await repository.initialize();
+  testWidgets(
+    'calendar opens a selected day with spending, incoming and neutral activity',
+    (tester) async {
+      final database = AppDatabase.inMemory();
+      addTearDown(database.close);
+      final repository = LocalFinanceRepository(
+        database,
+        clock: () => DateTime(2026, 9, 15, 12),
+      );
+      await repository.initialize();
 
-    final cash = (await repository.listAccounts()).first;
-    final expenseCategory = (await repository.listCategories(type: CategoryType.expense))
-        .firstWhere((category) => category.name == 'Makanan');
-    final incomeCategory = (await repository.listCategories(type: CategoryType.income))
-        .firstWhere((category) => category.name == 'Gaji');
-    final secondAccount = await repository.createAccount(
-      name: 'Bank Test',
-      accountClass: AccountClass.asset,
-      accountType: AccountType.bank,
-    );
+      final cash = (await repository.listAccounts()).first;
+      final expenseCategory =
+          (await repository.listCategories(type: CategoryType.expense))
+              .firstWhere((category) => category.name == 'Makanan');
+      final incomeCategory =
+          (await repository.listCategories(type: CategoryType.income))
+              .firstWhere((category) => category.name == 'Gaji');
+      final secondAccount = await repository.createAccount(
+        name: 'Bank Test',
+        accountClass: AccountClass.asset,
+        accountType: AccountType.bank,
+      );
 
-    await repository.createExpense(
-      amountMinor: 35000,
-      accountId: cash.id,
-      categoryId: expenseCategory.id,
-      occurredAt: DateTime(2026, 9, 15, 8, 15),
-      note: 'Kopi pagi',
-    );
-    await repository.createIncome(
-      amountMinor: 500000,
-      accountId: cash.id,
-      categoryId: incomeCategory.id,
-      occurredAt: DateTime(2026, 9, 15, 10),
-      note: 'Pemasukan tes',
-    );
-    await repository.createTransfer(
-      amountMinor: 100000,
-      sourceAccountId: cash.id,
-      destinationAccountId: secondAccount,
-      occurredAt: DateTime(2026, 9, 15, 11),
-      note: 'Pindah saldo',
-    );
+      await repository.createExpense(
+        amountMinor: 35000,
+        accountId: cash.id,
+        categoryId: expenseCategory.id,
+        occurredAt: DateTime(2026, 9, 15, 8, 15),
+        note: 'Kopi pagi',
+      );
+      await repository.createIncome(
+        amountMinor: 500000,
+        accountId: cash.id,
+        categoryId: incomeCategory.id,
+        occurredAt: DateTime(2026, 9, 15, 10),
+        note: 'Pemasukan tes',
+      );
+      await repository.createTransfer(
+        amountMinor: 100000,
+        sourceAccountId: cash.id,
+        destinationAccountId: secondAccount,
+        occurredAt: DateTime(2026, 9, 15, 11),
+        note: 'Pindah saldo',
+      );
 
-    final controller = AppController(repository);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AppScope(
-          controller: controller,
-          child: DailyActivityScreen(initialDate: DateTime(2026, 9, 15)),
+      final controller = AppController(repository);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AppScope(
+            controller: controller,
+            child: DailyActivityScreen(initialDate: DateTime(2026, 9, 15)),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Kalender Arus'), findsOneWidget);
-    expect(find.text('Keluar'), findsWidgets);
-    expect(find.text('Masuk'), findsWidgets);
-    expect(find.text('Net'), findsOneWidget);
-    expect(find.textContaining('35.000'), findsWidgets);
-    expect(find.textContaining('500.000'), findsWidgets);
-    expect(find.text('Makanan'), findsOneWidget);
-    expect(find.text('Transfer'), findsOneWidget);
-  });
+      expect(find.text('Kalender Arus'), findsOneWidget);
 
-  testWidgets('calendar can move to the previous month without carrying selected-day totals', (tester) async {
-    final database = AppDatabase.inMemory();
-    addTearDown(database.close);
-    final repository = LocalFinanceRepository(database);
-    await repository.initialize();
-    final controller = AppController(repository);
+      final outerScroll = find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('Net'),
+        260,
+        scrollable: outerScroll,
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AppScope(
-          controller: controller,
-          child: DailyActivityScreen(initialDate: DateTime(2026, 9, 15)),
+      expect(find.text('Keluar'), findsWidgets);
+      expect(find.text('Masuk'), findsWidgets);
+      expect(find.text('Net'), findsOneWidget);
+      expect(find.textContaining('35.000'), findsWidgets);
+      expect(find.textContaining('500.000'), findsWidgets);
+
+      await tester.scrollUntilVisible(
+        find.text('Transfer'),
+        260,
+        scrollable: outerScroll,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Makanan'), findsOneWidget);
+      expect(find.text('Transfer'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'calendar can move to the previous month without carrying selected-day totals',
+    (tester) async {
+      final database = AppDatabase.inMemory();
+      addTearDown(database.close);
+      final repository = LocalFinanceRepository(database);
+      await repository.initialize();
+      final controller = AppController(repository);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AppScope(
+            controller: controller,
+            child: DailyActivityScreen(initialDate: DateTime(2026, 9, 15)),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Bulan sebelumnya'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Bulan sebelumnya'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Agustus 2026'), findsOneWidget);
-    expect(find.text('Tidak ada aktivitas pada tanggal ini.'), findsOneWidget);
-  });
+      expect(find.text('Agustus 2026'), findsOneWidget);
+      final outerScroll = find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('Tidak ada aktivitas pada tanggal ini.'),
+        260,
+        scrollable: outerScroll,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Tidak ada aktivitas pada tanggal ini.'),
+        findsOneWidget,
+      );
+    },
+  );
 }
