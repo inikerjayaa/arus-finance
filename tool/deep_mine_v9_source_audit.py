@@ -1,9 +1,13 @@
 from pathlib import Path
-import sys
+import re, sys
+
 ROOT=Path(__file__).resolve().parents[1]
 repo=(ROOT/'lib/data/local_finance_repository.dart').read_text()
 backup=(ROOT/'lib/core/services/backup_service.dart').read_text()
 schema=(ROOT/'lib/core/db/schema.dart').read_text()
+current_match=re.search(r'const int kSchemaVersion\s*=\s*(\d+);', schema)
+current_version=int(current_match.group(1)) if current_match else 0
+
 checks={
  'hard delete transaction': "db.execute('DELETE FROM transactions WHERE id=?', [id]);" in repo,
  'detach recurring occurrence on hard delete': "UPDATE recurring_occurrences SET transaction_id=NULL" in repo,
@@ -16,7 +20,9 @@ checks={
  'backup over-refund validation': 'overRefund' in backup,
  'backup invalid-paid-bill validation': 'invalidPaidBill' in backup,
  'backup orphan-refund validation': 'orphanPostedRefund' in backup,
- 'schema v9 local-only tombstone purge': 'const int kSchemaVersion = 9;' in schema and "DELETE FROM transactions WHERE deleted_at IS NOT NULL" in schema,
+ # V9 is a historical safety contract, not a permanent ceiling on schema evolution.
+ # Keep migration 9 and its local-only tombstone purge intact even after V10+ exists.
+ 'schema retains v9 local-only tombstone purge': current_version >= 9 and re.search(r'\n\s*9:\s*\[', schema) is not None and "DELETE FROM transactions WHERE deleted_at IS NOT NULL" in schema,
  'restore legacy tombstone repair': '_repairLegacyLocalOnlyState' in backup,
 }
 failed=[k for k,v in checks.items() if not v]
