@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 import '../../core/services/screen_protection_service.dart';
 
 class PrivacySettingsScreen extends StatelessWidget {
-  const PrivacySettingsScreen({super.key});
+  const PrivacySettingsScreen({super.key, this.service});
+
+  final ScreenProtectionService? service;
 
   @override
   Widget build(BuildContext context) {
-    final service = ScreenProtectionService.instance;
+    final protection = service ?? ScreenProtectionService.instance;
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Privasi layar')),
       body: AnimatedBuilder(
-        animation: service,
+        animation: protection,
         builder: (context, _) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),
@@ -36,22 +38,22 @@ class PrivacySettingsScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Card(
                 child: SwitchListTile(
-                  value: service.enabled,
-                  onChanged: !service.loaded || !service.supported
+                  value: protection.enabled,
+                  onChanged: !protection.loaded || !protection.supported
                       ? null
-                      : (value) => _changeProtection(context, service, value),
+                      : (value) => _changeProtection(context, protection, value),
                   secondary: Icon(
-                    service.enabled
+                    protection.enabled
                         ? Icons.screen_lock_portrait_rounded
                         : Icons.screenshot_monitor_rounded,
                   ),
                   title: const Text('Lindungi screenshot & rekaman layar'),
-                  subtitle: Text(_statusText(service)),
+                  subtitle: Text(_statusText(protection)),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                service.supported
+                protection.supported
                     ? 'Default: aktif. Pengaturan ini hanya tersimpan di perangkat ini dan tidak mengubah data keuangan.'
                     : 'Kontrol screenshot runtime belum tersedia di platform/perangkat ini. Arus tidak akan mengklaim perlindungan yang tidak dapat diverifikasi.',
                 style: theme.textTheme.bodySmall?.copyWith(
