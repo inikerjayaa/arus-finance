@@ -1,4 +1,4 @@
-const int kSchemaVersion = 10;
+const int kSchemaVersion = 11;
 
 const List<String> kSchemaStatements = [
   '''CREATE TABLE IF NOT EXISTS app_meta (
@@ -31,6 +31,10 @@ const List<String> kSchemaStatements = [
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     version INTEGER NOT NULL DEFAULT 1
+  )''',
+  '''CREATE TABLE IF NOT EXISTS system_category_bindings (
+    system_key TEXT PRIMARY KEY,
+    category_id TEXT NOT NULL UNIQUE REFERENCES categories(id) ON DELETE CASCADE
   )''',
   '''CREATE TABLE IF NOT EXISTS transaction_groups (
     id TEXT PRIMARY KEY,
@@ -296,5 +300,11 @@ const Map<int, List<String>> kSchemaMigrations = {
     'ALTER TABLE accounts ADD COLUMN visual_color_key TEXT',
     'ALTER TABLE categories ADD COLUMN visual_icon_key TEXT',
     'ALTER TABLE categories ADD COLUMN visual_color_key TEXT',
+  ],
+  11: [
+    '''CREATE TABLE IF NOT EXISTS system_category_bindings (
+      system_key TEXT PRIMARY KEY,
+      category_id TEXT NOT NULL UNIQUE REFERENCES categories(id) ON DELETE CASCADE
+    )''',
   ],
 };
