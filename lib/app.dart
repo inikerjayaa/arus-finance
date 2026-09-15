@@ -7,6 +7,7 @@ import 'app_controller.dart';
 import 'app_shell.dart';
 import 'core/db/app_database.dart';
 import 'core/services/backup_service.dart';
+import 'core/services/screen_protection_service.dart';
 import 'core/services/security_service.dart';
 import 'core/services/theme_preferences_service.dart';
 import 'features/onboarding_screen.dart';
@@ -26,6 +27,7 @@ class ArusApp extends StatefulWidget {
 
 class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   final ThemePreferencesService _themePreferences = ThemePreferencesService.instance;
+  final ScreenProtectionService _screenProtection = ScreenProtectionService.instance;
   bool? _onboardingDone;
   bool _privacyShielded = false;
   late bool _lastInitializing;
@@ -76,8 +78,9 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      // Obscure financial UI before the OS can capture an app-switcher snapshot.
-      // Android also receives FLAG_SECURE from the native hardener.
+      // This lifecycle shield is intentionally independent from the optional
+      // Android screenshot flag. App-switcher snapshots stay protected even
+      // when the user explicitly allows screenshots while Arus is active.
       if (!_privacyShielded && mounted) {
         setState(() => _privacyShielded = true);
       }
@@ -127,6 +130,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     _onboardingDone = prefs.getBool('onboarding_done_v1') ?? false;
     await _themePreferences.load();
+    await _screenProtection.loadAndApply();
     if (mounted) setState(() {});
     await widget.controller.initialize();
     if (widget.controller.errorMessage == null) {
