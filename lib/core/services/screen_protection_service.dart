@@ -9,6 +9,8 @@ class ScreenProtectionService extends ChangeNotifier {
   })  : _channel = channel ?? const MethodChannel(_channelName),
         _preferences = preferences ?? SharedPreferences.getInstance;
 
+  static final ScreenProtectionService instance = ScreenProtectionService();
+
   static const _channelName = 'arus.finance/screen_protection';
   static const _enabledKey = 'screen_protection_enabled_v1';
 
