@@ -35,7 +35,7 @@ void main() {
       accountId: source.id,
       categoryId: feeCategoryId,
       occurredAt: DateTime(2026, 9, 15, 9),
-      note: 'Biaya lama',
+      note: 'Riwayat lama',
     );
 
     await maintenance.renameCategory(
@@ -52,7 +52,7 @@ void main() {
     expect(renamed['system_key'], 'expense.transfer_fee');
     expect(renamed['visual_icon_key'], 'finance.fee');
     expect(renamed['visual_color_key'], 'red');
-    expect(renamed['version'], 3);
+    expect(renamed['version'], 2);
 
     final searched = await repository.listTransactions(query: 'Administrasi');
     expect(searched.map((tx) => tx.id), contains(historyId));
