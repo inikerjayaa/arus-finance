@@ -72,17 +72,8 @@ void main() {
 
       expect(find.text('Kalender Arus'), findsOneWidget);
 
-      final outerScroll = find
-          .descendant(
-            of: find.byType(ListView),
-            matching: find.byType(Scrollable),
-          )
-          .first;
-      await tester.scrollUntilVisible(
-        find.text('Net'),
-        260,
-        scrollable: outerScroll,
-      );
+      final list = find.byType(ListView).first;
+      await tester.drag(list, const Offset(0, -520));
       await tester.pumpAndSettle();
 
       expect(find.text('Keluar'), findsWidgets);
@@ -91,11 +82,7 @@ void main() {
       expect(find.textContaining('35.000'), findsWidgets);
       expect(find.textContaining('500.000'), findsWidgets);
 
-      await tester.scrollUntilVisible(
-        find.text('Transfer'),
-        260,
-        scrollable: outerScroll,
-      );
+      await tester.drag(list, const Offset(0, -420));
       await tester.pumpAndSettle();
       expect(find.text('Makanan'), findsOneWidget);
       expect(find.text('Transfer'), findsOneWidget);
@@ -125,17 +112,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Agustus 2026'), findsOneWidget);
-      final outerScroll = find
-          .descendant(
-            of: find.byType(ListView),
-            matching: find.byType(Scrollable),
-          )
-          .first;
-      await tester.scrollUntilVisible(
-        find.text('Tidak ada aktivitas pada tanggal ini.'),
-        260,
-        scrollable: outerScroll,
-      );
+      await tester.drag(find.byType(ListView).first, const Offset(0, -620));
       await tester.pumpAndSettle();
       expect(
         find.text('Tidak ada aktivitas pada tanggal ini.'),
