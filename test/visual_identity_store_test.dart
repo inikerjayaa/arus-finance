@@ -23,8 +23,8 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('schema v10 keeps visual identity on backed-up account/category rows', () {
-    expect(kSchemaVersion, 10);
+  test('schema v11 keeps visual identity and stable category identity on backed-up rows', () {
+    expect(kSchemaVersion, 11);
     final accountColumns = db.db
         .select('PRAGMA table_info(accounts)')
         .map((row) => row['name'] as String)
@@ -34,7 +34,10 @@ void main() {
         .map((row) => row['name'] as String)
         .toSet();
     expect(accountColumns, containsAll(['visual_icon_key', 'visual_color_key']));
-    expect(categoryColumns, containsAll(['visual_icon_key', 'visual_color_key']));
+    expect(
+      categoryColumns,
+      containsAll(['visual_icon_key', 'visual_color_key', 'system_key']),
+    );
   });
 
   test('built-in category and account visuals are seeded without touching ledger data', () async {
