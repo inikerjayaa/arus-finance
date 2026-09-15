@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'app.dart';
 import 'app_controller.dart';
 import 'core/db/app_database.dart';
+import 'core/services/category_composition_controller_access.dart';
+import 'core/services/category_composition_service.dart';
 import 'core/services/local_notification_service.dart';
 import 'core/services/security_service.dart';
 import 'core/services/visual_identity_controller_access.dart';
@@ -16,6 +18,7 @@ void main() {
   final notifications = LocalNotificationService();
   final controller = AppController(repository, notifications: notifications);
   controller.visualIdentityStore = VisualIdentityStore(database);
+  controller.categoryCompositionService = CategoryCompositionService(database);
   final security = SecurityService();
   runApp(
     ArusApp(
