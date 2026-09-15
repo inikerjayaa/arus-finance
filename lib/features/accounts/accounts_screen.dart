@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/enums.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 import 'financial_actions_screen.dart';
 
@@ -137,14 +138,14 @@ class AccountsScreen extends StatelessWidget {
 
   Future<void> _reconcile(BuildContext context, String accountId, String accountName, int calculatedMinor) async {
     final controller = AppScope.of(context);
-    final observed = TextEditingController(text: calculatedMinor.toString());
+    final observed = TextEditingController(text: Money.input(calculatedMinor));
     final reason = TextEditingController();
     final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: Text('Rekonsiliasi $accountName'),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Text('Saldo terhitung: ${Money.format(calculatedMinor)}'),
         const SizedBox(height: 12),
-        TextField(controller: observed, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Saldo yang terlihat', prefixText: 'Rp ')),
+        TextField(controller: observed, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter(allowNegative: true)], decoration: const InputDecoration(labelText: 'Saldo yang terlihat', prefixText: 'Rp ')),
         const SizedBox(height: 12),
         TextField(controller: reason, decoration: const InputDecoration(labelText: 'Alasan penyesuaian')),
       ]),
@@ -197,7 +198,7 @@ class AccountsScreen extends StatelessWidget {
               onChanged: (v) => setState(() => type = v ?? type),
             ),
             const SizedBox(height: 12),
-            TextField(controller: opening, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: accountClass == AccountClass.liability ? 'Utang awal' : 'Saldo awal', prefixText: 'Rp ')),
+            TextField(controller: opening, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: InputDecoration(labelText: accountClass == AccountClass.liability ? 'Utang awal' : 'Saldo awal', prefixText: 'Rp ')),
             const SizedBox(height: 18),
             FilledButton(onPressed: () async {
               final result = await controller.run(() => controller.repository.createAccount(
