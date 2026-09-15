@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 
 /// Formats integer IDR input with Indonesian thousand separators while the
 /// user types. This only changes presentation; canonical parsing and money
-/// bounds remain enforced by [Money.parseIdr] and the repository layer.
+/// bounds remain enforced by the money parser and repository layer.
 class IdrInputFormatter extends TextInputFormatter {
   const IdrInputFormatter({this.allowNegative = false});
 
@@ -39,7 +39,12 @@ class IdrInputFormatter extends TextInputFormatter {
     }
 
     // Keep the caret at the same logical digit position for mid-number edits.
-    final extent = newValue.selection.extentOffset.clamp(0, newValue.text.length);
+    final rawExtent = newValue.selection.extentOffset;
+    final extent = rawExtent < 0
+        ? 0
+        : rawExtent > newValue.text.length
+            ? newValue.text.length
+            : rawExtent;
     final digitsToRight = RegExp(r'\d')
         .allMatches(newValue.text.substring(extent))
         .length;
