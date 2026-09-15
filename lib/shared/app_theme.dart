@@ -4,10 +4,10 @@ import '../core/services/theme_preferences_service.dart';
 
 class AppTheme {
   static ThemeData light([ArusThemeId themeId = ArusThemeId.original]) =>
-      _build(themeId, Brightness.light);
+      _withLightMinimumTargets(_build(themeId, Brightness.light));
 
   static ThemeData dark([ArusThemeId themeId = ArusThemeId.original]) =>
-      _build(themeId, Brightness.dark);
+      _withDarkMinimumTargets(_build(themeId, Brightness.dark));
 
   static ThemeData _build(ArusThemeId themeId, Brightness brightness) {
     final seed = _seed(themeId, brightness);
@@ -54,21 +54,42 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: const NavigationBarThemeData(height: 72),
-      iconButtonTheme: const IconButtonThemeData(
-        style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
-      ),
-      filledButtonTheme: const FilledButtonThemeData(
-        style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
-      ),
-      outlinedButtonTheme: const OutlinedButtonThemeData(
-        style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
-      ),
-      textButtonTheme: const TextButtonThemeData(
-        style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
-      ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: .7)),
     );
   }
+
+  // Keep the 48dp accessibility contract explicit in both brightness modes.
+  // This duplication is intentional: light and dark remain independently
+  // auditable even as their visual tokens evolve.
+  static ThemeData _withLightMinimumTargets(ThemeData base) => base.copyWith(
+        iconButtonTheme: const IconButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+        filledButtonTheme: const FilledButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+        outlinedButtonTheme: const OutlinedButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+        textButtonTheme: const TextButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+      );
+
+  static ThemeData _withDarkMinimumTargets(ThemeData base) => base.copyWith(
+        iconButtonTheme: const IconButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+        filledButtonTheme: const FilledButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+        outlinedButtonTheme: const OutlinedButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+        textButtonTheme: const TextButtonThemeData(
+          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+        ),
+      );
 
   static Color _seed(ArusThemeId themeId, Brightness brightness) {
     final dark = brightness == Brightness.dark;
