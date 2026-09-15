@@ -103,14 +103,14 @@ class _HomeCategoryCompositionCardState
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Card(
+          return Card(
             child: Padding(
-              padding: EdgeInsets.all(28),
+              padding: const EdgeInsets.all(28),
               child: Center(
                 child: Semantics(
                   label: 'Memuat komposisi kategori',
                   liveRegion: true,
-                  child: CircularProgressIndicator(),
+                  child: const CircularProgressIndicator(),
                 ),
               ),
             ),
