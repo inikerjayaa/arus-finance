@@ -7,6 +7,7 @@ import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
 import '../../shared/money.dart';
+import '../activity/daily_activity_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
 import 'home_category_composition_card.dart';
@@ -84,6 +85,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: _customize,
                 icon: const Icon(Icons.dashboard_customize_outlined),
                 tooltip: 'Atur dashboard',
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AppScope(
+                      controller: controller,
+                      child: DailyActivityScreen(initialDate: DateTime.now()),
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.calendar_month_rounded),
+                tooltip: 'Kalender aktivitas',
               ),
               IconButton(
                 onPressed: controller.refresh,
