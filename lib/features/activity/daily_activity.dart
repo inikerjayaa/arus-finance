@@ -59,10 +59,13 @@ class DailyActivityBuilder {
       switch (tx.type) {
         case TransactionType.expense:
           spending += tx.amountMinor;
+          break;
         case TransactionType.income:
           income += tx.amountMinor;
+          break;
         case TransactionType.refund:
           refunds += tx.amountMinor;
+          break;
         case TransactionType.transfer:
         case TransactionType.adjustment:
         case TransactionType.openingBalance:
