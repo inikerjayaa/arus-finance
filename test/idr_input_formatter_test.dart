@@ -38,5 +38,13 @@ void main() {
       final formatted = IdrInputFormatter.formatDigits('999999999');
       expect(Money.parseIdr(formatted), 999999999);
     });
+
+    test('prefilled IDR input round-trips through canonical parser', () {
+      expect(Money.input(0), '0');
+      expect(Money.input(1250000), '1.250.000');
+      expect(Money.input(-1250000), '-1.250.000');
+      expect(Money.parseIdr(Money.input(1250000)), 1250000);
+      expect(Money.parseIdr(Money.input(-1250000)), -1250000);
+    });
   });
 }
