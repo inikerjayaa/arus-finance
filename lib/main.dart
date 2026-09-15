@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 import 'app_controller.dart';
@@ -7,8 +8,9 @@ import 'core/services/security_service.dart';
 import 'core/services/local_notification_service.dart';
 import 'data/local_finance_repository.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID');
   final database = AppDatabase();
   final repository = LocalFinanceRepository(database);
   final notifications = LocalNotificationService();
