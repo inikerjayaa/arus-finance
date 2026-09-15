@@ -11,7 +11,6 @@ for path in ROOT.joinpath('lib').rglob('*.dart'):
     sigs=[]
     in_triple=None
     for i,line in enumerate(lines):
-        # crude but effective triple-string state so SQL bodies are ignored.
         for token in ("'''", '\"\"\"'):
             if line.count(token) % 2 == 1:
                 if in_triple is None: in_triple=token
@@ -32,13 +31,13 @@ for path in ROOT.joinpath('lib').rglob('*.dart'):
             errors.append(f'{path.relative_to(ROOT)}: duplicate method candidate: {name}')
         seen.add(name)
 
-
 # Private lower-case helper calls in production Dart are compile-critical and should resolve
-# to a lower-case private method/function in the same library file. Private
-# class constructors start with an upper-case letter after '_' and are ignored.
+# to a lower-case private method/function in the same library file. Private class
+# constructors start with an upper-case letter after '_' and are ignored. Dart 3
+# record return types (positional/named) and common method modifiers are valid.
 helper_call_re = re.compile(r'(?<![A-Za-z0-9_])(_[a-z][A-Za-z0-9_]*)\s*\(')
 helper_def_re = re.compile(
-    r'^\s*(?:[A-Za-z_][A-Za-z0-9_<>,? .]*\s+)?(_[a-z][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:async\s*)?(?:=>|\{)',
+    r'^\s*(?:(?:static|external)\s+)?(?:(?:[A-Za-z_][A-Za-z0-9_<>,? .]*|\([^\)\n]+\))\s+)?(_[a-z][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:async\s*)?(?:=>|\{)',
     re.M,
 )
 callable_field_re = re.compile(

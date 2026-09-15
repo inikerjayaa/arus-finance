@@ -10,6 +10,7 @@ import '../../core/services/csv_import_service.dart';
 import '../../core/services/local_notification_service.dart';
 import '../../core/services/security_service.dart';
 import '../../shared/app_scope.dart';
+import 'appearance_settings_screen.dart';
 import 'categories_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -184,10 +185,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       const SizedBox(height: 22),
       Text('Aplikasi', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
-      const Card(child: Column(children: [
-        ListTile(leading: Icon(Icons.shield_outlined), title: Text('Device-owned'), subtitle: Text('Data keuangan utama disimpan di perangkat. Internet dan akun tidak diperlukan.')),
-        Divider(height: 1),
-        ListTile(leading: Icon(Icons.palette_outlined), title: Text('Tema'), subtitle: Text('Mengikuti Light/Dark Mode perangkat.')),
+      Card(child: Column(children: [
+        const ListTile(leading: Icon(Icons.shield_outlined), title: Text('Device-owned'), subtitle: Text('Data keuangan utama disimpan di perangkat. Internet dan akun tidak diperlukan.')),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.palette_outlined),
+          title: const Text('Tema'),
+          subtitle: const Text('Pilih preset warna dan mode System/Light/Dark.'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AppearanceSettingsScreen()),
+          ),
+        ),
       ])),
       const SizedBox(height: 22),
       Text('Danger zone', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.error)),
