@@ -1,4 +1,4 @@
-const int kSchemaVersion = 10;
+const int kSchemaVersion = 11;
 
 const List<String> kSchemaStatements = [
   '''CREATE TABLE IF NOT EXISTS app_meta (
@@ -25,6 +25,7 @@ const List<String> kSchemaStatements = [
     parent_id TEXT REFERENCES categories(id),
     type TEXT NOT NULL CHECK(type IN ('EXPENSE','INCOME')),
     name TEXT NOT NULL,
+    system_key TEXT,
     visual_icon_key TEXT,
     visual_color_key TEXT,
     archived_at TEXT,
@@ -175,6 +176,28 @@ const List<String> kSchemaStatements = [
        SET category=COALESCE((SELECT group_concat(c.name,' ') FROM transaction_splits s JOIN categories c ON c.id=s.category_id WHERE s.transaction_id=transaction_search.transaction_id),'')
      WHERE transaction_id IN (SELECT transaction_id FROM transaction_splits WHERE category_id=NEW.id);
   END''',
+  '''CREATE TRIGGER IF NOT EXISTS trg_category_system_key_seed AFTER INSERT ON categories
+     WHEN NEW.system_key IS NULL
+     BEGIN
+       UPDATE categories SET system_key='expense.food' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='makanan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.food');
+       UPDATE categories SET system_key='expense.transport' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='transport' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.transport');
+       UPDATE categories SET system_key='expense.shopping' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='belanja' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.shopping');
+       UPDATE categories SET system_key='expense.home' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='rumah' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.home');
+       UPDATE categories SET system_key='expense.bills' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='tagihan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.bills');
+       UPDATE categories SET system_key='expense.health' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='kesehatan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.health');
+       UPDATE categories SET system_key='expense.entertainment' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='hiburan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.entertainment');
+       UPDATE categories SET system_key='expense.education' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='pendidikan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.education');
+       UPDATE categories SET system_key='expense.travel' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='travel' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.travel');
+       UPDATE categories SET system_key='expense.transfer_fee' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='biaya transfer' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.transfer_fee');
+       UPDATE categories SET system_key='expense.loan_interest' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='bunga pinjaman' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.loan_interest');
+       UPDATE categories SET system_key='expense.loan_fee' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='biaya pinjaman' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.loan_fee');
+       UPDATE categories SET system_key='expense.other' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='lainnya' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.other');
+       UPDATE categories SET system_key='income.salary' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='gaji' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.salary');
+       UPDATE categories SET system_key='income.bonus' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='bonus' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.bonus');
+       UPDATE categories SET system_key='income.sales' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='penjualan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.sales');
+       UPDATE categories SET system_key='income.gift' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='hadiah' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.gift');
+       UPDATE categories SET system_key='income.other' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='lainnya' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.other');
+     END''',
   '''CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(local_date)''',
   '''CREATE INDEX IF NOT EXISTS idx_tx_group ON transactions(transaction_group_id)''',
   '''CREATE INDEX IF NOT EXISTS idx_legs_account ON transaction_legs(account_id)''',
@@ -186,6 +209,7 @@ const List<String> kSchemaStatements = [
   '''CREATE UNIQUE INDEX IF NOT EXISTS idx_bills_paid_tx_unique ON bills(paid_transaction_id) WHERE paid_transaction_id IS NOT NULL''',
   '''CREATE INDEX IF NOT EXISTS idx_splits_transaction ON transaction_splits(transaction_id)''',
   '''CREATE INDEX IF NOT EXISTS idx_legs_transaction ON transaction_legs(transaction_id)''',
+  '''CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_system_key_unique ON categories(system_key) WHERE system_key IS NOT NULL''',
 ];
 
 const Map<int, List<String>> kSchemaMigrations = {
@@ -296,5 +320,49 @@ const Map<int, List<String>> kSchemaMigrations = {
     'ALTER TABLE accounts ADD COLUMN visual_color_key TEXT',
     'ALTER TABLE categories ADD COLUMN visual_icon_key TEXT',
     'ALTER TABLE categories ADD COLUMN visual_color_key TEXT',
+  ],
+  11: [
+    'ALTER TABLE categories ADD COLUMN system_key TEXT',
+    "UPDATE categories SET system_key='expense.food' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='makanan' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.transport' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='transport' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.shopping' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='belanja' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.home' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='rumah' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.bills' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='tagihan' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.health' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='kesehatan' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.entertainment' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='hiburan' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.education' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='pendidikan' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.travel' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='travel' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.transfer_fee' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='biaya transfer' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.loan_interest' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='bunga pinjaman' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.loan_fee' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='biaya pinjaman' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='expense.other' WHERE id=(SELECT id FROM categories WHERE type='EXPENSE' AND lower(trim(name))='lainnya' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='income.salary' WHERE id=(SELECT id FROM categories WHERE type='INCOME' AND lower(trim(name))='gaji' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='income.bonus' WHERE id=(SELECT id FROM categories WHERE type='INCOME' AND lower(trim(name))='bonus' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='income.sales' WHERE id=(SELECT id FROM categories WHERE type='INCOME' AND lower(trim(name))='penjualan' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='income.gift' WHERE id=(SELECT id FROM categories WHERE type='INCOME' AND lower(trim(name))='hadiah' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    "UPDATE categories SET system_key='income.other' WHERE id=(SELECT id FROM categories WHERE type='INCOME' AND lower(trim(name))='lainnya' ORDER BY created_at ASC,rowid ASC LIMIT 1)",
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_system_key_unique ON categories(system_key) WHERE system_key IS NOT NULL',
+    '''CREATE TRIGGER IF NOT EXISTS trg_category_system_key_seed AFTER INSERT ON categories
+       WHEN NEW.system_key IS NULL
+       BEGIN
+         UPDATE categories SET system_key='expense.food' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='makanan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.food');
+         UPDATE categories SET system_key='expense.transport' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='transport' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.transport');
+         UPDATE categories SET system_key='expense.shopping' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='belanja' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.shopping');
+         UPDATE categories SET system_key='expense.home' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='rumah' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.home');
+         UPDATE categories SET system_key='expense.bills' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='tagihan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.bills');
+         UPDATE categories SET system_key='expense.health' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='kesehatan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.health');
+         UPDATE categories SET system_key='expense.entertainment' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='hiburan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.entertainment');
+         UPDATE categories SET system_key='expense.education' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='pendidikan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.education');
+         UPDATE categories SET system_key='expense.travel' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='travel' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.travel');
+         UPDATE categories SET system_key='expense.transfer_fee' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='biaya transfer' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.transfer_fee');
+         UPDATE categories SET system_key='expense.loan_interest' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='bunga pinjaman' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.loan_interest');
+         UPDATE categories SET system_key='expense.loan_fee' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='biaya pinjaman' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.loan_fee');
+         UPDATE categories SET system_key='expense.other' WHERE id=NEW.id AND NEW.type='EXPENSE' AND lower(trim(NEW.name))='lainnya' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='expense.other');
+         UPDATE categories SET system_key='income.salary' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='gaji' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.salary');
+         UPDATE categories SET system_key='income.bonus' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='bonus' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.bonus');
+         UPDATE categories SET system_key='income.sales' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='penjualan' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.sales');
+         UPDATE categories SET system_key='income.gift' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='hadiah' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.gift');
+         UPDATE categories SET system_key='income.other' WHERE id=NEW.id AND NEW.type='INCOME' AND lower(trim(NEW.name))='lainnya' AND NOT EXISTS (SELECT 1 FROM categories WHERE system_key='income.other');
+       END''',
   ],
 };

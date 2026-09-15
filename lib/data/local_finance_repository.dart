@@ -478,8 +478,12 @@ class LocalFinanceRepository implements FinanceRepository {
       _insertLeg(db, primaryId, destinationAccountId, amountMinor, currency);
 
       if (feeMinor > 0) {
-        final feeCategoryRows = db.select("SELECT id FROM categories WHERE type='EXPENSE' AND archived_at IS NULL AND name='Biaya Transfer' LIMIT 1");
-        if (feeCategoryRows.isEmpty) throw StateError('Kategori Biaya Transfer tidak tersedia.');
+        final feeCategoryRows = db.select(
+          "SELECT id FROM categories WHERE type='EXPENSE' AND system_key='expense.transfer_fee' LIMIT 1",
+        );
+        if (feeCategoryRows.isEmpty) {
+          throw StateError('Kategori sistem biaya transfer tidak tersedia.');
+        }
         final feeTx = _insertTransaction(db,
           type: TransactionType.expense,
           status: TransactionStatus.posted,
