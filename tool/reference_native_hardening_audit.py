@@ -88,6 +88,12 @@ class MainActivity: FlutterActivity()
     assert g.count('desugar_jdk_libs:2.1.4') == 1
     assert g.count('androidx.appcompat:appcompat:1.8.0') == 1
     assert 'FlutterFragmentActivity' in a and 'FlutterActivity\n' not in a
+    assert a.count('arus.finance/screen_protection') == 1
+    assert 'MethodChannel' in a and 'configureFlutterEngine' in a
+    assert '"isSupported"' in a and '"setEnabled"' in a
+    assert 'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in a
+    assert 'window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)' in a
+    assert a.index('window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)') < a.index('configureFlutterEngine')
     assert 'parent="Theme.AppCompat.DayNight"' in st
 
     with plist.open('rb') as f:
@@ -96,4 +102,4 @@ class MainActivity: FlutterActivity()
     assert 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' in project.read_text()
     assert "platform :ios, '15.0'" in podfile.read_text()
 
-print('PASS: native hardening fixture is idempotent + biometric/reminder ready')
+print('PASS: native hardening fixture is idempotent + biometric/reminder/runtime-screen-protection ready')
