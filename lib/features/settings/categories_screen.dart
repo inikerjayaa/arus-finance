@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/services/category_maintenance_controller_access.dart';
 import '../../core/services/visual_identity_controller_access.dart';
 import '../../core/services/visual_identity_store.dart';
 import '../../domain/enums.dart';
@@ -210,13 +211,19 @@ class _CategoryList extends StatelessWidget {
           trailing: PopupMenuButton<String>(
             tooltip: 'Aksi kategori ${category.name}',
             onSelected: (value) async {
-              if (value == 'visual') {
+              if (value == 'rename') {
+                await _rename(context, category);
+              } else if (value == 'visual') {
                 await _changeVisual(context, category);
               } else if (value == 'archive') {
                 await _archive(context, category);
               }
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'rename',
+                child: Text('Ubah nama'),
+              ),
               PopupMenuItem(
                 value: 'visual',
                 child: Text('Ubah ikon & warna'),
@@ -226,6 +233,66 @@ class _CategoryList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _rename(BuildContext context, Category category) async {
+    final controller = AppScope.of(context);
+    final maintenance = controller.categoryMaintenanceService;
+    if (maintenance == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fitur ubah nama kategori belum tersedia.')),
+      );
+      return;
+    }
+
+    final input = TextEditingController(text: category.name);
+    final formKey = GlobalKey<FormState>();
+    final nextName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ubah nama kategori'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: input,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(labelText: 'Nama kategori'),
+            validator: (value) => value == null || value.trim().isEmpty
+                ? 'Nama kategori wajib diisi.'
+                : null,
+            onFieldSubmitted: (_) {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(ctx, input.text);
+              }
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(ctx, input.text);
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    input.dispose();
+    if (nextName == null || !context.mounted) return;
+
+    await controller.run(
+      () => maintenance.renameCategory(
+        categoryId: category.id,
+        name: nextName,
+      ),
     );
   }
 
