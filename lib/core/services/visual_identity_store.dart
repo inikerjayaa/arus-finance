@@ -131,11 +131,15 @@ class VisualIdentityStore {
     return VisualIdentity(iconKey: icon.key, colorKey: color);
   }
 
+  VisualIdentity suggestAccount(String name, AccountType type) =>
+      _suggestAccount(name, enumDbName(type));
+
   VisualIdentity? _fromRow(Row row) {
     final iconKey = row['visual_icon_key'];
     final colorKey = row['visual_color_key'];
     if (iconKey is! String || colorKey is! String) return null;
-    if (IconCatalog.byKey(iconKey) == null || VisualPalette.byKey(colorKey) == null) {
+    if (IconCatalog.byKey(iconKey) == null ||
+        VisualPalette.byKey(colorKey) == null) {
       return null;
     }
     return VisualIdentity(iconKey: iconKey, colorKey: colorKey);
