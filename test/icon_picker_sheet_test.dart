@@ -37,9 +37,13 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'BCA');
     await tester.pumpAndSettle();
-    expect(find.text('BCA'), findsOneWidget);
+    final bcaResult = find.descendant(
+      of: find.byType(GridView),
+      matching: find.text('BCA'),
+    );
+    expect(bcaResult, findsOneWidget);
 
-    await tester.tap(find.text('BCA'));
+    await tester.tap(bcaResult);
     await tester.pump();
     await tester.tap(find.text('Pakai'));
     await tester.pumpAndSettle();
