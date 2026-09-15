@@ -100,7 +100,9 @@ class CategoriesScreen extends StatelessWidget {
                     child: Icon(entry.fallbackIcon),
                   ),
                   title: const Text('Ikon & warna'),
-                  subtitle: Text('${entry.label} • ${VisualPalette.fallbackFor(identity.colorKey).label}'),
+                  subtitle: Text(
+                    '${entry.label} • ${VisualPalette.fallbackFor(identity.colorKey).label}',
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: visuals == null
                       ? null
@@ -136,7 +138,7 @@ class CategoriesScreen extends StatelessWidget {
                   );
                   if (id == null) return;
 
-                  String? visualWarning;
+                  final warnings = <String>[];
                   if (visuals != null) {
                     try {
                       await visuals.setCategory(
@@ -145,21 +147,22 @@ class CategoriesScreen extends StatelessWidget {
                         colorKey: identity.colorKey,
                       );
                     } catch (_) {
-                      visualWarning =
-                          'Kategori tersimpan, tetapi ikon belum berhasil disimpan.';
+                      warnings.add(
+                        'Kategori tersimpan, tetapi ikon belum berhasil disimpan.',
+                      );
                     }
                   }
                   try {
                     await controller.refresh();
                   } catch (_) {
-                    controller.noticeMessage =
-                        'Kategori sudah tersimpan. Muat ulang tampilan bila belum terlihat.';
-                    controller.notifyListeners();
+                    warnings.add(
+                      'Kategori sudah tersimpan. Muat ulang tampilan bila belum terlihat.',
+                    );
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
-                  if (visualWarning != null && context.mounted) {
+                  if (warnings.isNotEmpty && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(visualWarning)),
+                      SnackBar(content: Text(warnings.join(' '))),
                     );
                   }
                 },
