@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 
 class FinancialActionsScreen extends StatelessWidget {
@@ -227,6 +228,7 @@ class FinancialActionsScreen extends StatelessWidget {
   Widget _moneyField(TextEditingController controller, String label) => TextField(
     controller: controller,
     keyboardType: TextInputType.number,
+    inputFormatters: const [IdrInputFormatter()],
     decoration: InputDecoration(labelText: label, prefixText: 'Rp '),
   );
 
