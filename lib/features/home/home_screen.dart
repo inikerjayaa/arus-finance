@@ -7,8 +7,10 @@ import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
 import '../../shared/money.dart';
+import '../activity/daily_activity_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
+import 'home_category_composition_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -85,6 +87,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 tooltip: 'Atur dashboard',
               ),
               IconButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AppScope(
+                      controller: controller,
+                      child: DailyActivityScreen(initialDate: DateTime.now()),
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.calendar_month_rounded),
+                tooltip: 'Kalender aktivitas',
+              ),
+              IconButton(
                 onPressed: controller.refresh,
                 icon: const Icon(Icons.refresh_rounded),
                 tooltip: 'Perbarui',
@@ -138,6 +152,13 @@ class _HomeScreenState extends State<HomeScreen> {
             incomeMinor: data.incomePeriodMinor,
             spendingMinor: data.spendingPeriodMinor,
             currency: data.currency,
+          );
+          break;
+        case 'category_breakdown':
+          content = HomeCategoryCompositionCard(
+            controller: controller,
+            currency: data.currency,
+            refreshMarker: data,
           );
           break;
         case 'spending_today':
