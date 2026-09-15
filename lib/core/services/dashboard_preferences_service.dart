@@ -1,57 +1,129 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardWidgetConfig {
-  const DashboardWidgetConfig({required this.id, required this.label, required this.enabled});
+  const DashboardWidgetConfig({
+    required this.id,
+    required this.label,
+    required this.enabled,
+  });
+
   final String id;
   final String label;
   final bool enabled;
 
-  DashboardWidgetConfig copyWith({bool? enabled}) => DashboardWidgetConfig(id: id, label: label, enabled: enabled ?? this.enabled);
+  DashboardWidgetConfig copyWith({bool? enabled}) => DashboardWidgetConfig(
+        id: id,
+        label: label,
+        enabled: enabled ?? this.enabled,
+      );
 }
 
 class DashboardPreferencesService {
-  static const _orderKey = 'dashboard_widget_order_v2';
-  static const _hiddenKey = 'dashboard_widget_hidden_v2';
+  static const _orderKey = 'dashboard_widget_order_v3';
+  static const _hiddenKey = 'dashboard_widget_hidden_v3';
+  static const _legacyOrderKey = 'dashboard_widget_order_v2';
+  static const _legacyHiddenKey = 'dashboard_widget_hidden_v2';
 
   static const defaultOrder = <String>[
-    'available',
-    'spending_month',
+    'primary_summary',
     'spending_today',
-    'income_month',
     'net_worth',
     'largest_category',
     'recent_transactions',
   ];
 
   static const labels = <String, String>{
-    'available': 'Saldo tersedia',
-    'spending_month': 'Pengeluaran bulan ini',
+    'primary_summary': 'Ringkasan utama',
     'spending_today': 'Pengeluaran hari ini',
-    'income_month': 'Pemasukan bulan ini',
     'net_worth': 'Net worth',
     'largest_category': 'Kategori terbesar',
     'recent_transactions': 'Transaksi terbaru',
   };
 
+  static const _legacyPrimaryIds = <String>{
+    'available',
+    'spending_month',
+    'income_month',
+  };
+
   Future<List<DashboardWidgetConfig>> load() async {
     final prefs = await SharedPreferences.getInstance();
+    final hasV3 = prefs.containsKey(_orderKey) || prefs.containsKey(_hiddenKey);
+    if (!hasV3 &&
+        (prefs.containsKey(_legacyOrderKey) ||
+            prefs.containsKey(_legacyHiddenKey))) {
+      final migrated = _migrateLegacy(prefs);
+      await save(migrated);
+      return migrated;
+    }
+
     final storedOrder = prefs.getStringList(_orderKey) ?? const <String>[];
     final hidden = (prefs.getStringList(_hiddenKey) ?? const <String>[]).toSet();
+    return _normalize(storedOrder, hidden);
+  }
+
+  List<DashboardWidgetConfig> _migrateLegacy(SharedPreferences prefs) {
+    final legacyOrder =
+        prefs.getStringList(_legacyOrderKey) ?? const <String>[];
+    final legacyHidden =
+        (prefs.getStringList(_legacyHiddenKey) ?? const <String>[]).toSet();
+    final order = <String>[];
+    var primaryInserted = false;
+
+    for (final id in legacyOrder) {
+      if (_legacyPrimaryIds.contains(id)) {
+        if (!primaryInserted) {
+          order.add('primary_summary');
+          primaryInserted = true;
+        }
+        continue;
+      }
+      if (labels.containsKey(id) && !order.contains(id)) order.add(id);
+    }
+    if (!primaryInserted) order.insert(0, 'primary_summary');
+
+    final hidden = <String>{
+      ...legacyHidden.where(labels.containsKey),
+      if (_legacyPrimaryIds.every(legacyHidden.contains)) 'primary_summary',
+    };
+    return _normalize(order, hidden);
+  }
+
+  List<DashboardWidgetConfig> _normalize(
+    List<String> storedOrder,
+    Set<String> hidden,
+  ) {
     final validStored = storedOrder.where(labels.containsKey).toList();
     final missing = defaultOrder.where((id) => !validStored.contains(id));
     final order = [...validStored, ...missing];
-    return order.map((id) => DashboardWidgetConfig(id: id, label: labels[id]!, enabled: !hidden.contains(id))).toList();
+    return order
+        .map(
+          (id) => DashboardWidgetConfig(
+            id: id,
+            label: labels[id]!,
+            enabled: !hidden.contains(id),
+          ),
+        )
+        .toList();
   }
 
   Future<void> save(List<DashboardWidgetConfig> config) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_orderKey, config.map((e) => e.id).toList());
-    await prefs.setStringList(_hiddenKey, config.where((e) => !e.enabled).map((e) => e.id).toList());
+    await prefs.setStringList(
+      _orderKey,
+      config.map((entry) => entry.id).toList(),
+    );
+    await prefs.setStringList(
+      _hiddenKey,
+      config.where((entry) => !entry.enabled).map((entry) => entry.id).toList(),
+    );
   }
 
   Future<void> reset() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_orderKey);
     await prefs.remove(_hiddenKey);
+    await prefs.remove(_legacyOrderKey);
+    await prefs.remove(_legacyHiddenKey);
   }
 }
