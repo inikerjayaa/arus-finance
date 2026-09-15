@@ -34,7 +34,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Makanan'), findsOneWidget);
+    final food = find.text('Makanan');
+    expect(food, findsOneWidget);
+    await tester.ensureVisible(food);
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Aksi kategori Makanan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ubah nama'));
@@ -56,5 +59,37 @@ void main() {
     expect(renamed['id'], originalId);
     expect(renamed['name'], 'Kuliner Harian');
     expect(renamed['system_key'], 'expense.food');
+  });
+
+  testWidgets('category FAB opens add dialog for the active tab', (tester) async {
+    final database = AppDatabase.inMemory();
+    final repository = LocalFinanceRepository(database);
+    await repository.initialize();
+    addTearDown(database.close);
+
+    final controller = AppController(repository);
+    await controller.refresh();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AppScope(
+          controller: controller,
+          child: const CategoriesScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Kategori pengeluaran'), findsOneWidget);
+    await tester.tap(find.text('Batal'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Pemasukan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Kategori pemasukan'), findsOneWidget);
   });
 }
