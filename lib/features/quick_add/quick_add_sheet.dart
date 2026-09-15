@@ -4,6 +4,7 @@ import '../../app_controller.dart';
 import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 
 class QuickAddSheet extends StatefulWidget {
@@ -111,245 +112,352 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           bottom: MediaQuery.viewInsetsOf(context).bottom + 18,
         ),
         child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      'Catat transaksi',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Tutup pencatatan transaksi',
-                  onPressed: _submitting ? null : () => _requestClose(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(
-                  value: 0,
-                  label: Text('Keluar'),
-                  icon: Icon(Icons.arrow_upward_rounded),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  label: Text('Masuk'),
-                  icon: Icon(Icons.arrow_downward_rounded),
-                ),
-                ButtonSegment(
-                  value: 2,
-                  label: Text('Transfer'),
-                  icon: Icon(Icons.swap_horiz_rounded),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (value) => setState(() {
-                _mode = value.first;
-                _dirty = true;
-                _accountId = null;
-                _categoryId = null;
-                _destinationId = null;
-                _amountError = null;
-                _accountError = null;
-                _categoryError = null;
-                _destinationError = null;
-                _feeError = null;
-                _submitError = null;
-              }),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: _amount,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-              decoration: InputDecoration(
-                prefixText: 'Rp ',
-                hintText: '0',
-                labelText: 'Nominal',
-                errorText: _amountError,
-              ),
-              onChanged: (_) {
-                setState(() {
-                  _dirty = true;
-                  _amountError = null;
-                  _submitError = null;
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _accountId,
-              decoration: InputDecoration(
-                labelText: _mode == 2 ? 'Dari account' : 'Account',
-                errorText: _accountError,
-              ),
-              items: eligibleAccounts
-                  .map(
-                    (a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Text(a.name, overflow: TextOverflow.ellipsis),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() {
-                _dirty = true;
-                _accountId = value;
-                _accountError = null;
-                if (_mode == 2 && _destinationId == value) {
-                  _destinationId = eligibleAccounts
-                      .where((a) => a.id != value)
-                      .firstOrNull
-                      ?.id;
-                }
-              }),
-            ),
-            if (_mode == 2) ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _destinationId,
-                decoration: InputDecoration(
-                  labelText: 'Ke account',
-                  errorText: _destinationError,
-                ),
-                items: eligibleAccounts
-                    .where((a) => a.id != _accountId)
-                    .map(
-                      (a) => DropdownMenuItem(
-                        value: a.id,
-                        child: Text(a.name, overflow: TextOverflow.ellipsis),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'Catat transaksi',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() {
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Tutup pencatatan transaksi',
+                    onPressed: _submitting ? null : () => _requestClose(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(
+                    value: 0,
+                    label: Text('Keluar'),
+                    icon: Icon(Icons.arrow_upward_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 1,
+                    label: Text('Masuk'),
+                    icon: Icon(Icons.arrow_downward_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 2,
+                    label: Text('Transfer'),
+                    icon: Icon(Icons.swap_horiz_rounded),
+                  ),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (value) => setState(() {
+                  _mode = value.first;
                   _dirty = true;
-                  _destinationId = value;
+                  _accountId = null;
+                  _categoryId = null;
+                  _destinationId = null;
+                  _amountError = null;
+                  _accountError = null;
+                  _categoryError = null;
                   _destinationError = null;
+                  _feeError = null;
+                  _submitError = null;
                 }),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
+              const SizedBox(height: 18),
+              TextField(
+                controller: _amount,
+                autofocus: true,
                 keyboardType: TextInputType.number,
+                inputFormatters: const [IdrInputFormatter()],
+                textInputAction: TextInputAction.next,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                 decoration: InputDecoration(
-                  labelText: 'Biaya transfer (opsional)',
                   prefixText: 'Rp ',
-                  errorText: _feeError,
+                  hintText: '0',
+                  labelText: 'Nominal',
+                  errorText: _amountError,
                 ),
-                onChanged: (value) {
-                  final trimmed = value.trim();
-                  final parsed = trimmed.isEmpty ? 0 : Money.parseIdr(trimmed);
+                onChanged: (_) {
                   setState(() {
                     _dirty = true;
-                    _feeMinor = parsed ?? 0;
-                    _feeError = parsed == null ? 'Masukkan biaya yang valid.' : null;
+                    _amountError = null;
+                    _submitError = null;
                   });
                 },
               ),
-            ] else ...[
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _categoryId,
-                decoration: InputDecoration(
-                  labelText: 'Kategori',
-                  errorText: _categoryError,
-                ),
-                items: categories
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Text(c.name, overflow: TextOverflow.ellipsis),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() {
-                  _dirty = true;
-                  _categoryId = value;
-                  _categoryError = null;
-                }),
+              _selectionField(
+                context: context,
+                label: _mode == 2 ? 'Dari account' : 'Account',
+                value: eligibleAccounts
+                    .where((a) => a.id == _accountId)
+                    .firstOrNull
+                    ?.name,
+                errorText: _accountError,
+                onTap: eligibleAccounts.isEmpty
+                    ? null
+                    : () async {
+                        final picked = await _pickChoice(
+                          context,
+                          title: _mode == 2 ? 'Pilih account asal' : 'Pilih account',
+                          selected: _accountId,
+                          choices: eligibleAccounts
+                              .map((a) => _PickerChoice(a.id, a.name))
+                              .toList(growable: false),
+                        );
+                        if (!mounted || picked == null) return;
+                        setState(() {
+                          _dirty = true;
+                          _accountId = picked;
+                          _accountError = null;
+                          if (_mode == 2 && _destinationId == picked) {
+                            _destinationId = eligibleAccounts
+                                .where((a) => a.id != picked)
+                                .firstOrNull
+                                ?.id;
+                          }
+                        });
+                      },
               ),
-            ],
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () async {
-                final picked = await showDatePicker(
+              if (_mode == 2) ...[
+                const SizedBox(height: 12),
+                _selectionField(
                   context: context,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime.now(),
-                  initialDate: _date,
-                );
-                if (picked != null && mounted) {
-                  final now = DateTime.now();
-                  setState(
-                    () {
+                  label: 'Ke account',
+                  value: eligibleAccounts
+                      .where((a) => a.id == _destinationId)
+                      .firstOrNull
+                      ?.name,
+                  errorText: _destinationError,
+                  onTap: eligibleAccounts.where((a) => a.id != _accountId).isEmpty
+                      ? null
+                      : () async {
+                          final choices = eligibleAccounts
+                              .where((a) => a.id != _accountId)
+                              .map((a) => _PickerChoice(a.id, a.name))
+                              .toList(growable: false);
+                          final picked = await _pickChoice(
+                            context,
+                            title: 'Pilih account tujuan',
+                            selected: _destinationId,
+                            choices: choices,
+                          );
+                          if (!mounted || picked == null) return;
+                          setState(() {
+                            _dirty = true;
+                            _destinationId = picked;
+                            _destinationError = null;
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  keyboardType: TextInputType.number,
+                  inputFormatters: const [IdrInputFormatter()],
+                  decoration: InputDecoration(
+                    labelText: 'Biaya transfer (opsional)',
+                    prefixText: 'Rp ',
+                    errorText: _feeError,
+                  ),
+                  onChanged: (value) {
+                    final trimmed = value.trim();
+                    final parsed = trimmed.isEmpty ? 0 : Money.parseIdr(trimmed);
+                    setState(() {
                       _dirty = true;
-                      _date = DateTime(
-                      picked.year,
-                      picked.month,
-                      picked.day,
-                      now.hour,
-                      now.minute,
-                    );
-                    },
-                  );
-                }
-              },
-              icon: const Icon(Icons.calendar_today_outlined),
-              label: Text(
-                '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _note,
-              maxLines: 2,
-              textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
-              onChanged: (_) => setState(() => _dirty = true),
-            ),
-            if (_submitError != null) ...[
+                      _feeMinor = parsed ?? 0;
+                      _feeError = parsed == null ? 'Masukkan biaya yang valid.' : null;
+                    });
+                  },
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                _selectionField(
+                  context: context,
+                  label: 'Kategori',
+                  value: categories
+                      .where((c) => c.id == _categoryId)
+                      .firstOrNull
+                      ?.name,
+                  errorText: _categoryError,
+                  onTap: categories.isEmpty
+                      ? null
+                      : () async {
+                          final picked = await _pickChoice(
+                            context,
+                            title: _mode == 1
+                                ? 'Pilih kategori pemasukan'
+                                : 'Pilih kategori pengeluaran',
+                            selected: _categoryId,
+                            choices: categories
+                                .map((c) => _PickerChoice(c.id, c.name))
+                                .toList(growable: false),
+                          );
+                          if (!mounted || picked == null) return;
+                          setState(() {
+                            _dirty = true;
+                            _categoryId = picked;
+                            _categoryError = null;
+                          });
+                        },
+                ),
+              ],
               const SizedBox(height: 12),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  _submitError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                    initialDate: _date,
+                  );
+                  if (picked != null && mounted) {
+                    final now = DateTime.now();
+                    setState(
+                      () {
+                        _dirty = true;
+                        _date = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          now.hour,
+                          now.minute,
+                        );
+                      },
+                    );
+                  }
+                },
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text(
+                  '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}',
                 ),
               ),
-            ],
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: controller.busy || _submitting || eligibleAccounts.isEmpty
-                  ? null
-                  : () => _save(context),
-              icon: const Icon(Icons.check_rounded),
-              label: Text(controller.busy || _submitting ? 'Menyimpan…' : 'Simpan'),
-            ),
-            if (eligibleAccounts.isEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Belum ada account yang dapat dipakai untuk tipe transaksi ini.',
-                textAlign: TextAlign.center,
+              const SizedBox(height: 12),
+              TextField(
+                controller: _note,
+                maxLines: 2,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+                onChanged: (_) => setState(() => _dirty = true),
               ),
+              if (_submitError != null) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _submitError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: controller.busy || _submitting || eligibleAccounts.isEmpty
+                    ? null
+                    : () => _save(context),
+                icon: const Icon(Icons.check_rounded),
+                label: Text(controller.busy || _submitting ? 'Menyimpan…' : 'Simpan'),
+              ),
+              if (eligibleAccounts.isEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Belum ada account yang dapat dipakai untuk tipe transaksi ini.',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 6),
             ],
-            const SizedBox(height: 6),
-          ],
+          ),
         ),
       ),
-    ),
+    );
+  }
+
+  Widget _selectionField({
+    required BuildContext context,
+    required String label,
+    required String? value,
+    required String? errorText,
+    required VoidCallback? onTap,
+  }) {
+    return Semantics(
+      button: true,
+      label: '$label, ${value ?? 'belum dipilih'}',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: InputDecorator(
+          decoration: InputDecoration(labelText: label, errorText: errorText),
+          isEmpty: value == null,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value ?? 'Pilih $label',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(Icons.arrow_drop_down_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _pickChoice(
+    BuildContext context, {
+    required String title,
+    required List<_PickerChoice> choices,
+    String? selected,
+  }) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    for (var i = 0; i < 16; i++) {
+      if (!mounted || !context.mounted) return null;
+      if (MediaQuery.viewInsetsOf(context).bottom <= 0) break;
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+    if (!context.mounted) return null;
+
+    return showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              title,
+              style: Theme.of(sheetContext)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...choices.map(
+            (choice) => ListTile(
+              leading: Icon(
+                choice.id == selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+              ),
+              title: Text(choice.label),
+              onTap: () => Navigator.pop(sheetContext, choice.id),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -476,6 +584,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       _submitError = controller.errorMessage ?? 'Transaksi belum berhasil disimpan.';
     });
   }
+}
+
+class _PickerChoice {
+  const _PickerChoice(this.id, this.label);
+
+  final String id;
+  final String label;
 }
 
 extension FirstOrNull<T> on Iterable<T> {
