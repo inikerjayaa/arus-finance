@@ -4,6 +4,10 @@ import '../domain/money_limits.dart';
 
 class Money {
   static final NumberFormat _idr = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  static final NumberFormat _idrInput = NumberFormat.decimalPattern('id_ID');
+
+  static String input(int minor) => _idrInput.format(minor);
+
   static String format(int minor, {String currency = 'IDR'}) {
     if (currency == 'IDR') return _idr.format(minor);
     final sign = minor < 0 ? '-' : '';
