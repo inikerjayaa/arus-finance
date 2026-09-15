@@ -36,16 +36,18 @@ class CategoriesScreen extends StatelessWidget {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            final index = DefaultTabController.of(context).index;
-            _add(
-              context,
-              index == 0 ? CategoryType.expense : CategoryType.income,
-            );
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Kategori'),
+        floatingActionButton: Builder(
+          builder: (tabContext) => FloatingActionButton.extended(
+            onPressed: () {
+              final index = DefaultTabController.of(tabContext).index;
+              _add(
+                tabContext,
+                index == 0 ? CategoryType.expense : CategoryType.income,
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Kategori'),
+          ),
         ),
       ),
     );
