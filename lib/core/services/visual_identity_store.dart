@@ -96,10 +96,8 @@ class VisualIdentityStore {
            WHERE visual_icon_key IS NULL OR visual_color_key IS NULL''',
       );
       for (final row in accounts) {
-        final identity = _suggestAccount(
-          row['name'] as String,
-          row['account_type'] as String,
-        );
+        final type = enumFromDb(row['account_type'] as String, AccountType.values);
+        final identity = suggestAccount(row['name'] as String, type);
         _setAccountColumns(row['id'] as String, identity);
       }
       _db.execute('COMMIT');
@@ -131,11 +129,62 @@ class VisualIdentityStore {
     return VisualIdentity(iconKey: icon.key, colorKey: color);
   }
 
+  VisualIdentity suggestAccount(String name, AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return const VisualIdentity(
+          iconKey: 'finance.cash',
+          colorKey: 'green',
+        );
+      case AccountType.bank:
+        final matches = IconCatalog.search(
+          name,
+          group: IconCatalogGroup.bank,
+          limit: 1,
+        );
+        return VisualIdentity(
+          iconKey: matches.isEmpty ? 'finance.bank' : matches.first.key,
+          colorKey: 'blue',
+        );
+      case AccountType.ewallet:
+        final matches = IconCatalog.search(
+          name,
+          group: IconCatalogGroup.wallet,
+          limit: 1,
+        );
+        return VisualIdentity(
+          iconKey: matches.isEmpty ? 'finance.wallet' : matches.first.key,
+          colorKey: 'purple',
+        );
+      case AccountType.creditCard:
+        return const VisualIdentity(
+          iconKey: 'finance.credit_card',
+          colorKey: 'orange',
+        );
+      case AccountType.loan:
+        return const VisualIdentity(
+          iconKey: 'finance.loan',
+          colorKey: 'red',
+        );
+      case AccountType.investment:
+        return const VisualIdentity(
+          iconKey: 'finance.investment',
+          colorKey: 'teal',
+        );
+      default:
+        return const VisualIdentity(
+          iconKey: 'finance.wallet',
+          colorKey: 'slate',
+        );
+    }
+  }
+
   VisualIdentity? _fromRow(Row row) {
     final iconKey = row['visual_icon_key'];
     final colorKey = row['visual_color_key'];
     if (iconKey is! String || colorKey is! String) return null;
-    if (IconCatalog.byKey(iconKey) == null || VisualPalette.byKey(colorKey) == null) {
+    if (IconCatalog.byKey(iconKey) == null ||
+        VisualPalette.byKey(colorKey) == null) {
       return null;
     }
     return VisualIdentity(iconKey: iconKey, colorKey: colorKey);
@@ -173,63 +222,16 @@ class VisualIdentityStore {
     if (exists.isEmpty) throw StateError('$label tidak ditemukan.');
   }
 
-  VisualIdentity _suggestAccount(String name, String rawType) {
-    switch (rawType) {
-      case 'CASH':
-        return const VisualIdentity(
-          iconKey: 'finance.cash',
-          colorKey: 'green',
-        );
-      case 'BANK':
-        final matches = IconCatalog.search(
-          name,
-          group: IconCatalogGroup.bank,
-          limit: 1,
-        );
-        return VisualIdentity(
-          iconKey: matches.isEmpty ? 'finance.bank' : matches.first.key,
-          colorKey: 'blue',
-        );
-      case 'EWALLET':
-        final matches = IconCatalog.search(
-          name,
-          group: IconCatalogGroup.wallet,
-          limit: 1,
-        );
-        return VisualIdentity(
-          iconKey: matches.isEmpty ? 'finance.wallet' : matches.first.key,
-          colorKey: 'purple',
-        );
-      case 'CREDIT_CARD':
-        return const VisualIdentity(
-          iconKey: 'finance.credit_card',
-          colorKey: 'orange',
-        );
-      case 'LOAN':
-        return const VisualIdentity(
-          iconKey: 'finance.loan',
-          colorKey: 'red',
-        );
-      case 'INVESTMENT':
-        return const VisualIdentity(
-          iconKey: 'finance.investment',
-          colorKey: 'teal',
-        );
-      default:
-        return const VisualIdentity(
-          iconKey: 'finance.wallet',
-          colorKey: 'slate',
-        );
-    }
-  }
-
   VisualIdentity? _defaultCategoryIdentity(CategoryType type, String name) {
     final key = '${type.name}:${name.trim().toLowerCase()}';
     return _categoryDefaults[key];
   }
 
   static const Map<String, VisualIdentity> _categoryDefaults = {
-    'expense:makanan': VisualIdentity(iconKey: 'food.meal', colorKey: 'orange'),
+    'expense:makanan': VisualIdentity(
+      iconKey: 'food.meal',
+      colorKey: 'orange',
+    ),
     'expense:transport': VisualIdentity(
       iconKey: 'transport.general',
       colorKey: 'blue',
