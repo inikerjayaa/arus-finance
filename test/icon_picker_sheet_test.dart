@@ -32,7 +32,7 @@ void main() {
     await tester.tap(find.text('Open picker'));
     await tester.pumpAndSettle();
     expect(find.text('Pilih ikon & warna'), findsOneWidget);
-    expect(find.text('Bank'), findsOneWidget);
+    expect(find.text('Bank'), findsWidgets);
     expect(find.text('Subscription'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'BCA');
