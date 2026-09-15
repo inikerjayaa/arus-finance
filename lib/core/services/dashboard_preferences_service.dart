@@ -98,16 +98,16 @@ class DashboardPreferencesService {
     final validStored = storedOrder.where(labels.containsKey).toList();
     final order = [...validStored];
 
-    // New dashboard widgets should land in a sensible place for existing V3
-    // users without destroying their manual ordering. Category composition is
-    // a primary insight, so insert it directly after the main summary when it
-    // has never been stored before.
-    if (!order.contains('category_breakdown')) {
+    // For a truly fresh dashboard there is no user order to preserve, so use
+    // the canonical default sequence exactly. Existing V3 users keep their
+    // custom order; only the new composition widget is inserted next to the
+    // primary summary when it has never been stored before.
+    if (order.isEmpty) {
+      order.addAll(defaultOrder);
+    } else if (!order.contains('category_breakdown')) {
       final primaryIndex = order.indexOf('primary_summary');
       if (primaryIndex >= 0) {
         order.insert(primaryIndex + 1, 'category_breakdown');
-      } else {
-        order.insert(0, 'category_breakdown');
       }
     }
 
