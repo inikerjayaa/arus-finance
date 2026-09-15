@@ -10,8 +10,7 @@ import '../transactions/transaction_detail_screen.dart';
 import 'daily_activity.dart';
 
 class DailyActivityScreen extends StatefulWidget {
-  const DailyActivityScreen({super.key, DateTime? initialDate})
-      : initialDate = initialDate;
+  const DailyActivityScreen({super.key, this.initialDate});
 
   final DateTime? initialDate;
 
