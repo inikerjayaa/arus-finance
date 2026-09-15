@@ -27,10 +27,23 @@ class ScreenProtectionService extends ChangeNotifier {
 
   Future<void> loadAndApply() async {
     final prefs = await _preferences();
-    _enabled = prefs.getBool(_enabledKey) ?? true;
+    final preferred = prefs.getBool(_enabledKey) ?? true;
     _supported = await _nativeSupported();
+    _enabled = preferred;
     if (_supported) {
-      await _applyNative(_enabled);
+      try {
+        await _applyNative(preferred);
+      } catch (_) {
+        // Android starts with FLAG_SECURE already set by the native hardener.
+        // If Dart cannot apply a saved OFF preference, report the truthful
+        // fail-secure state instead of pretending screenshots are allowed.
+        _enabled = true;
+        try {
+          await _applyNative(true);
+        } catch (_) {
+          _supported = false;
+        }
+      }
     }
     _loaded = true;
     notifyListeners();
