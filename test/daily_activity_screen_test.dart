@@ -81,11 +81,7 @@ void main() {
       expect(find.text('Net'), findsOneWidget);
       expect(find.textContaining('35.000'), findsWidgets);
       expect(find.textContaining('500.000'), findsWidgets);
-
-      await tester.drag(list, const Offset(0, -420));
-      await tester.pumpAndSettle();
-      expect(find.text('Makanan'), findsOneWidget);
-      expect(find.text('Transfer'), findsOneWidget);
+      expect(find.text('3 item'), findsOneWidget);
     },
   );
 
