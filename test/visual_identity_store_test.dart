@@ -1,4 +1,5 @@
 import 'package:arus_finance/core/db/app_database.dart';
+import 'package:arus_finance/core/db/schema.dart';
 import 'package:arus_finance/core/services/visual_identity_store.dart';
 import 'package:arus_finance/data/local_finance_repository.dart';
 import 'package:arus_finance/domain/enums.dart';
@@ -8,25 +9,41 @@ void main() {
   late AppDatabase db;
   late LocalFinanceRepository repo;
   late VisualIdentityStore store;
-  late DateTime now;
 
   setUp(() async {
     db = AppDatabase.inMemory();
-    now = DateTime.utc(2026, 9, 15, 8);
-    repo = LocalFinanceRepository(db, clock: () => now);
+    repo = LocalFinanceRepository(
+      db,
+      clock: () => DateTime.utc(2026, 9, 15, 8),
+    );
     await repo.initialize();
-    store = VisualIdentityStore(db, clock: () => now);
+    store = VisualIdentityStore(db);
     await store.initialize();
   });
 
   tearDown(() => db.close());
+
+  test('schema v10 keeps visual identity on backed-up account/category rows', () {
+    expect(kSchemaVersion, 10);
+    final accountColumns = db.db
+        .select('PRAGMA table_info(accounts)')
+        .map((row) => row['name'] as String)
+        .toSet();
+    final categoryColumns = db.db
+        .select('PRAGMA table_info(categories)')
+        .map((row) => row['name'] as String)
+        .toSet();
+    expect(accountColumns, containsAll(['visual_icon_key', 'visual_color_key']));
+    expect(categoryColumns, containsAll(['visual_icon_key', 'visual_color_key']));
+  });
 
   test('built-in category and account visuals are seeded without touching ledger data', () async {
     await store.ensureBuiltInDefaults();
 
     final food = (await repo.listCategories(type: CategoryType.expense))
         .firstWhere((category) => category.name == 'Makanan');
-    final cash = (await repo.listAccounts()).firstWhere((account) => account.name == 'Cash');
+    final cash = (await repo.listAccounts())
+        .firstWhere((account) => account.name == 'Cash');
 
     final foodVisual = await store.category(food.id);
     final cashVisual = await store.account(cash.id);
@@ -46,7 +63,10 @@ void main() {
       accountClass: AccountClass.asset,
       accountType: AccountType.bank,
     );
-    final shoes = await repo.createCategory(name: 'Sepatu', type: CategoryType.expense);
+    final shoes = await repo.createCategory(
+      name: 'Sepatu',
+      type: CategoryType.expense,
+    );
 
     await store.ensureBuiltInDefaults();
 
@@ -55,34 +75,41 @@ void main() {
     expect((await store.category(shoes))?.colorKey, 'purple');
   });
 
-  test('explicit visual assignment persists and feeds recent/favorite picker metadata', () async {
-    final categoryId = await repo.createCategory(name: 'Streaming', type: CategoryType.expense);
+  test('explicit visual assignment persists on the entity row by stable id', () async {
+    final categoryId = await repo.createCategory(
+      name: 'Streaming',
+      type: CategoryType.expense,
+    );
 
     await store.setCategory(
       categoryId: categoryId,
       iconKey: 'subscription.netflix',
       colorKey: 'red',
     );
-    now = now.add(const Duration(minutes: 1));
     await store.setCategory(
       categoryId: categoryId,
       iconKey: 'subscription.chatgpt',
       colorKey: 'purple',
     );
-    await store.setFavorite('subscription.netflix', true);
 
     final visual = await store.category(categoryId);
     expect(visual?.iconKey, 'subscription.chatgpt');
     expect(visual?.colorKey, 'purple');
-    expect(await store.favoriteIconKeys(), contains('subscription.netflix'));
-    expect(await store.recentIconKeys(limit: 2), <String>[
-      'subscription.chatgpt',
-      'subscription.netflix',
-    ]);
+
+    final raw = db.db.select(
+      '''SELECT visual_icon_key,visual_color_key
+         FROM categories WHERE id=?''',
+      [categoryId],
+    ).single;
+    expect(raw['visual_icon_key'], 'subscription.chatgpt');
+    expect(raw['visual_color_key'], 'purple');
   });
 
   test('unknown visual keys are rejected before metadata is written', () async {
-    final categoryId = await repo.createCategory(name: 'Unknown Visual', type: CategoryType.expense);
+    final categoryId = await repo.createCategory(
+      name: 'Unknown Visual',
+      type: CategoryType.expense,
+    );
 
     await expectLater(
       store.setCategory(
@@ -103,8 +130,11 @@ void main() {
     expect(await store.category(categoryId), isNull);
   });
 
-  test('visual metadata follows entity lifetime through foreign-key cascade', () async {
-    final categoryId = await repo.createCategory(name: 'Disposable Visual', type: CategoryType.expense);
+  test('visual metadata disappears naturally when its entity is deleted', () async {
+    final categoryId = await repo.createCategory(
+      name: 'Disposable Visual',
+      type: CategoryType.expense,
+    );
     await store.setCategory(
       categoryId: categoryId,
       iconKey: 'shopping.cart',
