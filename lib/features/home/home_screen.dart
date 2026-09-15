@@ -9,6 +9,7 @@ import '../../shared/finance_widgets.dart';
 import '../../shared/money.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
+import 'home_category_composition_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -138,6 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
             incomeMinor: data.incomePeriodMinor,
             spendingMinor: data.spendingPeriodMinor,
             currency: data.currency,
+          );
+          break;
+        case 'category_breakdown':
+          content = HomeCategoryCompositionCard(
+            controller: controller,
+            currency: data.currency,
+            refreshMarker: data,
           );
           break;
         case 'spending_today':

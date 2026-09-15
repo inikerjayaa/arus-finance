@@ -7,12 +7,14 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('dashboard defaults place one primary summary first', () async {
+  test('dashboard defaults place primary summary then category composition', () async {
     final service = DashboardPreferencesService();
     final config = await service.load();
 
     expect(config.first.id, 'primary_summary');
     expect(config.first.label, 'Ringkasan utama');
+    expect(config[1].id, 'category_breakdown');
+    expect(config[1].label, 'Komposisi kategori');
     expect(
       config.map((entry) => entry.id),
       isNot(contains('available')),
@@ -50,16 +52,47 @@ void main() {
       hasLength(1),
     );
     expect(config.first.id, 'primary_summary');
+    expect(config[1].id, 'category_breakdown');
     expect(
       config.firstWhere((entry) => entry.id == 'primary_summary').enabled,
       isTrue,
     );
-    expect(config[1].id, 'recent_transactions');
+    expect(config[2].id, 'recent_transactions');
 
     final prefs = await SharedPreferences.getInstance();
     expect(
       prefs.getStringList('dashboard_widget_order_v3'),
       contains('primary_summary'),
+    );
+    expect(
+      prefs.getStringList('dashboard_widget_order_v3'),
+      contains('category_breakdown'),
+    );
+  });
+
+  test('existing v3 users receive category composition after primary', () async {
+    SharedPreferences.setMockInitialValues({
+      'dashboard_widget_order_v3': <String>[
+        'recent_transactions',
+        'primary_summary',
+        'net_worth',
+      ],
+      'dashboard_widget_hidden_v3': <String>['net_worth'],
+    });
+
+    final config = await DashboardPreferencesService().load();
+    expect(
+      config.take(4).map((entry) => entry.id).toList(),
+      <String>[
+        'recent_transactions',
+        'primary_summary',
+        'category_breakdown',
+        'net_worth',
+      ],
+    );
+    expect(
+      config.firstWhere((entry) => entry.id == 'net_worth').enabled,
+      isFalse,
     );
   });
 

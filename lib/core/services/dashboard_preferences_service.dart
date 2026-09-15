@@ -26,6 +26,7 @@ class DashboardPreferencesService {
 
   static const defaultOrder = <String>[
     'primary_summary',
+    'category_breakdown',
     'spending_today',
     'net_worth',
     'largest_category',
@@ -34,6 +35,7 @@ class DashboardPreferencesService {
 
   static const labels = <String, String>{
     'primary_summary': 'Ringkasan utama',
+    'category_breakdown': 'Komposisi kategori',
     'spending_today': 'Pengeluaran hari ini',
     'net_worth': 'Net worth',
     'largest_category': 'Kategori terbesar',
@@ -94,8 +96,25 @@ class DashboardPreferencesService {
     Set<String> hidden,
   ) {
     final validStored = storedOrder.where(labels.containsKey).toList();
-    final missing = defaultOrder.where((id) => !validStored.contains(id));
-    final order = [...validStored, ...missing];
+    final order = [...validStored];
+
+    // For a truly fresh dashboard there is no user order to preserve, so use
+    // the canonical default sequence exactly. Existing V3 users keep their
+    // custom order; only the new composition widget is inserted next to the
+    // primary summary when it has never been stored before.
+    if (order.isEmpty) {
+      order.addAll(defaultOrder);
+    } else if (!order.contains('category_breakdown')) {
+      final primaryIndex = order.indexOf('primary_summary');
+      if (primaryIndex >= 0) {
+        order.insert(primaryIndex + 1, 'category_breakdown');
+      }
+    }
+
+    for (final id in defaultOrder) {
+      if (!order.contains(id)) order.add(id);
+    }
+
     return order
         .map(
           (id) => DashboardWidgetConfig(
