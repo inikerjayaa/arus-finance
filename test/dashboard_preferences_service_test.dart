@@ -84,4 +84,25 @@ void main() {
       isFalse,
     );
   });
+
+  test('v3 preferences preserve custom order and hidden widgets', () async {
+    final service = DashboardPreferencesService();
+    final initial = await service.load();
+    final primary = initial.firstWhere((entry) => entry.id == 'primary_summary');
+    final recent = initial.firstWhere((entry) => entry.id == 'recent_transactions');
+    final rest = initial.where(
+      (entry) => entry.id != 'primary_summary' && entry.id != 'recent_transactions',
+    );
+
+    await service.save([
+      recent,
+      primary.copyWith(enabled: false),
+      ...rest,
+    ]);
+
+    final reloaded = await service.load();
+    expect(reloaded.first.id, 'recent_transactions');
+    expect(reloaded[1].id, 'primary_summary');
+    expect(reloaded[1].enabled, isFalse);
+  });
 }
