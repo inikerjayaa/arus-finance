@@ -4,6 +4,7 @@ import '../../core/services/dashboard_preferences_service.dart';
 import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
 import '../../shared/money.dart';
+import '../activity/daily_activity_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
 
@@ -57,6 +58,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 3),
               Text('Keuanganmu hari ini', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             ])),
+            IconButton(
+              onPressed: _openDailyActivity,
+              icon: const Icon(Icons.calendar_month_outlined),
+              tooltip: 'Aktivitas harian',
+            ),
             IconButton(onPressed: _customize, icon: const Icon(Icons.dashboard_customize_outlined), tooltip: 'Atur dashboard'),
             IconButton(onPressed: controller.refresh, icon: const Icon(Icons.refresh_rounded), tooltip: 'Perbarui'),
           ]),
@@ -132,6 +138,18 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
     return widgets;
+  }
+
+  Future<void> _openDailyActivity() async {
+    final controller = AppScope.of(context);
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AppScope(
+          controller: controller,
+          child: DailyActivityScreen(initialDate: DateTime.now()),
+        ),
+      ),
+    );
   }
 
   Future<void> _customize() async {
