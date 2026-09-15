@@ -8,6 +8,7 @@ import 'app_shell.dart';
 import 'core/db/app_database.dart';
 import 'core/services/backup_service.dart';
 import 'core/services/security_service.dart';
+import 'core/services/theme_preferences_service.dart';
 import 'features/onboarding_screen.dart';
 import 'features/recovery/recovery_screen.dart';
 import 'features/settings/lock_gate.dart';
@@ -24,6 +25,7 @@ class ArusApp extends StatefulWidget {
 }
 
 class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
+  final ThemePreferencesService _themePreferences = ThemePreferencesService.instance;
   bool? _onboardingDone;
   bool _privacyShielded = false;
   late bool _lastInitializing;
@@ -34,6 +36,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     super.initState();
     _captureRootControllerState();
     widget.controller.addListener(_controllerChanged);
+    _themePreferences.addListener(_appearanceChanged);
     WidgetsBinding.instance.addObserver(this);
     _boot();
   }
@@ -51,7 +54,12 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.controller.removeListener(_controllerChanged);
+    _themePreferences.removeListener(_appearanceChanged);
     super.dispose();
+  }
+
+  void _appearanceChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -118,6 +126,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   Future<void> _boot() async {
     final prefs = await SharedPreferences.getInstance();
     _onboardingDone = prefs.getBool('onboarding_done_v1') ?? false;
+    await _themePreferences.load();
     if (mounted) setState(() {});
     await widget.controller.initialize();
     if (widget.controller.errorMessage == null) {
@@ -134,9 +143,9 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'Arus Finance',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      theme: AppTheme.light(_themePreferences.themeId),
+      darkTheme: AppTheme.dark(_themePreferences.themeId),
+      themeMode: _themePreferences.themeMode,
       home: _buildPrivacyProtectedHome(),
     );
   }
