@@ -1,4 +1,4 @@
-const int kSchemaVersion = 9;
+const int kSchemaVersion = 10;
 
 const List<String> kSchemaStatements = [
   '''CREATE TABLE IF NOT EXISTS app_meta (
@@ -13,6 +13,8 @@ const List<String> kSchemaStatements = [
     currency TEXT NOT NULL,
     include_available INTEGER NOT NULL DEFAULT 1,
     include_net_worth INTEGER NOT NULL DEFAULT 1,
+    visual_icon_key TEXT,
+    visual_color_key TEXT,
     archived_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -23,6 +25,8 @@ const List<String> kSchemaStatements = [
     parent_id TEXT REFERENCES categories(id),
     type TEXT NOT NULL CHECK(type IN ('EXPENSE','INCOME')),
     name TEXT NOT NULL,
+    visual_icon_key TEXT,
+    visual_color_key TEXT,
     archived_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -286,5 +290,11 @@ const Map<int, List<String>> kSchemaMigrations = {
     "UPDATE transactions SET status='VOIDED',original_transaction_id=NULL WHERE type='REFUND' AND original_transaction_id IN (SELECT id FROM transactions WHERE deleted_at IS NOT NULL)",
     "DELETE FROM transactions WHERE deleted_at IS NOT NULL",
     "DELETE FROM transaction_groups WHERE NOT EXISTS (SELECT 1 FROM transactions WHERE transaction_group_id=transaction_groups.id)",
+  ],
+  10: [
+    'ALTER TABLE accounts ADD COLUMN visual_icon_key TEXT',
+    'ALTER TABLE accounts ADD COLUMN visual_color_key TEXT',
+    'ALTER TABLE categories ADD COLUMN visual_icon_key TEXT',
+    'ALTER TABLE categories ADD COLUMN visual_color_key TEXT',
   ],
 };
