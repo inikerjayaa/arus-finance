@@ -36,9 +36,11 @@ for path in ROOT.joinpath('lib').rglob('*.dart'):
 # Private lower-case helper calls in production Dart are compile-critical and should resolve
 # to a lower-case private method/function in the same library file. Private
 # class constructors start with an upper-case letter after '_' and are ignored.
+# Dart 3 record return types such as `(Color, Color)` and
+# `({IconData icon, Color color})` are valid helper return types too.
 helper_call_re = re.compile(r'(?<![A-Za-z0-9_])(_[a-z][A-Za-z0-9_]*)\s*\(')
 helper_def_re = re.compile(
-    r'^\s*(?:[A-Za-z_][A-Za-z0-9_<>,? .]*\s+)?(_[a-z][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:async\s*)?(?:=>|\{)',
+    r'^\s*(?:(?:[A-Za-z_][A-Za-z0-9_<>,? .]*|\([^\)\n]+\))\s+)?(_[a-z][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:async\s*)?(?:=>|\{)',
     re.M,
 )
 callable_field_re = re.compile(
