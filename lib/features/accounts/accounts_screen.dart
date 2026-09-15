@@ -295,7 +295,7 @@ class AccountsScreen extends StatelessWidget {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (sheetBodyContext, setState) {
           final accountClass = {
             AccountType.creditCard,
             AccountType.loan,
@@ -305,13 +305,13 @@ class AccountsScreen extends StatelessWidget {
               : AccountClass.asset;
           final entry = IconCatalog.fallbackFor(identity.iconKey);
           final color = VisualPalette.fallbackFor(identity.colorKey)
-              .resolve(Theme.of(context).brightness);
+              .resolve(Theme.of(sheetBodyContext).brightness);
           return Padding(
             padding: EdgeInsets.fromLTRB(
               18,
               4,
               18,
-              MediaQuery.viewInsetsOf(context).bottom + 18,
+              MediaQuery.viewInsetsOf(sheetBodyContext).bottom + 18,
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -320,9 +320,10 @@ class AccountsScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Tambah account',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(sheetBodyContext)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -375,11 +376,11 @@ class AccountsScreen extends StatelessWidget {
                         ? null
                         : () async {
                             final picked = await IconPickerSheet.show(
-                              context,
+                              sheetBodyContext,
                               initial: identity,
                               suggestionText: name.text,
                             );
-                            if (picked != null && context.mounted) {
+                            if (picked != null && sheetBodyContext.mounted) {
                               setState(() {
                                 identity = picked;
                                 customized = true;
@@ -413,7 +414,7 @@ class AccountsScreen extends StatelessWidget {
                         refreshAfter: false,
                       );
                       if (id == null) return;
-                      String? visualWarning;
+                      final warnings = <String>[];
                       if (visuals != null) {
                         try {
                           await visuals.setAccount(
@@ -422,23 +423,24 @@ class AccountsScreen extends StatelessWidget {
                             colorKey: identity.colorKey,
                           );
                         } catch (_) {
-                          visualWarning =
-                              'Account tersimpan, tetapi ikon belum berhasil disimpan.';
+                          warnings.add(
+                            'Account tersimpan, tetapi ikon belum berhasil disimpan.',
+                          );
                         }
                       }
                       try {
                         await controller.refresh();
                       } catch (_) {
-                        controller.noticeMessage =
-                            'Account sudah tersimpan. Muat ulang tampilan bila belum terlihat.';
-                        controller.notifyListeners();
+                        warnings.add(
+                          'Account sudah tersimpan. Muat ulang tampilan bila belum terlihat.',
+                        );
                       }
                       if (sheetContext.mounted) {
                         Navigator.of(sheetContext).pop();
                       }
-                      if (visualWarning != null && context.mounted) {
+                      if (warnings.isNotEmpty && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(visualWarning)),
+                          SnackBar(content: Text(warnings.join(' '))),
                         );
                       }
                     },
