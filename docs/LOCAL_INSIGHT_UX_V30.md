@@ -3,11 +3,13 @@
 ## Locked product behavior
 
 - Onboarding no longer asks what the user plans to use Arus for. The answer had no local product effect and no server-side personalization dependency exists.
-- The first-run screen remains a short local-first introduction with one `Mulai` action.
-- Home greets by local device time: pagi, siang, sore, or malam.
+- First use is intentionally short: enter a local display name, create and confirm a mandatory 4–8 digit Arus PIN, then enter Home.
+- The display name stays on-device and is used only for local personalization such as the Home greeting.
+- Home greets by local device time and name, for example `Selamat pagi, Ema`.
 - `Insight Arus` is generated entirely on-device from the encrypted local ledger. No finance data is sent to an AI/cloud service.
 - Insight is intentionally quiet: at most one insight is surfaced on the first Home visit of the current app session. Once the user closes it or navigates away, it stays quiet until a fresh app session. It is not a repeating notification or modal.
 - The engine must not call spending "too much" without a defensible comparison. Daily warnings require enough prior-day evidence; otherwise monthly composition wording stays descriptive, not judgmental.
+- Settings keeps only user-facing controls at the top level. Technical recovery/integrity actions live under a collapsed advanced data section. `Tentang Arus` is the final Settings section.
 
 ## Initial rule priority
 
