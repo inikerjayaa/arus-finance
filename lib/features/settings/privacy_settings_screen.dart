@@ -11,11 +11,13 @@ class PrivacySettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final protection = service ?? ScreenProtectionService.instance;
     final theme = Theme.of(context);
+    final runtimeEnabled = protection.supported && protection.enabled;
     return Scaffold(
       appBar: AppBar(title: const Text('Privasi layar')),
       body: AnimatedBuilder(
         animation: protection,
         builder: (context, _) {
+          final runtimeEnabled = protection.supported && protection.enabled;
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),
             children: [
@@ -38,12 +40,12 @@ class PrivacySettingsScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Card(
                 child: SwitchListTile(
-                  value: protection.enabled,
+                  value: runtimeEnabled,
                   onChanged: !protection.loaded || !protection.supported
                       ? null
                       : (value) => _changeProtection(context, protection, value),
                   secondary: Icon(
-                    protection.enabled
+                    runtimeEnabled
                         ? Icons.screen_lock_portrait_rounded
                         : Icons.screenshot_monitor_rounded,
                   ),
