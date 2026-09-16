@@ -82,9 +82,9 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
               state == AppLifecycleState.detached)) {
         _biometricAutoSuppressed = false;
       }
-      // Hide finance data immediately. Do not wait for secure-storage I/O;
-      // otherwise an async lifecycle race can leave a sensitive frame visible
-      // in the app switcher or re-lock after a successful resumed biometric.
+      // Hide finance data immediately. This state update is synchronous and,
+      // because LockGate wraps the root Navigator, it also blocks any dialog,
+      // bottom sheet, or pushed route that was open when Arus left foreground.
       if (_hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
@@ -128,7 +128,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         if (_foreground) {
           setState(() {
             _locked = true;
-            _error = null;
+            _error = widget.security.lastBiometricError;
           });
         }
         return;
@@ -170,58 +170,93 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if (_checking) {
-      return Scaffold(
-        body: Center(
-          child: Semantics(
-            label: 'Memeriksa keamanan Arus',
-            liveRegion: true,
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      );
-    }
-    if (!_locked) return widget.child;
-    return Scaffold(
-      body: SafeArea(
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        widget.child,
+        if (_checking)
+          const Positioned.fill(
+            child: ColoredBox(
+              color: Color(0xFF101114),
+              child: Center(
+                child: Semantics(
+                  label: 'Memeriksa keamanan Arus',
+                  liveRegion: true,
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
+          )
+        else if (_locked)
+          Positioned.fill(child: _buildLockedOverlay(context)),
+      ],
+    );
+  }
+
+  Widget _buildLockedOverlay(BuildContext context) {
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(28),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Icon(Icons.lock_outline_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 18),
-                Text('Arus terkunci', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text('Masukkan PIN untuk membuka data keuangan.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _pin,
-                  autofocus: true,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(labelText: 'PIN', errorText: _error),
-                  onSubmitted: (_) => _unlockPin(),
-                ),
-                if (_error != null)
-                  Semantics(
-                    liveRegion: true,
-                    label: _error!,
-                    child: const SizedBox.shrink(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 56,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                const SizedBox(height: 14),
-                FilledButton(onPressed: _unlockPin, child: const Text('Buka')),
-                if (_biometricAvailable) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    'Arus terkunci',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
                   const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: () => _tryBiometric(manual: true),
-                    icon: const Icon(Icons.fingerprint),
-                    label: const Text('Gunakan biometrik'),
+                  Text(
+                    'Masukkan PIN untuk membuka data keuangan.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _pin,
+                    autofocus: true,
+                    obscureText: true,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(labelText: 'PIN', errorText: _error),
+                    onSubmitted: (_) => _unlockPin(),
+                  ),
+                  if (_error != null)
+                    Semantics(
+                      liveRegion: true,
+                      label: _error!,
+                      child: const SizedBox.shrink(),
+                    ),
+                  const SizedBox(height: 14),
+                  FilledButton(
+                    onPressed: _unlockPin,
+                    child: const Text('Buka'),
+                  ),
+                  if (_biometricAvailable) ...[
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => _tryBiometric(manual: true),
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Gunakan biometrik'),
+                    ),
+                  ],
                 ],
-              ]),
+              ),
             ),
           ),
         ),
