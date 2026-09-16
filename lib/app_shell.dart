@@ -6,6 +6,8 @@ import 'core/services/backup_service.dart';
 import 'core/services/csv_export_service.dart';
 import 'core/services/csv_import_service.dart';
 import 'core/services/security_service.dart';
+import 'core/services/user_profile_controller_access.dart';
+import 'core/services/user_profile_service.dart';
 import 'features/accounts/accounts_screen.dart';
 import 'features/home/home_greeting_insight.dart';
 import 'features/home/home_screen.dart';
@@ -44,7 +46,10 @@ class AppShell extends StatelessWidget {
           final onHome = controller.navigationIndex == 0;
           return Scaffold(
             appBar: AppBar(
-              title: Text(onHome ? homeGreetingFor(DateTime.now()) : 'Arus'),
+              title: _GreetingTitle(
+                onHome: onHome,
+                profile: controller.userProfileService,
+              ),
               centerTitle: false,
               actions: [
                 IconButton(
@@ -244,6 +249,28 @@ class AppShell extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _GreetingTitle extends StatelessWidget {
+  const _GreetingTitle({required this.onHome, required this.profile});
+
+  final bool onHome;
+  final UserProfileService? profile;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!onHome) return const Text('Arus');
+    final source = profile;
+    if (source == null) return Text(homeGreetingFor(DateTime.now()));
+    return AnimatedBuilder(
+      animation: source,
+      builder: (context, _) => Text(
+        homeGreetingFor(DateTime.now(), name: source.name),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
