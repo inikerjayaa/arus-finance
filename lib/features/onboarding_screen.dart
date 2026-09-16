@@ -1,116 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/services/security_service.dart';
+import '../core/services/user_profile_service.dart';
+
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key, required this.onDone});
+  const OnboardingScreen({
+    super.key,
+    required this.onDone,
+    required this.security,
+    required this.profile,
+  });
+
   final VoidCallback onDone;
+  final SecurityService security;
+  final UserProfileService profile;
+
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  String _goal = 'Mencatat pengeluaran';
+  late final TextEditingController _name;
+  final _pin = TextEditingController();
+  final _confirmPin = TextEditingController();
+  int _step = 0;
   bool _saving = false;
-  final goals = const [
-    'Mencatat pengeluaran',
-    'Mengatur budget',
-    'Menabung',
-    'Mengontrol tagihan',
-    'Semuanya',
-  ];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = TextEditingController(text: widget.profile.name ?? '');
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _pin.dispose();
+    _confirmPin.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
+        child: Center(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: (constraints.maxHeight - 48).clamp(0.0, double.infinity).toDouble(),
-              ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      CircleAvatar(
-                        radius: 34,
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        child: Icon(
-                          Icons.account_balance_wallet_rounded,
-                          size: 34,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          'Arus',
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Catat uang dengan cepat. Pahami keuangan tanpa dibuat rumit.',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          'Tujuan utama kamu?',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      RadioGroup<String>(
-                        groupValue: _goal,
-                        onChanged: (v) {
-                          if (!_saving && v != null) {
-                            setState(() => _goal = v);
-                          }
-                        },
-                        child: Column(
-                          children: goals
-                              .map(
-                                (g) => RadioListTile<String>(
-                                  value: g,
-                                  title: Text(g),
-                                  contentPadding: EdgeInsets.zero,
-                                  enabled: !_saving,
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      FilledButton(
-                        onPressed: _saving ? null : _continueLocal,
-                        child: Text(_saving ? 'Menyiapkan…' : 'Mulai'),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tidak perlu login. Data keuangan utama tetap tersimpan di perangkatmu.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _step == 0
+                    ? _buildNameStep(theme)
+                    : _buildPinStep(theme),
               ),
             ),
           ),
@@ -119,14 +66,182 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Future<void> _continueLocal() async {
+  Widget _buildNameStep(ThemeData theme) {
+    return Column(
+      key: const ValueKey('name-step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Icon(
+          Icons.account_balance_wallet_rounded,
+          size: 46,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 26),
+        Text(
+          'Siapa nama kamu?',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          'Supaya Arus bisa menyapa kamu.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 28),
+        TextField(
+          controller: _name,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.done,
+          maxLength: 40,
+          decoration: InputDecoration(
+            labelText: 'Nama',
+            errorText: _error,
+            counterText: '',
+          ),
+          onChanged: (_) {
+            if (_error != null) setState(() => _error = null);
+          },
+          onSubmitted: (_) => _continueName(),
+        ),
+        const SizedBox(height: 18),
+        FilledButton(
+          onPressed: _continueName,
+          child: const Text('Lanjut'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPinStep(ThemeData theme) {
+    return Column(
+      key: const ValueKey('pin-step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            tooltip: 'Kembali',
+            onPressed: _saving
+                ? null
+                : () => setState(() {
+                    _step = 0;
+                    _error = null;
+                  }),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Icon(
+          Icons.lock_outline_rounded,
+          size: 46,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 22),
+        Text(
+          'Buat PIN Arus',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          '4–8 digit untuk melindungi data di perangkat ini.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 28),
+        TextField(
+          controller: _pin,
+          autofocus: true,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 8,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(
+            labelText: 'PIN',
+            errorText: _error,
+            counterText: '',
+          ),
+          onChanged: (_) {
+            if (_error != null) setState(() => _error = null);
+          },
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _confirmPin,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          maxLength: 8,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            labelText: 'Ulangi PIN',
+            counterText: '',
+          ),
+          onSubmitted: (_) => _finish(),
+        ),
+        const SizedBox(height: 18),
+        FilledButton(
+          onPressed: _saving ? null : _finish,
+          child: Text(_saving ? 'Menyiapkan…' : 'Mulai Arus'),
+        ),
+      ],
+    );
+  }
+
+  void _continueName() {
+    final clean = _name.text.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.isEmpty) {
+      setState(() => _error = 'Masukkan nama terlebih dahulu.');
+      return;
+    }
+    if (clean.length > 40) {
+      setState(() => _error = 'Nama maksimal 40 karakter.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _step = 1;
+      _error = null;
+    });
+  }
+
+  Future<void> _finish() async {
     if (_saving) return;
-    setState(() => _saving = true);
+    if (!RegExp(r'^\d{4,8}$').hasMatch(_pin.text)) {
+      setState(() => _error = 'PIN harus 4–8 digit.');
+      return;
+    }
+    if (_pin.text != _confirmPin.text) {
+      setState(() => _error = 'PIN tidak sama.');
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
+      await widget.security.setPin(_pin.text);
+      await widget.profile.saveName(_name.text);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('onboarding_done_v1', true);
-      await prefs.setString('onboarding_goal_v1', _goal);
+      await prefs.remove('onboarding_goal_v1');
       if (mounted) widget.onDone();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = error.toString().replaceFirst('Invalid argument(s): ', ''));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

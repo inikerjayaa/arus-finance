@@ -10,13 +10,20 @@ import 'core/services/backup_service.dart';
 import 'core/services/screen_protection_service.dart';
 import 'core/services/security_service.dart';
 import 'core/services/theme_preferences_service.dart';
+import 'core/services/user_profile_controller_access.dart';
+import 'core/services/user_profile_service.dart';
 import 'features/onboarding_screen.dart';
 import 'features/recovery/recovery_screen.dart';
 import 'features/settings/lock_gate.dart';
 import 'shared/app_theme.dart';
 
 class ArusApp extends StatefulWidget {
-  const ArusApp({super.key, required this.controller, required this.database, required this.security});
+  const ArusApp({
+    super.key,
+    required this.controller,
+    required this.database,
+    required this.security,
+  });
   final AppController controller;
   final AppDatabase database;
   final SecurityService security;
@@ -26,8 +33,10 @@ class ArusApp extends StatefulWidget {
 }
 
 class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
-  final ThemePreferencesService _themePreferences = ThemePreferencesService.instance;
-  final ScreenProtectionService _screenProtection = ScreenProtectionService.instance;
+  final ThemePreferencesService _themePreferences =
+      ThemePreferencesService.instance;
+  final ScreenProtectionService _screenProtection =
+      ScreenProtectionService.instance;
   bool? _onboardingDone;
   bool _privacyShielded = false;
   late bool _lastInitializing;
@@ -93,7 +102,8 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   }
 
   void _checkpointRecoveryOnBackground() {
-    if (widget.controller.initializing || widget.controller.errorMessage != null) {
+    if (widget.controller.initializing ||
+        widget.controller.errorMessage != null) {
       return;
     }
     unawaited(
@@ -107,18 +117,16 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
 
   void _captureRootControllerState() {
     _lastInitializing = widget.controller.initializing;
-    _lastFatalRecovery =
-        widget.controller.errorMessage != null && widget.controller.dashboardData == null;
+    _lastFatalRecovery = widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
   }
 
   void _controllerChanged() {
     final initializing = widget.controller.initializing;
-    final fatalRecovery =
-        widget.controller.errorMessage != null && widget.controller.dashboardData == null;
-    if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery) {
-      // AppScope/InheritedNotifier owns normal in-app state propagation. Avoid
-      // rebuilding MaterialApp/Navigator for search, pagination, busy, notices,
-      // dashboard values, or other routine controller notifications.
+    final fatalRecovery = widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
+    if (initializing == _lastInitializing &&
+        fatalRecovery == _lastFatalRecovery) {
       return;
     }
     _lastInitializing = initializing;
@@ -129,6 +137,12 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   Future<void> _boot() async {
     final prefs = await SharedPreferences.getInstance();
     _onboardingDone = prefs.getBool('onboarding_done_v1') ?? false;
+    var profile = widget.controller.userProfileService;
+    if (profile == null) {
+      profile = UserProfileService();
+      await profile.load();
+      widget.controller.userProfileService = profile;
+    }
     await _themePreferences.load();
     await _screenProtection.loadAndApply();
     if (mounted) setState(() {});
@@ -160,13 +174,17 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       children: [
         _buildHome(),
         if (_privacyShielded)
-          ColoredBox(
+          const ColoredBox(
             color: Color(0xFF101114),
             child: Semantics(
               container: true,
               label: 'Arus disembunyikan saat aplikasi tidak aktif',
               child: Center(
-                child: Icon(Icons.lock_outline, color: Colors.white70, size: 36),
+                child: Icon(
+                  Icons.lock_outline,
+                  color: Colors.white70,
+                  size: 36,
+                ),
               ),
             ),
           ),
@@ -176,7 +194,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
 
   Widget _buildHome() {
     if (_onboardingDone == null || widget.controller.initializing) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: Semantics(
             label: 'Memuat Arus Finance',
@@ -187,9 +205,20 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       );
     }
     if (_onboardingDone == false) {
-      return OnboardingScreen(onDone: () => setState(() => _onboardingDone = true));
+      final profile = widget.controller.userProfileService;
+      if (profile == null) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      return OnboardingScreen(
+        security: widget.security,
+        profile: profile,
+        onDone: () => setState(() => _onboardingDone = true),
+      );
     }
-    if (widget.controller.errorMessage != null && widget.controller.dashboardData == null) {
+    if (widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null) {
       return LockGate(
         security: widget.security,
         child: RecoveryScreen(
@@ -201,7 +230,11 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     }
     return LockGate(
       security: widget.security,
-      child: AppShell(controller: widget.controller, database: widget.database, security: widget.security),
+      child: AppShell(
+        controller: widget.controller,
+        database: widget.database,
+        security: widget.security,
+      ),
     );
   }
 }
