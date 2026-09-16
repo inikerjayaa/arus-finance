@@ -22,7 +22,7 @@ class _PinSecurity extends SecurityService {
 
 void main() {
   testWidgets(
-    'background lock sits above an already-open root navigator dialog',
+    'leaving foreground locks above an already-open root navigator dialog',
     (tester) async {
       final security = _PinSecurity();
       var committed = 0;
@@ -71,7 +71,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      // Flutter/Android leaves the foreground through `inactive` before the
+      // later hidden/paused states. Arus must fail closed at this earliest
+      // transition, not wait for the app to become fully paused.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
       expect(find.text('Arus terkunci'), findsOneWidget);
       expect(find.text('Sensitive dialog'), findsOneWidget);
