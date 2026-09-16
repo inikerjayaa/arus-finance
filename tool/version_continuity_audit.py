@@ -188,7 +188,11 @@ checks = {
     'V14 portable fresh recovery retained': 'restorePortableBackupAsRecovery' in backup,
     'V14 local generation fresh recovery retained': 'restoreLatestLocalRecoveryAsRecovery' in backup,
     'V14 safe recovery screen retained': 'class RecoveryScreen extends StatefulWidget' in recovery_src,
-    'V14 recovery UI protected by lock retained': 'RecoveryScreen(' in app and 'return LockGate(' in app,
+    'V14 recovery UI protected by lock retained': (
+        'RecoveryScreen(' in app and
+        'builder: (context, child) => _buildSecurityEnvelope(child)' in app and
+        'LockGate(' in app
+    ),
     'V14 healthy startup recovery generation retained': 'createLocalRecoveryGeneration()' in app,
     'V14 explicit wipe purges recovery material retained': 'destroyLocalRecoveryMaterial' in settings,
     'V14 executable survival audit retained': (ROOT / 'tool/deep_mine_v14_survival_audit.py').exists(),
@@ -197,7 +201,11 @@ checks = {
     # V15 — native readiness / device-boundary hardening.
     'V15 secure-storage 11.1 baseline retained': 'flutter_secure_storage: ^11.1.0' in pubspec,
     'V15 secure-storage fail-closed retained': 'AndroidOptions(resetOnError: false)' in db and 'AndroidOptions(resetOnError: false)' in security,
-    'V15 enrolled-biometric check retained': 'getAvailableBiometrics()).isNotEmpty' in security,
+    'V15 biometric capability + enrolled-type probe retained': (
+        'canCheckBiometrics' in security and
+        'getAvailableBiometrics()' in security and
+        'defaultTargetPlatform == TargetPlatform.android' in security
+    ),
     'V15 lifecycle anti-race app lock retained': all(x in lock_gate for x in ['_foreground', '_biometricInFlight', '_lifecycleGeneration']),
     'V15 timezone fail-closed reminder retained': 'Zona waktu perangkat tidak dapat dibaca' in notif and 'tz.setLocalLocation(tz.UTC)' not in notif,
     'V15 Android FragmentActivity retained': 'FlutterFragmentActivity' in hardener,
@@ -308,7 +316,13 @@ checks = {
     'V22 continuity doc retained': (ROOT / 'docs/VERSION_CONTINUITY_V1_V22.md').exists(),
 
     # V23 — sensitive UI privacy shield.
-    'V23 Flutter lifecycle privacy shield retained': '_privacyShielded' in app and 'AppLifecycleState.inactive' in app and 'AppLifecycleState.hidden' in app and '_buildPrivacyProtectedHome()' in app,
+    'V23 root-Navigator privacy shield retained': (
+        '_privacyShielded' in app and
+        'AppLifecycleState.inactive' in app and
+        'AppLifecycleState.hidden' in app and
+        'builder: (context, child) => _buildSecurityEnvelope(child)' in app and
+        'Widget _buildSecurityEnvelope(Widget? routedChild)' in app
+    ),
     'V23 privacy shield clears on resume retained': 'setState(() => _privacyShielded = false)' in app,
     'V23 Android FLAG_SECURE hardening retained': 'WindowManager.LayoutParams.FLAG_SECURE' in hardener and 'android.view.WindowManager' in hardener,
     'V23 privacy shield UAT retained': 'App Switcher Snapshot' in privacy_shield_uat and 'Android Screenshot / Screen Share' in privacy_shield_uat,
