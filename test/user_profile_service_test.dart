@@ -22,6 +22,16 @@ void main() {
     expect(second.name, 'Ema Putri');
   });
 
+  test('profile notifies listeners after a successful rename', () async {
+    final service = UserProfileService();
+    var notifications = 0;
+    service.addListener(() => notifications++);
+
+    await service.saveName('Ema');
+    expect(service.name, 'Ema');
+    expect(notifications, 1);
+  });
+
   test('profile rejects empty and overlong names', () async {
     final service = UserProfileService();
     await expectLater(service.saveName('   '), throwsArgumentError);
