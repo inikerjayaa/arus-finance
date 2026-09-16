@@ -56,7 +56,7 @@ void main() {
     );
   });
 
-  testWidgets('unsupported platform keeps toggle disabled and states limitation', (tester) async {
+  testWidgets('unsupported platform renders toggle off, disabled, and states limitation', (tester) async {
     SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
@@ -78,6 +78,7 @@ void main() {
       findsOneWidget,
     );
     final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+    expect(tile.value, isFalse);
     expect(tile.onChanged, isNull);
   });
 }
