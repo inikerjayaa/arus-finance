@@ -1,12 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import '../../core/services/security_service.dart';
+import 'pin_recovery_panel.dart';
 
 class LockGate extends StatefulWidget {
-  const LockGate({super.key, required this.security, required this.child});
+  const LockGate({
+    super.key,
+    required this.security,
+    required this.child,
+    this.startUnlocked = false,
+  });
+
   final SecurityService security;
   final Widget child;
+  final bool startUnlocked;
 
   @override
   State<LockGate> createState() => _LockGateState();
@@ -20,6 +29,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   bool _biometricInFlight = false;
   bool _biometricAutoSuppressed = false;
   bool _biometricAvailable = false;
+  bool _recovering = false;
   int _lifecycleGeneration = 0;
   final _pin = TextEditingController();
   String? _error;
@@ -41,16 +51,19 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   Future<void> _checkInitial() async {
     final hasPin = await widget.security.hasPin();
-    final biometricAvailable = hasPin && await widget.security.canUseBiometrics();
-    final biometricEnabled = biometricAvailable && await widget.security.biometricEnabled();
+    final biometricAvailable =
+        hasPin && await widget.security.canUseBiometrics();
+    final biometricEnabled =
+        biometricAvailable && await widget.security.biometricEnabled();
     if (!mounted) return;
+    final shouldStartLocked = hasPin && !widget.startUnlocked;
     setState(() {
       _hasPin = hasPin;
       _biometricAvailable = biometricAvailable;
-      _locked = hasPin;
+      _locked = shouldStartLocked;
       _checking = false;
     });
-    if (biometricEnabled && _foreground) {
+    if (biometricEnabled && shouldStartLocked && _foreground) {
       await _tryBiometric();
     }
   }
@@ -63,6 +76,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       if (_hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
+          _recovering = false;
           _error = null;
           _biometricError = null;
           _pin.clear();
@@ -84,33 +98,41 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
               state == AppLifecycleState.detached)) {
         _biometricAutoSuppressed = false;
       }
-      if (_hasPin && !_locked && mounted) {
-        setState(() {
-          _locked = true;
-          _error = null;
-          _biometricError = null;
-          _pin.clear();
-        });
+      if ((_hasPin && !_locked) || _recovering) {
+        if (mounted) {
+          setState(() {
+            _locked = _hasPin;
+            _recovering = false;
+            _error = null;
+            _biometricError = null;
+            _pin.clear();
+          });
+        }
       }
     }
   }
 
   Future<void> _refreshPinStateOnResume(int generation) async {
     final hasPin = await widget.security.hasPin();
-    final biometricAvailable = hasPin && await widget.security.canUseBiometrics();
-    final biometricEnabled = biometricAvailable && await widget.security.biometricEnabled();
+    final biometricAvailable =
+        hasPin && await widget.security.canUseBiometrics();
+    final biometricEnabled =
+        biometricAvailable && await widget.security.biometricEnabled();
     if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
     setState(() {
       _hasPin = hasPin;
       _biometricAvailable = biometricAvailable;
       _locked = hasPin;
+      _recovering = false;
       if (!hasPin) {
         _error = null;
         _biometricError = null;
       }
     });
     if (biometricEnabled && !_biometricAutoSuppressed) {
-      if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
+      if (!mounted || !_foreground || generation != _lifecycleGeneration) {
+        return;
+      }
       await _tryBiometric();
     }
   }
@@ -143,6 +165,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       }
       setState(() {
         _locked = false;
+        _recovering = false;
         _error = null;
         _biometricError = null;
         _pin.clear();
@@ -160,12 +183,15 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     setState(() {
       _locked = !ok;
       if (ok) {
+        _recovering = false;
         _error = null;
         _biometricError = null;
         _pin.clear();
       } else if (lockUntil != null) {
-        final seconds = lockUntil.difference(DateTime.now().toUtc()).inSeconds + 1;
-        _error = 'Terlalu banyak percobaan. Coba lagi sekitar $seconds detik.';
+        final seconds =
+            lockUntil.difference(DateTime.now().toUtc()).inSeconds + 1;
+        _error =
+            'Terlalu banyak percobaan. Coba lagi sekitar $seconds detik.';
       } else {
         _error = 'PIN tidak cocok.';
       }
@@ -193,7 +219,16 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
             ),
           )
         else if (_locked)
-          _buildSecuritySurface(context, _buildLockedOverlay(context)),
+          _buildSecuritySurface(
+            context,
+            _recovering
+                ? PinRecoveryPanel(
+                    security: widget.security,
+                    onRecovered: _finishRecovery,
+                    onCancel: () => setState(() => _recovering = false),
+                  )
+                : _buildLockedOverlay(context),
+          ),
       ],
     );
   }
@@ -250,6 +285,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 24),
                   TextField(
+                    key: const Key('lock_pin_input'),
                     controller: _pin,
                     autofocus: true,
                     obscureText: true,
@@ -289,8 +325,17 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                     onPressed: _unlockPin,
                     child: const Text('Buka'),
                   ),
+                  TextButton(
+                    onPressed: () => setState(() {
+                      _recovering = true;
+                      _error = null;
+                      _biometricError = null;
+                      _pin.clear();
+                    }),
+                    child: const Text('Lupa PIN?'),
+                  ),
                   if (_biometricAvailable) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 2),
                     TextButton.icon(
                       onPressed: () => _tryBiometric(manual: true),
                       icon: const Icon(Icons.fingerprint),
@@ -304,5 +349,17 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  void _finishRecovery() {
+    if (!mounted || !_foreground) return;
+    setState(() {
+      _hasPin = true;
+      _locked = false;
+      _recovering = false;
+      _error = null;
+      _biometricError = null;
+      _pin.clear();
+    });
   }
 }
