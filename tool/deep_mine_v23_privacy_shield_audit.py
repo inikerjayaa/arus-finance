@@ -14,7 +14,11 @@ checks={
  'shield activates on hidden':'state == AppLifecycleState.hidden' in app,
  'shield activates on paused':'state == AppLifecycleState.paused' in app,
  'shield clears on resumed':'setState(() => _privacyShielded = false)' in app,
- 'protected home overlays sensitive UI':'_buildPrivacyProtectedHome()' in app and 'if (_privacyShielded)' in app,
+ 'navigator security envelope overlays all routed sensitive UI':(
+   'builder: (context, child) => _buildSecurityEnvelope(child)' in app and
+   'Widget _buildSecurityEnvelope(Widget? routedChild)' in app and
+   'if (_privacyShielded)' in app
+ ),
  'shield is opaque':'color: Color(0xFF101114)' in app,
  'shield has assistive label':'Arus disembunyikan saat aplikasi tidak aktif' in app,
  'app switcher shield is documented independent':'intentionally independent' in app,
