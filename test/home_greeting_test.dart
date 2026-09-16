@@ -20,5 +20,9 @@ void main() {
       homeGreetingFor(DateTime(2026, 9, 16, 20), name: 'Ema'),
       'Selamat malam, Ema',
     );
+    expect(
+      homeGreetingFor(DateTime(2026, 9, 16, 8), name: '   '),
+      'Selamat pagi',
+    );
   });
 }
