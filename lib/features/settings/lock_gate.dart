@@ -187,14 +187,14 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       children: [
         widget.child,
         if (_checking)
-          const Positioned.fill(
+          Positioned.fill(
             child: ColoredBox(
-              color: Color(0xFF101114),
+              color: const Color(0xFF101114),
               child: Center(
                 child: Semantics(
                   label: 'Memeriksa keamanan Arus',
                   liveRegion: true,
-                  child: CircularProgressIndicator(),
+                  child: const CircularProgressIndicator(),
                 ),
               ),
             ),
