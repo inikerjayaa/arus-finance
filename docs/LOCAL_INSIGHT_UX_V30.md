@@ -6,7 +6,7 @@
 - The first-run screen remains a short local-first introduction with one `Mulai` action.
 - Home greets by local device time: pagi, siang, sore, or malam.
 - `Insight Arus` is generated entirely on-device from the encrypted local ledger. No finance data is sent to an AI/cloud service.
-- Insight is intentionally quiet: at most one insight is surfaced on the first unlocked Home visit of a calendar day. It is not a repeating notification or modal.
+- Insight is intentionally quiet: at most one insight is surfaced on the first Home visit of the current app session. Once the user closes it or navigates away, it stays quiet until a fresh app session. It is not a repeating notification or modal.
 - The engine must not call spending "too much" without a defensible comparison. Daily warnings require enough prior-day evidence; otherwise monthly composition wording stays descriptive, not judgmental.
 
 ## Initial rule priority
