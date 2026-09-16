@@ -156,13 +156,24 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   }
 
   Widget _buildSecurityEnvelope(Widget? routedChild) {
+    final lockedNavigator = _buildRootLock(
+      routedChild ?? const SizedBox.shrink(),
+    );
+    return _buildPrivacyProtectedHome(lockedNavigator);
+  }
+
+  Widget _buildRootLock(Widget child) {
+    return LockGate(
+      security: widget.security,
+      child: child,
+    );
+  }
+
+  Widget _buildPrivacyProtectedHome(Widget protectedNavigator) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        LockGate(
-          security: widget.security,
-          child: routedChild ?? const SizedBox.shrink(),
-        ),
+        protectedNavigator,
         if (_privacyShielded)
           const ColoredBox(
             color: Color(0xFF101114),
