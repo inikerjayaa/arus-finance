@@ -175,12 +175,12 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       children: [
         protectedNavigator,
         if (_privacyShielded)
-          const ColoredBox(
-            color: Color(0xFF101114),
+          ColoredBox(
+            color: const Color(0xFF101114),
             child: Semantics(
               container: true,
               label: 'Arus disembunyikan saat aplikasi tidak aktif',
-              child: Center(
+              child: const Center(
                 child: Icon(Icons.lock_outline, color: Colors.white70, size: 36),
               ),
             ),
