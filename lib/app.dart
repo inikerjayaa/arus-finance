@@ -34,6 +34,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   final ThemePreferencesService _themePreferences = ThemePreferencesService.instance;
   final ScreenProtectionService _screenProtection = ScreenProtectionService.instance;
   bool? _onboardingDone;
+  bool _onboardingJustCompleted = false;
   bool _privacyShielded = false;
   late bool _lastInitializing;
   late bool _lastFatalRecovery;
@@ -87,7 +88,12 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       // Android screenshot flag. App-switcher snapshots stay protected even
       // when the user explicitly allows screenshots while Arus is active.
       if (!_privacyShielded && mounted) {
-        setState(() => _privacyShielded = true);
+        setState(() {
+          _privacyShielded = true;
+          _onboardingJustCompleted = false;
+        });
+      } else {
+        _onboardingJustCompleted = false;
       }
     }
 
@@ -172,7 +178,9 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
 
   Widget _buildRootLock(Widget child) {
     return LockGate(
+      key: ValueKey('root-lock-${_onboardingDone == true}'),
       security: widget.security,
+      startUnlocked: _onboardingJustCompleted,
       child: child,
     );
   }
@@ -216,7 +224,10 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     if (_onboardingDone == false) {
       return OnboardingScreen(
         security: widget.security,
-        onDone: () => setState(() => _onboardingDone = true),
+        onDone: () => setState(() {
+          _onboardingJustCompleted = true;
+          _onboardingDone = true;
+        }),
       );
     }
     if (widget.controller.errorMessage != null &&
