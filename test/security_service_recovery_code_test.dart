@@ -16,9 +16,15 @@ void main() {
     await security.setPin('1234');
     final code = await security.createRecoveryCode();
 
-    expect(code, matches(RegExp(r'^[A-HJ-NP-Z2-9]{4}(?:-[A-HJ-NP-Z2-9]{4}){3}$')));
+    expect(
+      code,
+      matches(RegExp(r'^[A-HJ-NP-Z2-9]{4}(?:-[A-HJ-NP-Z2-9]{4}){3}$')),
+    );
     expect(await security.hasRecoveryCode(), isTrue);
     expect(await security.verifyRecoveryCode(code), isTrue);
+
+    final humanTyped = code.toLowerCase().replaceAll('-', ' ');
+    expect(await security.verifyRecoveryCode(humanTyped), isTrue);
 
     final stored = await storage.readAll();
     final normalized = code.replaceAll('-', '');
