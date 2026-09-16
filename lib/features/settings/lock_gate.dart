@@ -128,7 +128,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         if (_foreground) {
           setState(() {
             _locked = true;
-            _error = widget.security.lastBiometricError;
+            _error = null;
           });
         }
         return;
