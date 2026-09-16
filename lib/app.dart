@@ -10,6 +10,8 @@ import 'core/services/backup_service.dart';
 import 'core/services/screen_protection_service.dart';
 import 'core/services/security_service.dart';
 import 'core/services/theme_preferences_service.dart';
+import 'core/services/user_profile_controller_access.dart';
+import 'core/services/user_profile_service.dart';
 import 'features/onboarding_screen.dart';
 import 'features/recovery/recovery_screen.dart';
 import 'features/settings/lock_gate.dart';
@@ -84,9 +86,6 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      // This lifecycle shield is intentionally independent from the optional
-      // Android screenshot flag. App-switcher snapshots stay protected even
-      // when the user explicitly allows screenshots while Arus is active.
       if (!_privacyShielded && mounted) {
         setState(() {
           _privacyShielded = true;
@@ -140,6 +139,11 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   Future<void> _boot() async {
     final prefs = await SharedPreferences.getInstance();
     _onboardingDone = prefs.getBool('onboarding_done_v1') ?? false;
+    if (widget.controller.userProfileService == null) {
+      final profile = UserProfileService();
+      await profile.load();
+      widget.controller.userProfileService = profile;
+    }
     await _themePreferences.load();
     await _screenProtection.loadAndApply();
     if (mounted) setState(() {});
@@ -161,9 +165,6 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       theme: AppTheme.light(_themePreferences.themeId),
       darkTheme: AppTheme.dark(_themePreferences.themeId),
       themeMode: _themePreferences.themeMode,
-      // Security wraps the Navigator itself. A dialog, modal bottom sheet, or
-      // pushed route must never sit above the lock/privacy layers after Arus
-      // leaves the foreground.
       builder: (context, child) => _buildSecurityEnvelope(child),
       home: _buildHome(),
     );
@@ -224,6 +225,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     if (_onboardingDone == false) {
       return OnboardingScreen(
         security: widget.security,
+        profile: widget.controller.userProfileService,
         onDone: () => setState(() {
           _onboardingJustCompleted = true;
           _onboardingDone = true;
