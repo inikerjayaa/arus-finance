@@ -59,6 +59,16 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     _lifecycleGeneration++;
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
+      // Fail closed before any async secure-storage or biometric refresh.
+      // Physical-device UAT showed that an Android resume could otherwise
+      // expose an already-open route briefly before the async refresh locked it.
+      if (_hasPin && !_locked && mounted) {
+        setState(() {
+          _locked = true;
+          _error = null;
+          _pin.clear();
+        });
+      }
       // Android's biometric prompt can emit inactive/resumed while the
       // authenticate Future is still in flight. Never start a second
       // biometric request from that synthetic resume.
