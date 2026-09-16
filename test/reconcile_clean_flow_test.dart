@@ -11,7 +11,7 @@ void main() {
     expect(source, contains("'Saldo Saat Ini'"));
     expect(source, contains("labelText: 'Saldo Baru'"));
     expect(source, isNot(contains("labelText: 'Alasan penyesuaian'")));
-    expect(source, contains('Penyesuaian saldo $accountName:'));
+    expect(source, contains(r'Penyesuaian saldo $accountName:'));
     expect(source, contains('amount != calculatedMinor'));
   });
 }
