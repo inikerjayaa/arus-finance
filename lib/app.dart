@@ -10,6 +10,7 @@ import 'core/services/backup_service.dart';
 import 'core/services/screen_protection_service.dart';
 import 'core/services/security_service.dart';
 import 'core/services/theme_preferences_service.dart';
+import 'core/services/user_profile_controller_access.dart';
 import 'features/onboarding_screen.dart';
 import 'features/recovery/recovery_screen.dart';
 import 'features/settings/lock_gate.dart';
@@ -224,6 +225,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     if (_onboardingDone == false) {
       return OnboardingScreen(
         security: widget.security,
+        profile: widget.controller.userProfileService,
         onDone: () => setState(() {
           _onboardingJustCompleted = true;
           _onboardingDone = true;
