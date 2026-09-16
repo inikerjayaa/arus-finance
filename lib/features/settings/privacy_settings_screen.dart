@@ -11,7 +11,6 @@ class PrivacySettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final protection = service ?? ScreenProtectionService.instance;
     final theme = Theme.of(context);
-    final runtimeEnabled = protection.supported && protection.enabled;
     return Scaffold(
       appBar: AppBar(title: const Text('Privasi layar')),
       body: AnimatedBuilder(
