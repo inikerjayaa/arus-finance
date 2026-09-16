@@ -26,8 +26,17 @@ class ScreenProtectionService extends ChangeNotifier {
   bool get supported => _supported;
 
   Future<void> loadAndApply() async {
-    final prefs = await _preferences();
-    final preferred = prefs.getBool(_enabledKey) ?? true;
+    var preferred = true;
+    try {
+      final prefs = await _preferences();
+      preferred = prefs.getBool(_enabledKey) ?? true;
+    } catch (_) {
+      // A preference-store failure must never weaken startup protection.
+      // Android has already started with FLAG_SECURE from native hardening, so
+      // fall back to the secure default and keep the app usable.
+      preferred = true;
+    }
+
     _supported = await _nativeSupported();
     _enabled = preferred;
     if (_supported) {
@@ -59,17 +68,36 @@ class ScreenProtectionService extends ChangeNotifier {
       );
     }
 
+    final previous = _enabled;
+
     // Apply native state first. Never persist a setting the OS window did not
     // actually accept, otherwise the next launch could misrepresent protection.
     await _applyNative(enabled);
-    final prefs = await _preferences();
-    final saved = await prefs.setBool(_enabledKey, enabled);
-    if (!saved) {
-      // Preference persistence failed after the native state changed. Revert to
-      // the previous secure state so UI, persistence and OS protection agree.
-      await _applyNative(_enabled);
-      throw StateError('Preferensi perlindungan layar belum berhasil disimpan.');
+
+    try {
+      final prefs = await _preferences();
+      final saved = await prefs.setBool(_enabledKey, enabled);
+      if (!saved) {
+        throw StateError('Preferensi perlindungan layar belum berhasil disimpan.');
+      }
+    } catch (_) {
+      // Persistence failed after the OS flag changed. Restore the last known
+      // state so UI, local preference and native window protection stay aligned.
+      try {
+        await _applyNative(previous);
+        _enabled = previous;
+      } catch (_) {
+        // The last confirmed native state is the requested value. Stop claiming
+        // that runtime control is reliable until the next fresh app start.
+        _enabled = enabled;
+        _supported = false;
+      }
+      notifyListeners();
+      throw StateError(
+        'Preferensi perlindungan layar belum berhasil disimpan. Perubahan native dibatalkan bila memungkinkan.',
+      );
     }
+
     _enabled = enabled;
     notifyListeners();
   }
