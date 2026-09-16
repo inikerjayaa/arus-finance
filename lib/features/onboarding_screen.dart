@@ -205,7 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           obscureText: true,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
-          inputFormatters: const [
+          inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(8),
           ],
@@ -218,7 +218,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           obscureText: true,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.done,
-          inputFormatters: const [
+          inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(8),
           ],

@@ -135,7 +135,7 @@ class _PinRecoveryPanelState extends State<PinRecoveryPanel> {
             obscureText: true,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
-            inputFormatters: const [
+            inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(8),
             ],
@@ -148,7 +148,7 @@ class _PinRecoveryPanelState extends State<PinRecoveryPanel> {
             obscureText: true,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
-            inputFormatters: const [
+            inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(8),
             ],

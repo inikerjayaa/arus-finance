@@ -1,6 +1,7 @@
+import 'package:arus_finance/core/services/security_service.dart';
 import 'package:arus_finance/features/onboarding_screen.dart';
-import 'package:arus_finance/shared/finance_widgets.dart';
 import 'package:arus_finance/shared/app_theme.dart';
+import 'package:arus_finance/shared/finance_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,7 +12,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light(),
-          home: OnboardingScreen(onDone: () {}),
+          home: OnboardingScreen(
+            security: SecurityService(),
+            onDone: () {},
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -39,15 +43,18 @@ void main() {
             size: Size(390, 844),
             textScaler: TextScaler.linear(2.0),
           ),
-          child: OnboardingScreen(onDone: () {}),
+          child: OnboardingScreen(
+            security: SecurityService(),
+            onDone: () {},
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Mulai'), findsOneWidget);
-    await tester.ensureVisible(find.text('Mulai'));
+    expect(find.text('Lanjut'), findsOneWidget);
+    await tester.ensureVisible(find.text('Lanjut'));
     expect(tester.takeException(), isNull);
   });
 
