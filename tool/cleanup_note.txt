@@ -1,0 +1,1 @@
+This branch accumulated temporary patch helpers during investigation. Delete before any PR.
