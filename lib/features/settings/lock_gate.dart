@@ -60,9 +60,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     _lifecycleGeneration++;
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
-      // Fail closed before any async secure-storage or biometric refresh.
-      // Physical-device UAT showed that an Android resume could otherwise
-      // expose an already-open route briefly before the async refresh locked it.
       if (_hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
@@ -71,9 +68,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
           _pin.clear();
         });
       }
-      // Android's biometric prompt can emit inactive/resumed while the
-      // authenticate Future is still in flight. Never start a second
-      // biometric request from that synthetic resume.
       if (_biometricInFlight) return;
       unawaited(_refreshPinStateOnResume(_lifecycleGeneration));
       return;
@@ -90,8 +84,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
               state == AppLifecycleState.detached)) {
         _biometricAutoSuppressed = false;
       }
-      // Hide finance data immediately. Because LockGate wraps the root
-      // Navigator, this also blocks any open dialog, bottom sheet, or route.
       if (_hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
@@ -243,6 +235,9 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                     controller: _pin,
                     autofocus: true,
                     obscureText: true,
+                    enableInteractiveSelection: false,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
