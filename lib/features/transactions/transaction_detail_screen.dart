@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
@@ -115,7 +116,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         Card(child: Column(children: [
           _row('Tanggal', '${tx.occurredAt.day}/${tx.occurredAt.month}/${tx.occurredAt.year}'),
           const Divider(height: 1),
-          _row('Account', tx.accountName),
+          _row('Akun', tx.accountName),
           if (tx.destinationAccountName != null) ...[const Divider(height: 1), _row('Tujuan', tx.destinationAccountName!)],
           if (tx.categoryName != null) ...[const Divider(height: 1), _row('Kategori', tx.categoryName!)],
           const Divider(height: 1),
@@ -147,7 +148,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Future<void> _edit() async {
     final d = _detail!;
     final c = AppScope.of(context);
-    final amount = TextEditingController(text: d.view.amountMinor.toString());
+    final amount = TextEditingController(text: Money.input(d.view.amountMinor));
     final note = TextEditingController(text: d.view.note ?? '');
     var accountId = d.accountId;
     var categoryId = d.categoryId;
@@ -164,8 +165,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       padding: EdgeInsets.fromLTRB(18, 4, 18, MediaQuery.viewInsetsOf(ctx).bottom + 18),
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Edit transaksi', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
-        DropdownButtonFormField<String>(initialValue: accountId, decoration: const InputDecoration(labelText: 'Account'), items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v)), const SizedBox(height: 12),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
+        DropdownButtonFormField<String>(initialValue: accountId, decoration: const InputDecoration(labelText: 'Akun'), items: accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v)), const SizedBox(height: 12),
         DropdownButtonFormField<String>(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: categories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v)), const SizedBox(height: 12),
         OutlinedButton.icon(onPressed: () async {
           final lastDate = d.view.status == TransactionStatus.posted ? DateTime.now() : DateTime(2100);
@@ -190,14 +191,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     final d = _detail!;
     final c = AppScope.of(context);
     final remaining = d.view.amountMinor - d.refundedMinor;
-    final amount = TextEditingController(text: remaining.toString());
+    final amount = TextEditingController(text: Money.input(remaining));
     var destinationId = d.accountId;
     final assetsAndCards = c.accounts.where((a) => a.accountClass == AccountClass.asset || a.accountType == AccountType.creditCard).toList();
     final ok = await showDialog<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (context, setState) => AlertDialog(
       title: const Text('Buat refund'),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Text('Maksimal ${Money.format(remaining, currency: d.view.currency)}'), const SizedBox(height: 12),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal refund', prefixText: 'Rp ')), const SizedBox(height: 12),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal refund', prefixText: 'Rp ')), const SizedBox(height: 12),
         DropdownButtonFormField<String>(initialValue: destinationId, decoration: const InputDecoration(labelText: 'Refund masuk ke'), items: assetsAndCards.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => destinationId = v)),
       ]),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')), FilledButton(onPressed: () async {
@@ -224,12 +225,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
+            child: const Text('Batal')),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Catat sekarang'),
-          ),
+            child: const Text('Catat sekarang')),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/enums.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 
 class PlanningScreen extends StatelessWidget {
@@ -55,10 +56,10 @@ class PlanningScreen extends StatelessWidget {
             ),
           ))),
         const SizedBox(height: 24),
-        _Header(title: 'Recurring', action: 'Tambah', onTap: () => _addRecurring(context)),
+        _Header(title: 'Transaksi rutin', action: 'Tambah', onTap: () => _addRecurring(context)),
         const SizedBox(height: 8),
         if (c.recurring.isEmpty)
-          const _Empty(text: 'Belum ada transaksi berulang.')
+          const _Empty(text: 'Belum ada transaksi rutin.')
         else
           ...c.recurring.map((r) => Card(child: SwitchListTile(
             title: Text(r.name),
@@ -113,7 +114,7 @@ class PlanningScreen extends StatelessWidget {
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Budget bulanan', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
         TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama')), const SizedBox(height: 12),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Limit', prefixText: 'Rp ')), const SizedBox(height: 18),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Limit', prefixText: 'Rp ')), const SizedBox(height: 18),
         FilledButton(onPressed: () async {
           final now = DateTime.now();
           final result = await c.run(() => c.repository.createBudget(name: name.text, limitMinor: Money.parseIdr(amount.text) ?? 0, start: DateTime(now.year, now.month, 1), end: DateTime(now.year, now.month + 1, 0)));
@@ -130,14 +131,14 @@ class PlanningScreen extends StatelessWidget {
       a.accountClass == AccountClass.asset || a.accountType == AccountType.creditCard
     ).toList();
     if (paymentAccounts.isEmpty || c.expenseCategories.isEmpty) return;
-    final amount = TextEditingController(text: expectedMinor.toString());
+    final amount = TextEditingController(text: Money.input(expectedMinor));
     var accountId = paymentAccounts.first.id;
     var categoryId = c.expenseCategories.firstWhere((x) => x.name == 'Tagihan', orElse: () => c.expenseCategories.first).id;
     await showModalBottomSheet<void>(context: context, isScrollControlled: true, showDragHandle: true, builder: (ctx) => StatefulBuilder(builder: (context, setState) => Padding(
       padding: EdgeInsets.fromLTRB(18, 4, 18, MediaQuery.viewInsetsOf(ctx).bottom + 18),
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Bayar $billName', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal aktual', prefixText: 'Rp ')), const SizedBox(height: 12),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal aktual', prefixText: 'Rp ')), const SizedBox(height: 12),
         DropdownButtonFormField<String>(initialValue: accountId, decoration: const InputDecoration(labelText: 'Bayar dari'), items: paymentAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
         DropdownButtonFormField<String>(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: c.expenseCategories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v ?? categoryId)), const SizedBox(height: 18),
         FilledButton(onPressed: () async {
@@ -161,7 +162,7 @@ class PlanningScreen extends StatelessWidget {
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('Tambah tagihan', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
         TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama tagihan')), const SizedBox(height: 12),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
         OutlinedButton.icon(onPressed: () async { final p = await showDatePicker(context: ctx, firstDate: DateTime.now(), lastDate: DateTime(2100), initialDate: due); if (p != null) setState(() => due = p); }, icon: const Icon(Icons.calendar_today), label: Text('Jatuh tempo ${due.day}/${due.month}/${due.year}')),
         const SizedBox(height: 18),
         FilledButton(onPressed: () async { final result = await c.run(() => c.repository.createBill(name: name.text, expectedAmountMinor: Money.parseIdr(amount.text) ?? 0, dueDate: due)); if (ctx.mounted && result != null) Navigator.pop(ctx); }, child: const Text('Simpan')),
@@ -184,10 +185,10 @@ class PlanningScreen extends StatelessWidget {
     await showModalBottomSheet<void>(context: context, isScrollControlled: true, showDragHandle: true, builder: (ctx) => StatefulBuilder(builder: (context, setState) => Padding(
       padding: EdgeInsets.fromLTRB(18, 4, 18, MediaQuery.viewInsetsOf(ctx).bottom + 18),
       child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('Recurring expense', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
+        Text('Transaksi rutin', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 14),
         TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama')), const SizedBox(height: 12),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
-        DropdownButtonFormField(initialValue: accountId, decoration: const InputDecoration(labelText: 'Account'), items: recurringAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')), const SizedBox(height: 12),
+        DropdownButtonFormField(initialValue: accountId, decoration: const InputDecoration(labelText: 'Akun'), items: recurringAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(), onChanged: (v) => setState(() => accountId = v ?? accountId)), const SizedBox(height: 12),
         DropdownButtonFormField(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Kategori'), items: c.expenseCategories.map((x) => DropdownMenuItem(value: x.id, child: Text(x.name))).toList(), onChanged: (v) => setState(() => categoryId = v ?? categoryId)), const SizedBox(height: 12),
         TextField(controller: day, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Tanggal tiap bulan (1–31)')), const SizedBox(height: 18),
         FilledButton(onPressed: () async { final result = await c.run(() => c.repository.createRecurringExpenseDraft(name: name.text, amountMinor: Money.parseIdr(amount.text) ?? 0, accountId: accountId, categoryId: categoryId, dayOfMonth: int.tryParse(day.text) ?? 1)); if (ctx.mounted && result != null) Navigator.pop(ctx); }, child: const Text('Simpan sebagai draft otomatis')),

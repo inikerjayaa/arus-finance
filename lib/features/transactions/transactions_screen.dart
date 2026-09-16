@@ -4,6 +4,7 @@ import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
+import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 import '../quick_add/quick_add_sheet.dart';
 import 'transaction_detail_screen.dart';
@@ -60,7 +61,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
-              hintText: 'Cari nominal, kategori, account, catatan',
+              hintText: 'Cari nominal, kategori, akun, catatan',
               suffixIcon: _search.text.isEmpty ? null : IconButton(
                 tooltip: 'Hapus pencarian',
                 icon: const Icon(Icons.close),
@@ -160,7 +161,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final result = <Widget>[];
     if (f.type != null) result.add(Chip(label: Text(_typeLabel(f.type!))));
     if (f.status != null) result.add(Chip(label: Text('Status: ${f.status!.name}')));
-    if (f.accountId != null) result.add(const Chip(label: Text('Account')));
+    if (f.accountId != null) result.add(const Chip(label: Text('Akun')));
     if (f.categoryId != null) result.add(const Chip(label: Text('Kategori')));
     if (f.startDate != null || f.endDate != null) result.add(Chip(label: Text(_dateRangeLabel(f))));
     if (f.minAmountMinor != null || f.maxAmountMinor != null) result.add(Chip(label: Text(_amountRangeLabel(f))));
@@ -193,8 +194,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Future<void> _showFilters(BuildContext context) async {
     final controller = AppScope.of(context);
     var filter = controller.transactionFilter;
-    final minAmount = TextEditingController(text: filter.minAmountMinor?.toString() ?? '');
-    final maxAmount = TextEditingController(text: filter.maxAmountMinor?.toString() ?? '');
+    final minAmount = TextEditingController(
+      text: filter.minAmountMinor == null ? '' : Money.input(filter.minAmountMinor!),
+    );
+    final maxAmount = TextEditingController(
+      text: filter.maxAmountMinor == null ? '' : Money.input(filter.maxAmountMinor!),
+    );
 
     final result = await showModalBottomSheet<TransactionFilter>(
       context: context,
@@ -245,9 +250,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
               initialValue: filter.accountId,
-              decoration: const InputDecoration(labelText: 'Account'),
+              decoration: const InputDecoration(labelText: 'Akun'),
               items: [
-                const DropdownMenuItem<String?>(value: null, child: Text('Semua account')),
+                const DropdownMenuItem<String?>(value: null, child: Text('Semua akun')),
                 ...controller.accounts.map((a) => DropdownMenuItem<String?>(value: a.id, child: Text(a.name))),
               ],
               onChanged: (v) => setState(() => filter = filter.copyWith(accountId: v, clearAccount: v == null)),
@@ -286,9 +291,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => setState(() => filter = filter.copyWith(clearStartDate: true, clearEndDate: true)), child: const Text('Hapus rentang tanggal'))),
             const SizedBox(height: 4),
             Row(children: [
-              Expanded(child: TextField(controller: minAmount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal minimum', prefixText: 'Rp '))),
+              Expanded(child: TextField(controller: minAmount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal minimum', prefixText: 'Rp '))),
               const SizedBox(width: 10),
-              Expanded(child: TextField(controller: maxAmount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal maksimum', prefixText: 'Rp '))),
+              Expanded(child: TextField(controller: maxAmount, keyboardType: TextInputType.number, inputFormatters: const [IdrInputFormatter()], decoration: const InputDecoration(labelText: 'Nominal maksimum', prefixText: 'Rp '))),
             ]),
             const SizedBox(height: 20),
             FilledButton.icon(
