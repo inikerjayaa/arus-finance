@@ -14,7 +14,7 @@ void main() {
   });
 
   testWidgets(
-    'primary highlight shows total active assets with income and spending below',
+    'primary highlight shows total active assets with only income and spending below',
     (tester) async {
       final database = AppDatabase.inMemory();
       addTearDown(database.close);
@@ -75,9 +75,13 @@ void main() {
       expect(find.text('Pemasukan'), findsOneWidget);
       expect(find.text('Pengeluaran'), findsOneWidget);
       expect(find.textContaining('3.465.000'), findsWidgets);
-      expect(find.textContaining('1.465.000'), findsWidgets);
       expect(find.textContaining('500.000'), findsWidgets);
       expect(find.textContaining('35.000'), findsWidgets);
+
+      // Available-to-spend remains an accounting concept, but it must not
+      // compete with the three headline numbers in the primary Home card.
+      expect(find.textContaining('1.465.000'), findsNothing);
+      expect(find.textContaining('Tersedia untuk dibelanjakan'), findsNothing);
       expect(find.text('Saldo tersedia'), findsNothing);
     },
   );
