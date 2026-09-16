@@ -23,6 +23,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   int _lifecycleGeneration = 0;
   final _pin = TextEditingController();
   String? _error;
+  String? _biometricError;
 
   @override
   void initState() {
@@ -89,6 +90,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         setState(() {
           _locked = true;
           _error = null;
+          _biometricError = null;
           _pin.clear();
         });
       }
@@ -104,7 +106,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       _hasPin = hasPin;
       _biometricAvailable = biometricAvailable;
       _locked = hasPin;
-      if (!hasPin) _error = null;
+      if (!hasPin) {
+        _error = null;
+        _biometricError = null;
+      }
     });
     if (biometricEnabled && !_biometricAutoSuppressed) {
       if (!mounted || !_foreground || generation != _lifecycleGeneration) return;
@@ -114,7 +119,12 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   Future<void> _tryBiometric({bool manual = false}) async {
     if (_biometricInFlight || !_foreground || !_hasPin) return;
-    if (manual) _biometricAutoSuppressed = false;
+    if (manual) {
+      _biometricAutoSuppressed = false;
+      if (mounted && _biometricError != null) {
+        setState(() => _biometricError = null);
+      }
+    }
     _biometricInFlight = true;
     try {
       final ok = await widget.security.authenticateBiometric();
@@ -123,12 +133,13 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         // false includes a normal user Cancel. Keep the gate locked and stop
         // automatic biometric retries for this activation. PIN remains usable;
         // the explicit biometric button is the only retry path until a genuine
-        // background/foreground cycle occurs.
+        // background/foreground cycle occurs. Structured plugin failures are
+        // surfaced separately from PIN errors so OEM/device issues are visible.
         _biometricAutoSuppressed = true;
         if (_foreground) {
           setState(() {
             _locked = true;
-            _error = null;
+            _biometricError = widget.security.lastBiometricError;
           });
         }
         return;
@@ -142,6 +153,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       setState(() {
         _locked = false;
         _error = null;
+        _biometricError = null;
         _pin.clear();
       });
     } finally {
@@ -158,6 +170,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       _locked = !ok;
       if (ok) {
         _error = null;
+        _biometricError = null;
         _pin.clear();
       } else if (lockUntil != null) {
         final seconds = lockUntil.difference(DateTime.now().toUtc()).inSeconds + 1;
@@ -182,6 +195,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       );
     }
     if (!_locked) return widget.child;
+    final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -190,11 +204,11 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(28),
               child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Icon(Icons.lock_outline_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
+                Icon(Icons.lock_outline_rounded, size: 56, color: theme.colorScheme.primary),
                 const SizedBox(height: 18),
-                Text('Arus terkunci', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                Text('Arus terkunci', textAlign: TextAlign.center, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                Text('Masukkan PIN untuk membuka data keuangan.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                Text('Masukkan PIN untuk membuka data keuangan.', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 24),
                 TextField(
                   controller: _pin,
@@ -211,6 +225,20 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                     label: _error!,
                     child: const SizedBox.shrink(),
                   ),
+                if (_biometricError != null) ...[
+                  const SizedBox(height: 10),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _biometricError!,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 FilledButton(onPressed: _unlockPin, child: const Text('Buka')),
                 if (_biometricAvailable) ...[
