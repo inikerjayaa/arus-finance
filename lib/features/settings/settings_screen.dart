@@ -15,6 +15,7 @@ import '../../shared/app_scope.dart';
 import 'appearance_settings_screen.dart';
 import 'categories_screen.dart';
 import 'privacy_settings_screen.dart';
+import 'recovery_code_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -151,6 +152,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(_hasPin == true ? 'Ubah PIN' : 'Buat PIN'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _setPin(context),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.key_rounded),
+                  title: const Text('Kode pemulihan'),
+                  subtitle: Text(
+                    _hasPin == true
+                        ? 'Buat atau ganti kode jika suatu saat lupa PIN'
+                        : 'Buat PIN terlebih dahulu',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  enabled: _hasPin == true,
+                  onTap: _hasPin == true
+                      ? () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => RecoveryCodeSettingsScreen(
+                                security: widget.security,
+                              ),
+                            ),
+                          )
+                      : null,
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
@@ -402,6 +424,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _setPin(BuildContext context) async {
+    if (_hasPin == true) {
+      final current = await _askSecret(
+        context,
+        title: 'Konfirmasi PIN saat ini',
+        label: 'PIN saat ini',
+        obscure: true,
+      );
+      if (current == null || !context.mounted) return;
+      final ok = await widget.security.verifyPin(current);
+      if (!context.mounted) return;
+      if (!ok) {
+        _snack(context, 'PIN saat ini tidak cocok.');
+        return;
+      }
+    }
+
     var pin = '';
     var confirm = '';
     String? error;
