@@ -21,6 +21,11 @@ app_src = read('lib/app.dart')
 settings_src = read('lib/features/settings/settings_screen.dart')
 recovery_src = read('lib/features/recovery/recovery_screen.dart')
 
+wipe_src = settings_src[
+    settings_src.index('Future<void> _wipe('):
+    settings_src.index('Future<bool> _confirmPermanentWipe')
+]
+
 checks = {
     'fresh recovery has persisted marker states': all(x in db_src for x in [
         "'state': 'preparing'", "'state': 'quarantined'", "'state': 'replacement_validated'"
@@ -104,8 +109,10 @@ checks = {
         backup_src.index('_restoreDecodedBackup(decoded);')
     ),
     'explicit wipe removes recovery material too': (
-        'destroyLocalRecoveryMaterial' in settings_src and
-        'Data lokal dan material recovery lama sudah direset.' in settings_src
+        'destroyLocalRecoveryMaterial' in wipe_src and
+        'wipeLocalFinanceData' in wipe_src and
+        wipe_src.index('destroyLocalRecoveryMaterial') <
+        wipe_src.index('wipeLocalFinanceData')
     ),
 }
 
