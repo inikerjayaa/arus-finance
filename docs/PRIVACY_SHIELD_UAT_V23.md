@@ -1,5 +1,7 @@
 # Arus Finance — Privacy Shield + Screenshot Toggle UAT
 
+> Verification checkpoint: rerun the complete native matrix after the safe category-rename slice is merged to `main`, so the privacy toggle is proven against the latest combined app state rather than the older base alone.
+
 ## App Switcher Snapshot
 - Open a screen containing balances/transaction details.
 - Background the app and inspect the OS app switcher.
