@@ -42,8 +42,7 @@ class SecurityService {
       // is empty on Android; the actual authenticate(biometricOnly: true)
       // call remains the source of truth.
       try {
-        final enrolled = await _auth.getAvailableBiometrics();
-        if (enrolled.isNotEmpty) return true;
+        if ((await _auth.getAvailableBiometrics()).isNotEmpty) return true;
       } on LocalAuthException {
         // Capability checks above succeeded. Android gets a runtime-auth
         // fallback below; other platforms stay conservative.
