@@ -20,6 +20,10 @@ lifecycle = lock_gate[
     lock_gate.index('void didChangeAppLifecycleState'):
     lock_gate.index('Future<void> _refreshPinStateOnResume')
 ]
+reminder_settings = settings[
+    settings.index('Future<void> _setReminders'):
+    settings.index('Future<void> _setNotificationDetails')
+]
 
 checks = {
     'secure-storage minimum includes 11.1 fix line': 'flutter_secure_storage: ^11.1.0' in pubspec,
@@ -41,7 +45,11 @@ checks = {
     ),
     'notification timezone fails closed': 'Zona waktu perangkat tidak dapat dibaca' in notifications and 'tz.setLocalLocation(tz.UTC)' not in notifications,
     'notification init commits only after cleanup': notifications.index('await _cleanLegacyIdsOnce();') < notifications.index('_initialized = true;'),
-    'settings catches reminder native failures': 'Future<void> _setReminders' in settings and 'catch (e)' in settings[settings.index('Future<void> _setReminders'):settings.index('Future<void> _setNotificationDetails')],
+    'settings catches reminder native failures': (
+        'catch (' in reminder_settings and
+        'await _reloadNotifications();' in reminder_settings and
+        '_snack(context,' in reminder_settings
+    ),
     'Android biometric permission retained': 'android.permission.USE_BIOMETRIC' in hardener,
     'Android API24 minimum enforced': "'minSdk = 24'" in hardener or 'minSdk = 24' in hardener,
     'Android API36 compile/target enforced': 'compileSdk = 36' in hardener and 'targetSdk = 36' in hardener,
