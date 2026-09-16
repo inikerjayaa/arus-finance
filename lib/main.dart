@@ -8,8 +8,12 @@ import 'core/services/category_composition_controller_access.dart';
 import 'core/services/category_composition_service.dart';
 import 'core/services/category_maintenance_controller_access.dart';
 import 'core/services/category_maintenance_service.dart';
+import 'core/services/local_insight_controller_access.dart';
+import 'core/services/local_insight_service.dart';
 import 'core/services/local_notification_service.dart';
 import 'core/services/security_service.dart';
+import 'core/services/user_profile_controller_access.dart';
+import 'core/services/user_profile_service.dart';
 import 'core/services/visual_identity_controller_access.dart';
 import 'core/services/visual_identity_store.dart';
 import 'data/local_finance_repository.dart';
@@ -24,6 +28,10 @@ Future<void> main() async {
   controller.visualIdentityStore = VisualIdentityStore(database);
   controller.categoryCompositionService = CategoryCompositionService(database);
   controller.categoryMaintenanceService = CategoryMaintenanceService(database);
+  controller.localInsightService = LocalInsightService(database);
+  final profile = UserProfileService();
+  await profile.load();
+  controller.userProfileService = profile;
   final security = SecurityService();
   runApp(
     ArusApp(
