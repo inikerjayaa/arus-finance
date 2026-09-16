@@ -81,9 +81,16 @@ checks = {
         'Coba buka database lagi', 'Pulihkan titik lokal terbaru', 'Pulihkan dari file .arusbackup'
     ]),
     'safe recovery is protected by app lock': (
-        'RecoveryScreen(' in app_src and
-        'return LockGate(' in app_src and
-        app_src.index('return LockGate(') < app_src.index('RecoveryScreen(')
+        'RecoveryScreen(' in app_src and (
+            (
+                'builder: (context, child) => _buildSecurityEnvelope(child)' in app_src and
+                'LockGate(' in app_src and
+                app_src.index('LockGate(') < app_src.index('RecoveryScreen(')
+            ) or (
+                'return LockGate(' in app_src and
+                app_src.index('return LockGate(') < app_src.index('RecoveryScreen(')
+            )
+        )
     ),
     'healthy startup refreshes local recovery generation': (
         'createLocalRecoveryGeneration()' in app_src and 'controller.errorMessage == null' in app_src
