@@ -12,6 +12,7 @@ import '../../core/services/security_service.dart';
 import '../../shared/app_scope.dart';
 import 'appearance_settings_screen.dart';
 import 'categories_screen.dart';
+import 'privacy_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -107,6 +108,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             catch (e) { if (context.mounted) _snack(context, e.toString()); }
           } : null,
         ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.screen_lock_portrait_outlined),
+          title: const Text('Privasi layar'),
+          subtitle: const Text('Atur perlindungan screenshot. App-switcher shield tetap aktif.'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PrivacySettingsScreen()),
+          ),
+        ),
         if (_hasPin == true) ...[
           const Divider(height: 1),
           ListTile(leading: const Icon(Icons.lock_open_outlined), title: const Text('Nonaktifkan app lock'), onTap: () => _disablePin(context)),
@@ -118,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Card(child: ListTile(
         leading: const Icon(Icons.category_outlined),
         title: const Text('Kategori'),
-        subtitle: const Text('Tambah atau arsipkan kategori pemasukan/pengeluaran'),
+        subtitle: const Text('Tambah, ubah, atau arsipkan kategori pemasukan/pengeluaran'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           final controller = AppScope.of(context);

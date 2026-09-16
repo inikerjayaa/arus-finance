@@ -11,10 +11,72 @@ import plistlib
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _kotlin_import(text: str, value: str) -> str:
+    marker = f'import {value}'
+    if marker in text:
+        return text
+    package = re.search(r'^\s*package[^\n]*\n', text, re.M)
+    if not package:
+        raise RuntimeError('Kotlin MainActivity has no package declaration')
+    return text[: package.end()] + marker + '\n' + text[package.end() :]
+
+
+def _java_import(text: str, value: str) -> str:
+    marker = f'import {value};'
+    if marker in text:
+        return text
+    package = re.search(r'^\s*package[^;]*;\s*\n', text, re.M)
+    if not package:
+        raise RuntimeError('Java MainActivity has no package declaration')
+    return text[: package.end()] + marker + '\n' + text[package.end() :]
+
+
 def _patch_main_activity() -> None:
     android = ROOT / 'android/app/src/main'
     if not android.exists():
         return
+
+    kotlin_class = '''class MainActivity : FlutterFragmentActivity() {
+    private val screenProtectionChannel = "arus.finance/screen_protection"
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Fail secure before Dart starts. A persisted OFF preference may clear
+        // this flag only after the runtime MethodChannel is available.
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            screenProtectionChannel,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isSupported" -> result.success(true)
+                "setEnabled" -> {
+                    val enabled = call.argument<Boolean>("enabled")
+                    if (enabled == null) {
+                        result.error(
+                            "INVALID_ARGUMENT",
+                            "enabled boolean is required",
+                            null,
+                        )
+                    } else {
+                        if (enabled) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(true)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+}
+'''
 
     for path in list(android.rglob('MainActivity.kt')):
         text = path.read_text()
@@ -23,27 +85,68 @@ def _patch_main_activity() -> None:
             'import io.flutter.embedding.android.FlutterFragmentActivity',
         )
         text = re.sub(r'\bFlutterActivity\s*\(\)', 'FlutterFragmentActivity()', text)
-        if 'WindowManager.LayoutParams.FLAG_SECURE' not in text:
-            if 'import android.os.Bundle' not in text:
-                text = text.replace(
-                    'import io.flutter.embedding.android.FlutterFragmentActivity',
-                    'import android.os.Bundle\nimport android.view.WindowManager\nimport io.flutter.embedding.android.FlutterFragmentActivity',
-                )
-            text = re.sub(
-                r'class MainActivity\s*:\s*FlutterFragmentActivity\(\)\s*\{?\s*\}?',
-                '''class MainActivity : FlutterFragmentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE,
+        for value in [
+            'android.os.Bundle',
+            'android.view.WindowManager',
+            'io.flutter.embedding.android.FlutterFragmentActivity',
+            'io.flutter.embedding.engine.FlutterEngine',
+            'io.flutter.plugin.common.MethodChannel',
+        ]:
+            text = _kotlin_import(text, value)
+        class_start = re.search(
+            r'\bclass\s+MainActivity\s*:\s*FlutterFragmentActivity\(\)',
+            text,
         )
+        if not class_start:
+            raise RuntimeError('Unsupported Kotlin MainActivity shape')
+        path.write_text(text[: class_start.start()] + kotlin_class)
+
+    java_class = '''public class MainActivity extends FlutterFragmentActivity {
+    private static final String SCREEN_PROTECTION_CHANNEL = "arus.finance/screen_protection";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Fail secure before Dart starts. A persisted OFF preference may clear
+        // this flag only after the runtime MethodChannel is available.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }
-}''',
-                text,
-                count=1,
-            )
-        path.write_text(text)
+
+    @Override
+    public void configureFlutterEngine(FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
+        new MethodChannel(
+            flutterEngine.getDartExecutor().getBinaryMessenger(),
+            SCREEN_PROTECTION_CHANNEL
+        ).setMethodCallHandler((call, result) -> {
+            switch (call.method) {
+                case "isSupported":
+                    result.success(true);
+                    break;
+                case "setEnabled":
+                    Boolean enabled = call.argument("enabled");
+                    if (enabled == null) {
+                        result.error(
+                            "INVALID_ARGUMENT",
+                            "enabled boolean is required",
+                            null
+                        );
+                    } else {
+                        if (enabled) {
+                            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                        } else {
+                            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                        }
+                        result.success(true);
+                    }
+                    break;
+                default:
+                    result.notImplemented();
+            }
+        });
+    }
+}
+'''
 
     for path in list(android.rglob('MainActivity.java')):
         text = path.read_text()
@@ -56,28 +159,21 @@ def _patch_main_activity() -> None:
             'extends FlutterFragmentActivity',
             text,
         )
-        if 'WindowManager.LayoutParams.FLAG_SECURE' not in text:
-            if 'import android.os.Bundle;' not in text:
-                text = text.replace(
-                    'import io.flutter.embedding.android.FlutterFragmentActivity;',
-                    'import android.os.Bundle;\nimport android.view.WindowManager;\nimport io.flutter.embedding.android.FlutterFragmentActivity;',
-                )
-            text = re.sub(
-                r'public class MainActivity extends FlutterFragmentActivity\s*\{?\s*\}?',
-                '''public class MainActivity extends FlutterFragmentActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getWindow().setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        );
-    }
-}''',
-                text,
-                count=1,
-            )
-        path.write_text(text)
+        for value in [
+            'android.os.Bundle',
+            'android.view.WindowManager',
+            'io.flutter.embedding.android.FlutterFragmentActivity',
+            'io.flutter.embedding.engine.FlutterEngine',
+            'io.flutter.plugin.common.MethodChannel',
+        ]:
+            text = _java_import(text, value)
+        class_start = re.search(
+            r'\bpublic\s+class\s+MainActivity\s+extends\s+FlutterFragmentActivity',
+            text,
+        )
+        if not class_start:
+            raise RuntimeError('Unsupported Java MainActivity shape')
+        path.write_text(text[: class_start.start()] + java_class)
 
 
 def _patch_launch_theme() -> None:
@@ -103,7 +199,6 @@ def patch_android() -> None:
     manifest_match = re.search(r'<manifest\b[^>]*>', text, re.S)
     if not manifest_match:
         raise RuntimeError('AndroidManifest.xml has no <manifest> root tag')
-    manifest_open = manifest_match.group(0)
     permissions = [
         'android.permission.USE_BIOMETRIC',
         'android.permission.POST_NOTIFICATIONS',
@@ -244,7 +339,7 @@ def patch_ios() -> None:
 def main() -> None:
     patch_android()
     patch_ios()
-    print('Native hardening applied (idempotent, biometric + reminder ready).')
+    print('Native hardening applied (idempotent, biometric + reminder + runtime screen protection ready).')
 
 
 if __name__ == '__main__':
