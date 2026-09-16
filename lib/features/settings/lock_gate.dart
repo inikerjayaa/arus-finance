@@ -179,21 +179,39 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       children: [
         widget.child,
         if (_checking)
-          Positioned.fill(
-            child: ColoredBox(
-              color: const Color(0xFF101114),
+          _buildSecuritySurface(
+            context,
+            const ColoredBox(
+              color: Color(0xFF101114),
               child: Center(
                 child: Semantics(
                   label: 'Memeriksa keamanan Arus',
                   liveRegion: true,
-                  child: const CircularProgressIndicator(),
+                  child: CircularProgressIndicator(),
                 ),
               ),
             ),
           )
         else if (_locked)
-          Positioned.fill(child: _buildLockedOverlay(context)),
+          _buildSecuritySurface(context, _buildLockedOverlay(context)),
       ],
+    );
+  }
+
+  Widget _buildSecuritySurface(BuildContext context, Widget child) {
+    // LockGate intentionally sits above the app's root Navigator so dialogs,
+    // sheets, and pushed routes cannot escape the lock. The lock surface owns
+    // a tiny private Navigator/Overlay so PIN text input still has a valid
+    // selection/focus overlay without borrowing the sensitive Navigator below.
+    return Positioned.fill(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: Theme.of(context),
+        home: PopScope<void>(
+          canPop: false,
+          child: child,
+        ),
+      ),
     );
   }
 
