@@ -1,0 +1,228 @@
+name: Temporary Settings Dialog Lifecycle Hardening
+
+on:
+  push:
+    branches:
+      - v30-dialog-lifecycle-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  patch-settings-dialogs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Apply isolated lifecycle patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('lib/features/settings/settings_screen.dart')
+          text = path.read_text()
+
+          def replace_section(source: str, start: str, end: str, replacement: str) -> str:
+              a = source.index(start)
+              b = source.index(end, a)
+              return source[:a] + replacement + source[b:]
+
+          set_pin = r'''  Future<void> _setPin(BuildContext context) async {
+            var pin = '';
+            var confirmPin = '';
+            await showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(_hasPin == true ? 'Ubah PIN' : 'Buat PIN'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        autofocus: true,
+                        obscureText: true,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'PIN baru'),
+                        onChanged: (value) => pin = value,
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        obscureText: true,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Ulangi PIN'),
+                        onChanged: (value) => confirmPin = value,
+                        onSubmitted: (_) async {
+                          if (pin != confirmPin) {
+                            _snack(context, 'PIN tidak sama.');
+                            return;
+                          }
+                          try {
+                            await widget.security.setPin(pin);
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            await _reloadSecurity();
+                          } catch (e) {
+                            if (context.mounted) _snack(context, e.toString());
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Batal'),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      if (pin != confirmPin) {
+                        _snack(context, 'PIN tidak sama.');
+                        return;
+                      }
+                      try {
+                        await widget.security.setPin(pin);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        await _reloadSecurity();
+                      } catch (e) {
+                        if (context.mounted) _snack(context, e.toString());
+                      }
+                    },
+                    child: const Text('Simpan'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+'''
+
+          confirm_wipe = r'''  Future<bool> _confirmPermanentWipe(BuildContext context) async {
+            var matches = false;
+            final result = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => StatefulBuilder(
+                builder: (context, setState) => AlertDialog(
+                  title: const Text('Konfirmasi penghapusan permanen'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ketik HAPUS untuk mengonfirmasi bahwa seluruh data lokal dan material recovery akan direset.',
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          autofocus: true,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(labelText: 'Ketik HAPUS'),
+                          onChanged: (value) => setState(
+                            () => matches = value.trim() == 'HAPUS',
+                          ),
+                          onSubmitted: (_) {
+                            if (matches) Navigator.pop(ctx, true);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Batal'),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(ctx).colorScheme.error,
+                        foregroundColor: Theme.of(ctx).colorScheme.onError,
+                      ),
+                      onPressed: matches ? () => Navigator.pop(ctx, true) : null,
+                      child: const Text('Hapus seluruh data'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+            return result == true;
+          }
+
+'''
+
+          ask_secret = r'''  Future<String?> _askSecret(
+            BuildContext context, {
+            required String title,
+            required String label,
+            required bool obscure,
+          }) async {
+            var value = '';
+            return showDialog<String>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(title),
+                content: TextField(
+                  autofocus: true,
+                  obscureText: obscure,
+                  decoration: InputDecoration(labelText: label),
+                  onChanged: (next) => value = next,
+                  onSubmitted: (submitted) => Navigator.pop(ctx, submitted),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Batal'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, value),
+                    child: const Text('Lanjut'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+'''
+
+          text = replace_section(
+              text,
+              '  Future<void> _setPin(BuildContext context) async {',
+              '  Future<void> _disablePin(BuildContext context) async {',
+              set_pin,
+          )
+          text = replace_section(
+              text,
+              '  Future<bool> _confirmPermanentWipe(BuildContext context) async {',
+              '  String _formatRecoveryTime(DateTime value) {',
+              confirm_wipe,
+          )
+          text = replace_section(
+              text,
+              '  Future<String?> _askSecret(BuildContext context,',
+              '  void _snack(BuildContext context, String value)',
+              ask_secret,
+          )
+
+          path.write_text(text)
+          PY
+
+          git diff --check
+          ! grep -A80 'Future<void> _setPin' lib/features/settings/settings_screen.dart | grep -q 'TextEditingController'
+          ! grep -A80 'Future<bool> _confirmPermanentWipe' lib/features/settings/settings_screen.dart | grep -q 'TextEditingController'
+          ! grep -A60 'Future<String?> _askSecret' lib/features/settings/settings_screen.dart | grep -q 'TextEditingController'
+
+      - name: Commit patch once
+        shell: bash
+        run: |
+          if git diff --quiet -- lib/features/settings/settings_screen.dart; then
+            echo 'Settings lifecycle patch already applied.'
+            exit 0
+          fi
+          git config user.name 'arus-ci'
+          git config user.email 'arus-ci@users.noreply.github.com'
+          git add lib/features/settings/settings_screen.dart
+          git commit -m 'Harden Settings dialog field lifecycle'
+          git push origin HEAD:v30-dialog-lifecycle-hardening
