@@ -181,13 +181,13 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         if (_checking)
           _buildSecuritySurface(
             context,
-            const ColoredBox(
-              color: Color(0xFF101114),
+            ColoredBox(
+              color: const Color(0xFF101114),
               child: Center(
                 child: Semantics(
                   label: 'Memeriksa keamanan Arus',
                   liveRegion: true,
-                  child: CircularProgressIndicator(),
+                  child: const CircularProgressIndicator(),
                 ),
               ),
             ),
