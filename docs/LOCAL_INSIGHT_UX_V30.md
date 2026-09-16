@@ -10,6 +10,7 @@
 - Insight is intentionally quiet: at most one insight is surfaced on the first Home visit of the current app session. Once the user closes it or navigates away, it stays quiet until a fresh app session. It is not a repeating notification or modal.
 - The engine must not call spending "too much" without a defensible comparison. Daily warnings require enough prior-day evidence; otherwise monthly composition wording stays descriptive, not judgmental.
 - Settings keeps only user-facing controls at the top level. Technical recovery/integrity actions live under a collapsed advanced data section. `Tentang Arus` is the final Settings section.
+- New installs keep app lock enabled by design: Settings exposes PIN change rather than a normal disable-lock action.
 
 ## Initial rule priority
 
