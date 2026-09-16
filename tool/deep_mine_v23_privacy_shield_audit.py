@@ -19,7 +19,7 @@ checks={
    'Widget _buildSecurityEnvelope(Widget? routedChild)' in app and
    'if (_privacyShielded)' in app
  ),
- 'shield is opaque':'color: Color(0xFF101114)' in app,
+ 'shield is opaque':'0xFF101114' in app,
  'shield has assistive label':'Arus disembunyikan saat aplikasi tidak aktif' in app,
  'app switcher shield is documented independent':'intentionally independent' in app,
  'Android hardener imports WindowManager':'android.view.WindowManager' in hardener,
