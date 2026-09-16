@@ -16,6 +16,10 @@ notifications = read('lib/core/services/local_notification_service.dart')
 settings = read('lib/features/settings/settings_screen.dart')
 setup = read('docs/NATIVE_SETUP.md')
 future = read('future_optional/README.md')
+lifecycle = lock_gate[
+    lock_gate.index('void didChangeAppLifecycleState'):
+    lock_gate.index('Future<void> _refreshPinStateOnResume')
+]
 
 checks = {
     'secure-storage minimum includes 11.1 fix line': 'flutter_secure_storage: ^11.1.0' in pubspec,
@@ -27,7 +31,14 @@ checks = {
     'lock gate tracks foreground lifecycle': 'bool _foreground = true;' in lock_gate,
     'lock gate prevents duplicate biometric prompts': 'bool _biometricInFlight = false;' in lock_gate,
     'lock gate uses lifecycle generation anti-race': 'int _lifecycleGeneration = 0;' in lock_gate and 'generation != _lifecycleGeneration' in lock_gate,
-    'lock gate locks synchronously on background': 'Hide finance data immediately' in lock_gate and '_locked = true;' in lock_gate,
+    'lock gate locks synchronously on background': (
+        'AppLifecycleState.paused' in lifecycle and
+        'AppLifecycleState.hidden' in lifecycle and
+        'AppLifecycleState.detached' in lifecycle and
+        'if (_hasPin && !_locked && mounted)' in lifecycle and
+        '_locked = true;' in lifecycle and
+        'await ' not in lifecycle
+    ),
     'notification timezone fails closed': 'Zona waktu perangkat tidak dapat dibaca' in notifications and 'tz.setLocalLocation(tz.UTC)' not in notifications,
     'notification init commits only after cleanup': notifications.index('await _cleanLegacyIdsOnce();') < notifications.index('_initialized = true;'),
     'settings catches reminder native failures': 'Future<void> _setReminders' in settings and 'catch (e)' in settings[settings.index('Future<void> _setReminders'):settings.index('Future<void> _setNotificationDetails')],
