@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app_controller.dart';
 import '../../core/services/dashboard_preferences_service.dart';
+import '../../core/services/user_profile_controller_access.dart';
+import '../../core/services/user_profile_service.dart';
 import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
@@ -11,6 +13,7 @@ import '../activity/daily_activity_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
 import 'home_category_composition_card.dart';
+import 'home_greeting_insight.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -59,26 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        'Ringkasan',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Keuanganmu hari ini',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                child: _HomeGreeting(
+                  profile: controller.userProfileService,
                 ),
               ),
               IconButton(
@@ -98,12 +83,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.calendar_month_rounded),
                 tooltip: 'Kalender aktivitas',
               ),
-              IconButton(
-                onPressed: controller.refresh,
-                icon: const Icon(Icons.refresh_rounded),
-                tooltip: 'Perbarui',
-              ),
             ],
+          ),
+          HomeGreetingInsight(
+            controller: controller,
+            visible: controller.navigationIndex == 0,
           ),
           const SizedBox(height: 14),
           if (enabled.isEmpty)
@@ -148,7 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
         case 'primary_summary':
           content = _PrimaryFinanceHighlightCard(
             totalBalanceMinor: totalAssetBalanceMinor,
-            availableBalanceMinor: data.availableBalanceMinor,
             incomeMinor: data.incomePeriodMinor,
             spendingMinor: data.spendingPeriodMinor,
             currency: data.currency,
@@ -280,17 +263,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _HomeGreeting extends StatelessWidget {
+  const _HomeGreeting({required this.profile});
+
+  final UserProfileService? profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final source = profile;
+    if (source == null) return _text(context, null);
+    return AnimatedBuilder(
+      animation: source,
+      builder: (context, _) => _text(context, source.name),
+    );
+  }
+
+  Widget _text(BuildContext context, String? name) {
+    final theme = Theme.of(context);
+    return Semantics(
+      header: true,
+      child: Text(
+        homeGreetingFor(DateTime.now(), name: name),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.headlineMedium?.copyWith(
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
 class _PrimaryFinanceHighlightCard extends StatelessWidget {
   const _PrimaryFinanceHighlightCard({
     required this.totalBalanceMinor,
-    required this.availableBalanceMinor,
     required this.incomeMinor,
     required this.spendingMinor,
     required this.currency,
   });
 
   final int totalBalanceMinor;
-  final int availableBalanceMinor;
   final int incomeMinor;
   final int spendingMinor;
   final String currency;
@@ -313,15 +325,13 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
         dark ? const Color(0xFFFF8996) : const Color(0xFFB93F51);
 
     final totalLabel = Money.format(totalBalanceMinor, currency: currency);
-    final availableLabel =
-        Money.format(availableBalanceMinor, currency: currency);
     final incomeLabel = Money.format(incomeMinor, currency: currency);
     final spendingLabel = Money.format(spendingMinor, currency: currency);
 
     return Semantics(
       container: true,
       label:
-          'Total saldo $totalLabel, saldo tersedia $availableLabel, pemasukan bulan ini $incomeLabel, pengeluaran bulan ini $spendingLabel',
+          'Total saldo $totalLabel, pemasukan bulan ini $incomeLabel, pengeluaran bulan ini $spendingLabel',
       child: ExcludeSemantics(
         child: Container(
           decoration: BoxDecoration(
@@ -372,14 +382,6 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
                     color: foreground,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -.6,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Tersedia untuk dibelanjakan $availableLabel',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: muted,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 18),
