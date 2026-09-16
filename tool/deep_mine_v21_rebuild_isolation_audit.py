@@ -9,16 +9,24 @@ controller_changed = app[
  app.index('void _controllerChanged()'):
  app.index('Future<void> _boot()')
 ]
+# Structural audits must survive dart format. Collapse whitespace only for the
+# selective-root-rebuild assertion while keeping the return-before-setState
+# ordering requirement explicit.
+controller_changed_flat = ' '.join(controller_changed.split())
+selective_guard = (
+    'if (initializing == _lastInitializing && '
+    'fatalRecovery == _lastFatalRecovery) {'
+)
 checks={
  'root no longer rebuilds on every controller notification':'widget.controller.addListener(_refresh)' not in app,
  'root uses selective controller listener':'widget.controller.addListener(_controllerChanged)' in app,
  'root selection tracks initializing':'_lastInitializing' in app and 'widget.controller.initializing' in app,
  'root selection tracks fatal recovery only':'_lastFatalRecovery' in app and 'dashboardData == null' in app,
  'routine controller notifications return without root setState':(
-   'if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery)' in controller_changed and
-   'return;' in controller_changed and
-   'setState(() {});' in controller_changed and
-   controller_changed.index('return;') < controller_changed.index('setState(() {});')
+   selective_guard in controller_changed_flat and
+   'return;' in controller_changed_flat and
+   'setState(() {});' in controller_changed_flat and
+   controller_changed_flat.index('return;') < controller_changed_flat.index('setState(() {});')
  ),
  'controller replacement listener is safely rewired':'didUpdateWidget' in app and 'oldWidget.controller.removeListener(_controllerChanged)' in app,
  'root listener removed on dispose':'widget.controller.removeListener(_controllerChanged)' in app,
