@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -22,6 +23,9 @@ class SecurityService {
   static const _failedAttemptsKey = 'arus_pin_failed_attempts_v1';
   static const _lockUntilKey = 'arus_pin_lock_until_v1';
 
+  String? _lastBiometricError;
+  String? get lastBiometricError => _lastBiometricError;
+
   Future<bool> hasPin() async => (await _storage.read(key: _pinHashKey))?.isNotEmpty == true;
   Future<bool> biometricEnabled() async => (await _storage.read(key: _bioKey)) == '1';
 
@@ -30,10 +34,22 @@ class SecurityService {
       if (!await _auth.isDeviceSupported() || !await _auth.canCheckBiometrics) {
         return false;
       }
-      // canCheckBiometrics only reports hardware capability. App settings
-      // should offer biometric unlock only when at least one biometric is
-      // actually enrolled on the device.
-      return (await _auth.getAvailableBiometrics()).isNotEmpty;
+
+      // Prefer the enrolled-biometric list when the platform reports it
+      // correctly. Some Android/OEM combinations return an empty list even
+      // though BiometricPrompt can authenticate an enrolled fingerprint.
+      // Do not hide Arus' biometric option solely because that advisory list
+      // is empty on Android; the actual authenticate(biometricOnly: true)
+      // call remains the source of truth.
+      try {
+        if ((await _auth.getAvailableBiometrics()).isNotEmpty) return true;
+      } on LocalAuthException {
+        // Capability checks above succeeded. Android gets a runtime-auth
+        // fallback below; other platforms stay conservative.
+      } catch (_) {
+        // Same rationale as above for vendor-specific enumeration failures.
+      }
+      return defaultTargetPlatform == TargetPlatform.android;
     } catch (_) {
       return false;
     }
@@ -106,6 +122,7 @@ class SecurityService {
   }
 
   Future<bool> authenticateBiometric() async {
+    _lastBiometricError = null;
     if (!await biometricEnabled()) return false;
     try {
       return await _auth.authenticate(
@@ -116,7 +133,35 @@ class SecurityService {
         // user can fall back to the app PIN. LockGate owns any later retry.
         persistAcrossBackgrounding: false,
       );
+    } on LocalAuthException catch (error) {
+      _lastBiometricError = switch (error.code) {
+        LocalAuthExceptionCode.userCanceled ||
+        LocalAuthExceptionCode.systemCanceled ||
+        LocalAuthExceptionCode.userRequestedFallback => null,
+        LocalAuthExceptionCode.noBiometricsEnrolled =>
+          'Belum ada sidik jari/biometrik yang terdaftar untuk aplikasi.',
+        LocalAuthExceptionCode.noBiometricHardware =>
+          'Sensor biometrik tidak terdeteksi oleh Android.',
+        LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable =>
+          'Sensor biometrik sedang tidak tersedia. Coba lagi.',
+        LocalAuthExceptionCode.temporaryLockout =>
+          'Biometrik dikunci sementara karena terlalu banyak percobaan. Coba lagi nanti.',
+        LocalAuthExceptionCode.biometricLockout =>
+          'Biometrik dikunci oleh perangkat. Buka kunci HP sekali lalu coba lagi.',
+        LocalAuthExceptionCode.noCredentialsSet =>
+          'Kunci layar perangkat belum siap untuk autentikasi biometrik.',
+        LocalAuthExceptionCode.uiUnavailable =>
+          'Prompt biometrik tidak dapat ditampilkan oleh perangkat.',
+        LocalAuthExceptionCode.authInProgress =>
+          'Permintaan biometrik lain masih berjalan.',
+        LocalAuthExceptionCode.timeout =>
+          'Pembacaan biometrik berakhir karena batas waktu.',
+        LocalAuthExceptionCode.deviceError || LocalAuthExceptionCode.unknownError =>
+          error.description ?? 'Perangkat gagal memproses autentikasi biometrik.',
+      };
+      return false;
     } catch (_) {
+      _lastBiometricError = 'Biometrik belum dapat digunakan pada perangkat ini.';
       return false;
     }
   }
