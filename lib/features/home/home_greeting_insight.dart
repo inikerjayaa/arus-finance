@@ -70,7 +70,7 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
     final theme = Theme.of(context);
     final insight = _insight!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
+      padding: const EdgeInsets.only(top: 10, bottom: 2),
       child: Semantics(
         container: true,
         label: 'Insight Arus. ${insight.title}. ${insight.message}',
@@ -78,8 +78,7 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
             decoration: BoxDecoration(
-              color:
-                  theme.colorScheme.tertiaryContainer.withValues(alpha: .58),
+              color: theme.colorScheme.tertiaryContainer.withValues(alpha: .58),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: theme.colorScheme.tertiary.withValues(alpha: .22),
