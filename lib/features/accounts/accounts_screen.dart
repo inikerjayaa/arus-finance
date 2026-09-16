@@ -129,7 +129,7 @@ class AccountsScreen extends StatelessWidget {
                             ),
                             PopupMenuItem(
                               value: 'reconcile',
-                              child: Text('Rekonsiliasi saldo'),
+                              child: Text('Sesuaikan saldo'),
                             ),
                             PopupMenuItem(
                               value: 'archive',
@@ -182,68 +182,111 @@ class AccountsScreen extends StatelessWidget {
     int calculatedMinor,
   ) async {
     final controller = AppScope.of(context);
-    final observed = TextEditingController(text: Money.input(calculatedMinor));
-    final reason = TextEditingController();
-    final ok = await showDialog<bool>(
+    var value = Money.input(calculatedMinor);
+    var saving = false;
+
+    final saved = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Rekonsiliasi $accountName'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Saldo terhitung: ${Money.format(calculatedMinor)}'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: observed,
-              keyboardType: TextInputType.number,
-              inputFormatters: const [
-                IdrInputFormatter(allowNegative: true),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Saldo yang terlihat',
-                prefixText: 'Rp ',
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetBodyContext, setState) {
+          final amount = Money.parseIdr(value);
+          final canSave = !saving &&
+              amount != null &&
+              amount != calculatedMinor;
+          final theme = Theme.of(sheetBodyContext);
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              2,
+              20,
+              MediaQuery.viewInsetsOf(sheetBodyContext).bottom + 22,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Sesuaikan saldo',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    accountName,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Saldo Saat Ini',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    Money.format(calculatedMinor),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  TextFormField(
+                    initialValue: value,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [
+                      IdrInputFormatter(allowNegative: true),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Saldo Baru',
+                      prefixText: 'Rp ',
+                    ),
+                    onChanged: (next) => setState(() => value = next),
+                  ),
+                  const SizedBox(height: 22),
+                  FilledButton(
+                    onPressed: canSave
+                        ? () async {
+                            final next = Money.parseIdr(value);
+                            if (next == null || next == calculatedMinor) return;
+                            setState(() => saving = true);
+                            await controller.run(
+                              () => controller.repository.reconcileAccount(
+                                accountId: accountId,
+                                observedBalanceMinor: next,
+                                occurredAt: DateTime.now(),
+                                reason:
+                                    'Penyesuaian saldo $accountName: ${Money.format(calculatedMinor)} → ${Money.format(next)}',
+                              ),
+                            );
+                            if (!sheetContext.mounted) return;
+                            if (controller.errorMessage == null) {
+                              Navigator.of(sheetContext).pop(true);
+                            } else {
+                              setState(() => saving = false);
+                            }
+                          }
+                        : null,
+                    child: Text(saving ? 'Menyimpan…' : 'Simpan saldo'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reason,
-              decoration: const InputDecoration(
-                labelText: 'Alasan penyesuaian',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final amount = Money.parseIdr(observed.text);
-              if (amount == null || reason.text.trim().isEmpty) return;
-              await controller.run(
-                () => controller.repository.reconcileAccount(
-                  accountId: accountId,
-                  observedBalanceMinor: amount,
-                  occurredAt: DateTime.now(),
-                  reason: reason.text.trim(),
-                ),
-              );
-              if (ctx.mounted && controller.errorMessage == null) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            child: const Text('Sesuaikan'),
-          ),
-        ],
+          );
+        },
       ),
     );
-    observed.dispose();
-    reason.dispose();
-    if (ok == true && context.mounted) {
+
+    if (saved == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Rekonsiliasi selesai.')),
+        const SnackBar(content: Text('Saldo diperbarui.')),
       );
     }
   }
