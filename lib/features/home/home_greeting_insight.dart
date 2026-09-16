@@ -4,12 +4,18 @@ import '../../app_controller.dart';
 import '../../core/services/local_insight_controller_access.dart';
 import '../../core/services/local_insight_service.dart';
 
-String homeGreetingFor(DateTime value) {
+String homeGreetingFor(DateTime value, {String? name}) {
   final hour = value.toLocal().hour;
-  if (hour < 11) return 'Selamat pagi';
-  if (hour < 15) return 'Selamat siang';
-  if (hour < 18) return 'Selamat sore';
-  return 'Selamat malam';
+  final greeting = switch (hour) {
+    < 11 => 'Selamat pagi',
+    < 15 => 'Selamat siang',
+    < 18 => 'Selamat sore',
+    _ => 'Selamat malam',
+  };
+  final cleanName = name?.trim();
+  return cleanName == null || cleanName.isEmpty
+      ? greeting
+      : '$greeting, $cleanName';
 }
 
 class HomeGreetingInsight extends StatefulWidget {
@@ -40,8 +46,6 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
   @override
   void didUpdateWidget(covariant HomeGreetingInsight oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // The assistant belongs to the first Home visit of this app session. Once
-    // the user moves elsewhere it stays quiet until a fresh app session.
     if (oldWidget.visible && !widget.visible && !_consumed) {
       setState(() => _consumed = true);
     }
@@ -56,8 +60,7 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
       final insight = await service.build();
       if (mounted) setState(() => _insight = insight);
     } catch (_) {
-      // Insight must never block Home or surface a noisy technical error. The
-      // finance data remains available even when this optional helper fails.
+      // Insight is optional and must never block access to finance data.
     }
   }
 
@@ -75,7 +78,8 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
             decoration: BoxDecoration(
-              color: theme.colorScheme.tertiaryContainer.withValues(alpha: .58),
+              color:
+                  theme.colorScheme.tertiaryContainer.withValues(alpha: .58),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: theme.colorScheme.tertiary.withValues(alpha: .22),
