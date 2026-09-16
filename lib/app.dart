@@ -16,7 +16,12 @@ import 'features/settings/lock_gate.dart';
 import 'shared/app_theme.dart';
 
 class ArusApp extends StatefulWidget {
-  const ArusApp({super.key, required this.controller, required this.database, required this.security});
+  const ArusApp({
+    super.key,
+    required this.controller,
+    required this.database,
+    required this.security,
+  });
   final AppController controller;
   final AppDatabase database;
   final SecurityService security;
@@ -29,6 +34,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   final ThemePreferencesService _themePreferences = ThemePreferencesService.instance;
   final ScreenProtectionService _screenProtection = ScreenProtectionService.instance;
   bool? _onboardingDone;
+  bool _onboardingJustCompleted = false;
   bool _privacyShielded = false;
   late bool _lastInitializing;
   late bool _lastFatalRecovery;
@@ -82,7 +88,12 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       // Android screenshot flag. App-switcher snapshots stay protected even
       // when the user explicitly allows screenshots while Arus is active.
       if (!_privacyShielded && mounted) {
-        setState(() => _privacyShielded = true);
+        setState(() {
+          _privacyShielded = true;
+          _onboardingJustCompleted = false;
+        });
+      } else {
+        _onboardingJustCompleted = false;
       }
     }
 
@@ -108,14 +119,17 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   void _captureRootControllerState() {
     _lastInitializing = widget.controller.initializing;
     _lastFatalRecovery =
-        widget.controller.errorMessage != null && widget.controller.dashboardData == null;
+        widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
   }
 
   void _controllerChanged() {
     final initializing = widget.controller.initializing;
     final fatalRecovery =
-        widget.controller.errorMessage != null && widget.controller.dashboardData == null;
-    if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery) {
+        widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
+    if (initializing == _lastInitializing &&
+        fatalRecovery == _lastFatalRecovery) {
       return;
     }
     _lastInitializing = initializing;
@@ -164,7 +178,9 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
 
   Widget _buildRootLock(Widget child) {
     return LockGate(
+      key: ValueKey('root-lock-${_onboardingDone == true}'),
       security: widget.security,
+      startUnlocked: _onboardingJustCompleted,
       child: child,
     );
   }
@@ -181,7 +197,11 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
               container: true,
               label: 'Arus disembunyikan saat aplikasi tidak aktif',
               child: const Center(
-                child: Icon(Icons.lock_outline, color: Colors.white70, size: 36),
+                child: Icon(
+                  Icons.lock_outline,
+                  color: Colors.white70,
+                  size: 36,
+                ),
               ),
             ),
           ),
@@ -196,15 +216,22 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
           child: Semantics(
             label: 'Memuat Arus Finance',
             liveRegion: true,
-            child: CircularProgressIndicator(),
+            child: const CircularProgressIndicator(),
           ),
         ),
       );
     }
     if (_onboardingDone == false) {
-      return OnboardingScreen(onDone: () => setState(() => _onboardingDone = true));
+      return OnboardingScreen(
+        security: widget.security,
+        onDone: () => setState(() {
+          _onboardingJustCompleted = true;
+          _onboardingDone = true;
+        }),
+      );
     }
-    if (widget.controller.errorMessage != null && widget.controller.dashboardData == null) {
+    if (widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null) {
       return RecoveryScreen(
         controller: widget.controller,
         database: widget.database,
