@@ -116,9 +116,6 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     final fatalRecovery =
         widget.controller.errorMessage != null && widget.controller.dashboardData == null;
     if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery) {
-      // AppScope/InheritedNotifier owns normal in-app state propagation. Avoid
-      // rebuilding MaterialApp/Navigator for search, pagination, busy, notices,
-      // dashboard values, or other routine controller notifications.
       return;
     }
     _lastInitializing = initializing;
@@ -150,22 +147,40 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       theme: AppTheme.light(_themePreferences.themeId),
       darkTheme: AppTheme.dark(_themePreferences.themeId),
       themeMode: _themePreferences.themeMode,
-      home: _buildPrivacyProtectedHome(),
+      // Security wraps the Navigator itself. A dialog, modal bottom sheet, or
+      // pushed route must never sit above the lock/privacy layers after Arus
+      // leaves the foreground.
+      builder: (context, child) => _buildSecurityEnvelope(child),
+      home: _buildHome(),
     );
   }
 
-  Widget _buildPrivacyProtectedHome() {
+  Widget _buildSecurityEnvelope(Widget? routedChild) {
+    final lockedNavigator = _buildRootLock(
+      routedChild ?? const SizedBox.shrink(),
+    );
+    return _buildPrivacyProtectedHome(lockedNavigator);
+  }
+
+  Widget _buildRootLock(Widget child) {
+    return LockGate(
+      security: widget.security,
+      child: child,
+    );
+  }
+
+  Widget _buildPrivacyProtectedHome(Widget protectedNavigator) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        _buildHome(),
+        protectedNavigator,
         if (_privacyShielded)
           ColoredBox(
-            color: Color(0xFF101114),
+            color: const Color(0xFF101114),
             child: Semantics(
               container: true,
               label: 'Arus disembunyikan saat aplikasi tidak aktif',
-              child: Center(
+              child: const Center(
                 child: Icon(Icons.lock_outline, color: Colors.white70, size: 36),
               ),
             ),
@@ -190,18 +205,16 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       return OnboardingScreen(onDone: () => setState(() => _onboardingDone = true));
     }
     if (widget.controller.errorMessage != null && widget.controller.dashboardData == null) {
-      return LockGate(
-        security: widget.security,
-        child: RecoveryScreen(
-          controller: widget.controller,
-          database: widget.database,
-          errorMessage: widget.controller.errorMessage!,
-        ),
+      return RecoveryScreen(
+        controller: widget.controller,
+        database: widget.database,
+        errorMessage: widget.controller.errorMessage!,
       );
     }
-    return LockGate(
+    return AppShell(
+      controller: widget.controller,
+      database: widget.database,
       security: widget.security,
-      child: AppShell(controller: widget.controller, database: widget.database, security: widget.security),
     );
   }
 }

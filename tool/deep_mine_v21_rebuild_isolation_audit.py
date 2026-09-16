@@ -5,12 +5,21 @@ read=lambda r:(ROOT/r).read_text()
 app=read('lib/app.dart')
 shell=read('lib/app_shell.dart')
 docs=read('docs/REBUILD_LIFECYCLE_UAT_V21.md')
+controller_changed = app[
+ app.index('void _controllerChanged()'):
+ app.index('Future<void> _boot()')
+]
 checks={
  'root no longer rebuilds on every controller notification':'widget.controller.addListener(_refresh)' not in app,
  'root uses selective controller listener':'widget.controller.addListener(_controllerChanged)' in app,
  'root selection tracks initializing':'_lastInitializing' in app and 'widget.controller.initializing' in app,
  'root selection tracks fatal recovery only':'_lastFatalRecovery' in app and 'dashboardData == null' in app,
- 'routine controller notifications return without root setState':'AppScope/InheritedNotifier owns normal in-app state propagation' in app,
+ 'routine controller notifications return without root setState':(
+   'if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery)' in controller_changed and
+   'return;' in controller_changed and
+   'setState(() {});' in controller_changed and
+   controller_changed.index('return;') < controller_changed.index('setState(() {});')
+ ),
  'controller replacement listener is safely rewired':'didUpdateWidget' in app and 'oldWidget.controller.removeListener(_controllerChanged)' in app,
  'root listener removed on dispose':'widget.controller.removeListener(_controllerChanged)' in app,
  'shell directly listens to controller':'AnimatedBuilder(' in shell and 'animation: controller' in shell,
