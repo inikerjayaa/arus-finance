@@ -13,7 +13,7 @@ enum ArusThemeId {
 
 extension ArusThemeIdLabel on ArusThemeId {
   String get label => switch (this) {
-        ArusThemeId.original => 'Arus Original',
+        ArusThemeId.original => 'SAKU Original',
         ArusThemeId.ocean => 'Ocean',
         ArusThemeId.forest => 'Forest',
         ArusThemeId.graphite => 'Graphite',
