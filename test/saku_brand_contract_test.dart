@@ -18,8 +18,8 @@ void main() {
     final dark = AppTheme.dark();
     expect(light.scaffoldBackgroundColor, SakuBrand.sand);
     expect(dark.scaffoldBackgroundColor, SakuBrand.noturno);
-    expect(light.fontFamily, SakuBrand.fontFamily);
-    expect(dark.fontFamily, SakuBrand.fontFamily);
+    expect(light.textTheme.bodyMedium?.fontFamily, SakuBrand.fontFamily);
+    expect(dark.textTheme.bodyMedium?.fontFamily, SakuBrand.fontFamily);
   });
 
   test('brand icon catalog has unique stable ids and required anchors', () {
@@ -43,8 +43,11 @@ void main() {
       'cash',
       'subscription',
     ]) {
-      expect(SakuBrandIconCatalog.byId(required), isNotNull,
-          reason: 'Missing required SAKU icon catalog id: $required');
+      expect(
+        SakuBrandIconCatalog.byId(required),
+        isNotNull,
+        reason: 'Missing required SAKU icon catalog id: $required',
+      );
     }
   });
 
@@ -52,8 +55,11 @@ void main() {
     for (final item in SakuBrandIconCatalog.items) {
       final path = item.assetPath;
       if (path == null) continue;
-      expect(path.startsWith('http://') || path.startsWith('https://'), isFalse,
-          reason: '${item.id} must resolve locally');
+      expect(
+        path.startsWith('http://') || path.startsWith('https://'),
+        isFalse,
+        reason: '${item.id} must resolve locally',
+      );
     }
   });
 }
