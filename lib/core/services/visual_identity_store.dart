@@ -1,6 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 import '../../domain/enums.dart';
+import '../../shared/custom_visual_icon.dart';
 import '../../shared/icon_catalog.dart';
 import '../../shared/visual_palette.dart';
 import '../db/app_database.dart';
@@ -66,7 +67,7 @@ class VisualIdentityStore {
   }) async {
     await initialize();
     _validateVisualKeys(iconKey, colorKey);
-    _requireEntity('accounts', accountId, 'Account');
+    _requireEntity('accounts', accountId, 'Akun');
     _db.execute(
       '''UPDATE accounts
          SET visual_icon_key=?, visual_color_key=?
@@ -115,10 +116,14 @@ class VisualIdentityStore {
     final color = switch (icon.group) {
       IconCatalogGroup.food => 'orange',
       IconCatalogGroup.shopping => 'purple',
+      IconCatalogGroup.marketplace => 'orange',
       IconCatalogGroup.transport => 'blue',
       IconCatalogGroup.home => 'teal',
       IconCatalogGroup.health => 'red',
       IconCatalogGroup.subscription => 'indigo',
+      IconCatalogGroup.ai => 'indigo',
+      IconCatalogGroup.telco => 'red',
+      IconCatalogGroup.utility => 'amber',
       IconCatalogGroup.wallet => 'purple',
       IconCatalogGroup.bank => 'blue',
       IconCatalogGroup.lifestyle => 'cyan',
@@ -183,8 +188,7 @@ class VisualIdentityStore {
     final iconKey = row['visual_icon_key'];
     final colorKey = row['visual_color_key'];
     if (iconKey is! String || colorKey is! String) return null;
-    if (IconCatalog.byKey(iconKey) == null ||
-        VisualPalette.byKey(colorKey) == null) {
+    if (!_isKnownIconKey(iconKey) || VisualPalette.byKey(colorKey) == null) {
       return null;
     }
     return VisualIdentity(iconKey: iconKey, colorKey: colorKey);
@@ -209,13 +213,16 @@ class VisualIdentityStore {
   }
 
   void _validateVisualKeys(String iconKey, String colorKey) {
-    if (IconCatalog.byKey(iconKey) == null) {
-      throw ArgumentError('Ikon visual tidak dikenal: $iconKey');
+    if (!_isKnownIconKey(iconKey)) {
+      throw ArgumentError('Ikon visual tidak dikenal atau rusak.');
     }
     if (VisualPalette.byKey(colorKey) == null) {
       throw ArgumentError('Warna visual tidak dikenal: $colorKey');
     }
   }
+
+  bool _isKnownIconKey(String iconKey) =>
+      IconCatalog.byKey(iconKey) != null || CustomVisualIconData.isValid(iconKey);
 
   void _requireEntity(String table, String id, String label) {
     final exists = _db.select('SELECT 1 FROM $table WHERE id=? LIMIT 1', [id]);

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+python3 tool/materialize_brand_fonts.py
 python3 tool/reference_financial_audit.py
 python3 tool/local_only_source_audit.py
 python3 tool/dart_source_audit.py
@@ -40,9 +41,10 @@ find . -type f -name '*.pyc' -delete
 python3 tool/deep_mine_v27_git_bootstrap_audit.py
 python3 tool/deep_mine_biometric_cancel_audit.py
 python3 tool/deep_mine_v31_data_survival_audit.py
+python3 tool/deep_mine_v32_brand_foundation_audit.py
 python3 tool/reference_v27_git_bootstrap_audit.py
 python3 tool/reference_v17_native_execution_audit.py
 python3 tool/version_continuity_audit.py
 python3 tool/reference_native_hardening_audit.py
 python3 tool/reference_android_signing_audit.py
-printf '\nPASS: all non-native Arus audits\n'
+printf '\nPASS: all non-native Arus/SAKU audits\n'

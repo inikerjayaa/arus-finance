@@ -11,3 +11,4 @@ ios/Pods/
 *.mobileprovision
 android/key.properties
 ios/ExportOptions.plist
+assets/fonts/*.ttf
