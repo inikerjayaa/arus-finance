@@ -56,7 +56,7 @@ class SakuVisualIcon extends StatelessWidget {
         width: size,
         height: size,
         fit: fit,
-        errorBuilder: (_, __, ___) => _fallback(),
+        errorBuilder: (context, error, stackTrace) => _fallback(),
       );
     }
     if (SakuIconRegistry.isCustomKey(key)) {
@@ -72,7 +72,7 @@ class SakuVisualIcon extends StatelessWidget {
               width: size,
               height: size,
               fit: fit,
-              errorBuilder: (_, __, ___) => _fallback(),
+              errorBuilder: (context, error, stackTrace) => _fallback(),
             ),
           );
         },
