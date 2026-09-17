@@ -49,6 +49,10 @@ Uint8List _pngBytes([int marker = 0]) => Uint8List.fromList(<int>[
 String _keyFor(Uint8List bytes) => 'custom:${sha256.convert(bytes)}.png';
 
 void main() {
+  test('legacy backup without custom_icons decodes as an empty bundle', () {
+    expect(CustomIconBackupBundle.decode(null), isEmpty);
+  });
+
   test('capture includes only referenced readable custom icons', () async {
     final database = AppDatabase.inMemory();
     addTearDown(database.close);
