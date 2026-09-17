@@ -20,6 +20,7 @@ class IconPickerSheet {
     return showModalBottomSheet<VisualIdentity>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => _IconPickerBody(
         initial: initial,
@@ -111,166 +112,175 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
         VisualPalette.fallbackFor(_colorKey).resolve(brightness);
     final selectedLabel = SakuVisualIconResolver.labelFor(_iconKey);
 
-    return SafeArea(
-      child: FractionallySizedBox(
-        heightFactor: .92,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            18,
-            0,
-            18,
-            MediaQuery.viewInsetsOf(context).bottom + 18,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Pilih ikon & warna',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          18,
+          0,
+          18,
+          MediaQuery.viewInsetsOf(context).bottom + 12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Pilih ikon & warna',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(height: 12),
-              SegmentedButton<_PickerMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: _PickerMode.common,
-                    icon: Icon(Icons.category_rounded),
-                    label: Text('Umum'),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<_PickerMode>(
+              segments: const [
+                ButtonSegment(
+                  value: _PickerMode.common,
+                  icon: Icon(Icons.category_rounded),
+                  label: Text('Umum'),
+                ),
+                ButtonSegment(
+                  value: _PickerMode.brand,
+                  icon: Icon(Icons.apps_rounded),
+                  label: Text('Brand'),
+                ),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (value) => setState(() {
+                _mode = value.first;
+                _group = null;
+                _brandGroup = null;
+              }),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _search,
+                    autofocus: false,
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(
+                      labelText: 'Cari ikon',
+                      hintText: 'BCA, DANA, ChatGPT, makanan…',
+                      prefixIcon: Icon(Icons.search_rounded),
+                    ),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  ButtonSegment(
-                    value: _PickerMode.brand,
-                    icon: Icon(Icons.apps_rounded),
-                    label: Text('Brand'),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _importing ? null : _pickCustomIcon,
+                    child: _importing
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Tooltip(
+                            message: 'Pakai gambar sendiri',
+                            child: Icon(Icons.add_photo_alternate_rounded),
+                          ),
                   ),
-                ],
-                selected: {_mode},
-                onSelectionChanged: (value) => setState(() {
-                  _mode = value.first;
-                  _group = null;
-                  _brandGroup = null;
-                }),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _search,
-                autofocus: false,
-                textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  labelText: 'Cari ikon',
-                  hintText: 'BCA, DANA, ChatGPT, makanan…',
-                  prefixIcon: Icon(Icons.search_rounded),
                 ),
-                onChanged: (_) => setState(() {}),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 42,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: _mode == _PickerMode.common
+                    ? _commonGroupChips()
+                    : _brandGroupChips(),
               ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: _importing ? null : _pickCustomIcon,
-                icon: _importing
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_photo_alternate_rounded),
-                label: Text(
-                  _importing ? 'Memproses…' : 'Pakai gambar sendiri',
-                ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _mode == _PickerMode.common
+                  ? _buildCommonGrid(commonEntries, theme)
+                  : _buildBrandGrid(brandEntries, theme),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: VisualPalette.presets.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final preset = VisualPalette.presets[index];
+                  return Tooltip(
+                    message: preset.label,
+                    child: ChoiceChip(
+                      selected: preset.key == _colorKey,
+                      label: Text(preset.label),
+                      avatar: CircleAvatar(
+                        backgroundColor: preset.resolve(brightness),
+                      ),
+                      onSelected: (_) =>
+                          setState(() => _colorKey = preset.key),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 42,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: _mode == _PickerMode.common
-                      ? _commonGroupChips()
-                      : _brandGroupChips(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: _mode == _PickerMode.common
-                    ? _buildCommonGrid(commonEntries, theme)
-                    : _buildBrandGrid(brandEntries, theme),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Warna',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final preset in VisualPalette.presets)
-                    Tooltip(
-                      message: preset.label,
-                      child: ChoiceChip(
-                        selected: preset.key == _colorKey,
-                        label: const SizedBox(width: 18, height: 18),
-                        avatar: CircleAvatar(
-                          backgroundColor: preset.resolve(brightness),
-                        ),
-                        onSelected: (_) =>
-                            setState(() => _colorKey = preset.key),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: selectedColor.withValues(alpha: .16),
+                      foregroundColor: selectedColor,
+                      child: SakuVisualIcon(
+                        iconKey: _iconKey,
+                        size: 24,
+                        color: selectedColor,
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Card(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor:
-                            selectedColor.withValues(alpha: .16),
-                        foregroundColor: selectedColor,
-                        child: SakuVisualIcon(
-                          iconKey: _iconKey,
-                          size: 24,
-                          color: selectedColor,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              selectedLabel,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            selectedLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
-                            Text(
-                              VisualPalette.fallbackFor(_colorKey).label,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(context).pop(
-                          VisualIdentity(
-                            iconKey: _iconKey,
-                            colorKey: _colorKey,
                           ),
-                        ),
-                        child: const Text('Pakai'),
+                          Text(
+                            VisualPalette.fallbackFor(_colorKey).label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).pop(
+                        VisualIdentity(
+                          iconKey: _iconKey,
+                          colorKey: _colorKey,
+                        ),
+                      ),
+                      child: const Text('Pakai'),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -310,10 +320,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
         ],
       ];
 
-  Widget _buildCommonGrid(
-    List<IconCatalogEntry> entries,
-    ThemeData theme,
-  ) {
+  Widget _buildCommonGrid(List<IconCatalogEntry> entries, ThemeData theme) {
     if (entries.isEmpty) return _emptyState(theme);
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -334,10 +341,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
     );
   }
 
-  Widget _buildBrandGrid(
-    List<SakuIconChoice> entries,
-    ThemeData theme,
-  ) {
+  Widget _buildBrandGrid(List<SakuIconChoice> entries, ThemeData theme) {
     if (entries.isEmpty) return _emptyState(theme);
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
