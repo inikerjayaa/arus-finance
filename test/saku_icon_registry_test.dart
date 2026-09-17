@@ -36,6 +36,10 @@ void main() {
       SakuIconRegistry.search('MotionBanking').first.key,
       'brand:motionbanking',
     );
+    expect(
+      SakuIconRegistry.search('motion banking').first.key,
+      'brand:motionbanking',
+    );
     expect(SakuIconRegistry.search('ChatGPT').first.key, 'brand:chatgpt');
     expect(SakuIconRegistry.search('Gemini').first.key, 'brand:gemini');
     expect(SakuIconRegistry.search('Claude').first.key, 'brand:claude');
