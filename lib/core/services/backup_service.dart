@@ -9,11 +9,17 @@ import 'package:path_provider/path_provider.dart';
 import '../db/app_database.dart';
 import '../db/schema.dart';
 import '../../domain/money_limits.dart';
+import 'custom_icon_backup_bundle.dart';
 
 class _DecodedBackup {
-  const _DecodedBackup({required this.schemaVersion, required this.tables});
+  const _DecodedBackup({
+    required this.schemaVersion,
+    required this.tables,
+    required this.customIcons,
+  });
   final int schemaVersion;
   final Map<String, dynamic> tables;
+  final List<CustomIconBackupEntry> customIcons;
 }
 
 class BackupService {
@@ -44,6 +50,10 @@ class BackupService {
     database.assertQuickIntegrity();
 
     final payload = _capturePayload();
+    final customIcons = await CustomIconBackupBundle(database).captureReferenced();
+    if (customIcons.isNotEmpty) {
+      payload['custom_icons'] = customIcons;
+    }
     final clear = utf8.encode(jsonEncode(payload));
     final random = Random.secure();
     final salt = List<int>.generate(16, (_) => random.nextInt(256));
@@ -84,6 +94,9 @@ class BackupService {
     // perfectly valid. Capture an exact pre-restore local generation first.
     // If storage is full, abort before touching live financial data.
     await createLocalRecoveryGeneration(force: true);
+    // Optional visual files are validated and made durable before financial
+    // rows are replaced. If this fails, the live ledger is still untouched.
+    await CustomIconBackupBundle(database).restoreValidated(decoded.customIcons);
     _restoreDecodedBackup(decoded);
   }
 
@@ -92,6 +105,7 @@ class BackupService {
     String passphrase,
   ) async {
     final decoded = await _decodePortableBackup(file, passphrase);
+    await CustomIconBackupBundle(database).restoreValidated(decoded.customIcons);
     await _restoreDecodedAsFreshRecovery(decoded);
   }
 
@@ -324,7 +338,12 @@ class BackupService {
         throw FormatException('Tabel backup tidak valid: $table');
       }
     }
-    return _DecodedBackup(schemaVersion: schemaVersion, tables: rawTables);
+    final customIcons = CustomIconBackupBundle.decode(decoded['custom_icons']);
+    return _DecodedBackup(
+      schemaVersion: schemaVersion,
+      tables: rawTables,
+      customIcons: customIcons,
+    );
   }
 
   void _restoreDecodedBackup(_DecodedBackup decoded) {
