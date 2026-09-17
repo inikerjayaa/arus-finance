@@ -31,6 +31,7 @@ cp -a "$TMP_ROOT/arus_native_shell/ios" ./ios
 
 python3 tool/native_hardening.py
 python3 tool/native_branding.py
+python3 tool/native_splash.py
 bash tool/run_all_audits.sh
 if [[ -f pubspec.lock ]]; then
   flutter pub get --enforce-lockfile
