@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/services/theme_preferences_service.dart';
+import 'saku_brand.dart';
 
 class AppTheme {
   static ThemeData light([ArusThemeId themeId = ArusThemeId.original]) =>
@@ -21,22 +22,25 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: SakuBrand.fontFamily,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
       canvasColor: background,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? scheme.surfaceContainerHighest.withValues(alpha: .34) : scheme.surface,
+        fillColor: isDark
+            ? scheme.surfaceContainerHighest.withValues(alpha: .34)
+            : scheme.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(SakuBrand.controlRadius),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(SakuBrand.controlRadius),
           borderSide: BorderSide(color: scheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(SakuBrand.controlRadius),
           borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
       ),
@@ -47,14 +51,16 @@ class AppTheme {
             ? const Color(0xFF121820)
             : null,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: const BorderRadius.all(SakuBrand.cardRadius),
           side: BorderSide(
             color: scheme.outlineVariant.withValues(alpha: isDark ? .45 : .55),
           ),
         ),
       ),
       navigationBarTheme: const NavigationBarThemeData(height: 72),
-      dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: .7)),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: .7),
+      ),
     );
   }
 
@@ -63,38 +69,54 @@ class AppTheme {
   // auditable even as their visual tokens evolve.
   static ThemeData _withLightMinimumTargets(ThemeData base) => base.copyWith(
         iconButtonTheme: const IconButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
         filledButtonTheme: const FilledButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
         outlinedButtonTheme: const OutlinedButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
         textButtonTheme: const TextButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
       );
 
   static ThemeData _withDarkMinimumTargets(ThemeData base) => base.copyWith(
         iconButtonTheme: const IconButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
         filledButtonTheme: const FilledButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
         outlinedButtonTheme: const OutlinedButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
         textButtonTheme: const TextButtonThemeData(
-          style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
+          style: ButtonStyle(
+            minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+          ),
         ),
       );
 
   static Color _seed(ArusThemeId themeId, Brightness brightness) {
     final dark = brightness == Brightness.dark;
     return switch (themeId) {
-      ArusThemeId.original => dark ? const Color(0xFF7BA89C) : const Color(0xFF375B53),
+      ArusThemeId.original => SakuBrand.vulcanico,
       ArusThemeId.ocean => dark ? const Color(0xFF69B8CF) : const Color(0xFF246B82),
       ArusThemeId.forest => dark ? const Color(0xFF78B88A) : const Color(0xFF315E3D),
       ArusThemeId.graphite => dark ? const Color(0xFF9DA8B2) : const Color(0xFF4D5963),
@@ -107,6 +129,7 @@ class AppTheme {
   static Color _background(ArusThemeId themeId, Brightness brightness) {
     if (brightness == Brightness.dark) {
       return switch (themeId) {
+        ArusThemeId.original => SakuBrand.noturno,
         ArusThemeId.midnight => const Color(0xFF080B10),
         ArusThemeId.sand => const Color(0xFF17130F),
         ArusThemeId.highContrast => Colors.black,
@@ -114,7 +137,7 @@ class AppTheme {
       };
     }
     return switch (themeId) {
-      ArusThemeId.original => const Color(0xFFF7F8F6),
+      ArusThemeId.original => SakuBrand.sand,
       ArusThemeId.ocean => const Color(0xFFF4F8FA),
       ArusThemeId.forest => const Color(0xFFF5F8F4),
       ArusThemeId.graphite => const Color(0xFFF5F6F7),
