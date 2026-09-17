@@ -32,7 +32,7 @@ class SakuSplashScreen extends StatelessWidget {
                     fontSize: 44,
                     height: 1,
                     letterSpacing: 3.2,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
