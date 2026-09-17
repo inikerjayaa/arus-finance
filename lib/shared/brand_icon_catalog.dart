@@ -62,6 +62,12 @@ abstract final class SakuBrandIconCatalog {
     SakuBrandIcon(id: 'digibank', name: 'digibank by DBS', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'line_bank', name: 'LINE Bank', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'bank_saqu', name: 'Bank Saqu', group: SakuIconGroup.bank),
+    SakuBrandIcon(
+      id: 'motionbanking',
+      name: 'MotionBanking',
+      group: SakuIconGroup.bank,
+      keywords: ['motion', 'banking'],
+    ),
 
     // B — E-wallets & payment
     SakuBrandIcon(id: 'dana', name: 'DANA', group: SakuIconGroup.wallet),
