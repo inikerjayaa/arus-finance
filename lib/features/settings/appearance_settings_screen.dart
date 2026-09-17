@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/services/theme_preferences_service.dart';
+import '../../shared/saku_brand.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -20,7 +21,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
               Semantics(
                 header: true,
                 child: Text(
-                  'Tampilan Arus',
+                  'Tampilan SAKU',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -91,7 +92,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Arus Original tetap menjadi default. High Contrast disediakan untuk kebutuhan keterbacaan yang lebih kuat.',
+                'SAKU Original memakai identitas utama NOTURNO, VULCANICO, dan SAND. High Contrast tetap disediakan untuk kebutuhan keterbacaan yang lebih kuat.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -161,7 +162,7 @@ class _ThemePresetTile extends StatelessWidget {
 
   static (Color, Color) _previewColors(ArusThemeId themeId) {
     return switch (themeId) {
-      ArusThemeId.original => (const Color(0xFF375B53), const Color(0xFF7BA89C)),
+      ArusThemeId.original => (SakuBrand.noturno, SakuBrand.vulcanico),
       ArusThemeId.ocean => (const Color(0xFF246B82), const Color(0xFF69B8CF)),
       ArusThemeId.forest => (const Color(0xFF315E3D), const Color(0xFF78B88A)),
       ArusThemeId.graphite => (const Color(0xFF4D5963), const Color(0xFF9DA8B2)),
@@ -173,7 +174,7 @@ class _ThemePresetTile extends StatelessWidget {
 
   static String _description(ArusThemeId themeId) {
     return switch (themeId) {
-      ArusThemeId.original => 'Hijau lembut khas Arus',
+      ArusThemeId.original => 'NOTURNO + VULCANICO, identitas utama SAKU',
       ArusThemeId.ocean => 'Biru-teal bersih dan modern',
       ArusThemeId.forest => 'Hijau natural dengan rasa premium',
       ArusThemeId.graphite => 'Netral, profesional, minim distraksi',
