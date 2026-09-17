@@ -12,6 +12,14 @@ APP_NAME = "SAKU"
 FACE_ID_COPY = "Gunakan Face ID untuk membuka data keuangan SAKU di perangkat ini."
 
 
+def _set_android_attr(tag: str, name: str, value: str) -> str:
+    pattern = rf'\s{name}="[^"]*"'
+    replacement = f' {name}="{value}"'
+    if re.search(pattern, tag):
+        return re.sub(pattern, replacement, tag)
+    return tag[:-1] + replacement + ">"
+
+
 def patch_android() -> None:
     manifest = ROOT / "android/app/src/main/AndroidManifest.xml"
     if not manifest.exists():
@@ -21,10 +29,9 @@ def patch_android() -> None:
     if not tag:
         raise RuntimeError("AndroidManifest.xml has no <application> tag")
     app = tag.group(0)
-    if re.search(r'\sandroid:label="[^"]*"', app):
-        app = re.sub(r'\sandroid:label="[^"]*"', f' android:label="{APP_NAME}"', app)
-    else:
-        app = app[:-1] + f' android:label="{APP_NAME}">'
+    app = _set_android_attr(app, "android:label", APP_NAME)
+    app = _set_android_attr(app, "android:icon", "@mipmap/ic_launcher")
+    app = _set_android_attr(app, "android:roundIcon", "@mipmap/ic_launcher_round")
     manifest.write_text(text[: tag.start()] + app + text[tag.end() :])
 
 
