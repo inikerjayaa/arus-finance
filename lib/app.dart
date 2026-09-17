@@ -16,6 +16,7 @@ import 'features/recovery/recovery_screen.dart';
 import 'features/settings/lock_gate.dart';
 import 'shared/app_theme.dart';
 import 'shared/saku_brand.dart';
+import 'shared/saku_splash.dart';
 
 class ArusApp extends StatefulWidget {
   const ArusApp({
@@ -215,16 +216,11 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   }
 
   Widget _buildHome() {
+    // The brand splash is strictly a cold-start/initialization state. It is
+    // never inserted into normal resume/navigation flow, so returning from the
+    // background still goes through LockGate without replaying the splash.
     if (_onboardingDone == null || widget.controller.initializing) {
-      return Scaffold(
-        body: Center(
-          child: Semantics(
-            label: 'Memuat SAKU',
-            liveRegion: true,
-            child: const CircularProgressIndicator(),
-          ),
-        ),
-      );
+      return const SakuSplashScreen();
     }
     if (_onboardingDone == false) {
       return OnboardingScreen(
