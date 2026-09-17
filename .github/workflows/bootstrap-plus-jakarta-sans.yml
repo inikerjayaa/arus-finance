@@ -1,0 +1,62 @@
+name: Bootstrap Plus Jakarta Sans Assets
+
+on:
+  push:
+    branches:
+      - v36-saku-plus-jakarta-sans-assets
+    paths:
+      - .github/workflows/bootstrap-plus-jakarta-sans.yml
+
+permissions:
+  contents: write
+
+jobs:
+  vendor-fonts:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout asset branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and verify pinned official TTF files
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream_commit='18d1cd2f7ea10481919d2f05c1f7064b7307fc26'
+          base="https://raw.githubusercontent.com/tokotype/PlusJakartaSans/${upstream_commit}/fonts/ttf"
+          mkdir -p assets/fonts
+
+          fetch_font() {
+            local file="$1"
+            local expected_blob="$2"
+            local target="assets/fonts/${file}"
+            curl --fail --location --retry 3 --retry-delay 2 \
+              "${base}/${file}" -o "${target}"
+            local actual_blob
+            actual_blob="$(git hash-object "${target}")"
+            if [[ "${actual_blob}" != "${expected_blob}" ]]; then
+              echo "Blob mismatch for ${file}: expected ${expected_blob}, got ${actual_blob}" >&2
+              exit 1
+            fi
+          }
+
+          fetch_font 'PlusJakartaSans-Regular.ttf'  'cb874458c3911fcb7a12da70f66e4154863c9841'
+          fetch_font 'PlusJakartaSans-Medium.ttf'   '5d8dd8ab476e4bc9766af41d9ee0e183da2c15fe'
+          fetch_font 'PlusJakartaSans-SemiBold.ttf' 'c12d4b0e72bde4d78af22aa73184024d2495bef3'
+          fetch_font 'PlusJakartaSans-Bold.ttf'     '2d49642350842c27fc88ff90d6445eeda1766f7e'
+
+      - name: Commit verified font assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/fonts/*.ttf
+          if git diff --cached --quiet; then
+            echo 'Font assets already committed.'
+            exit 0
+          fi
+          git commit -m 'V36: vendor verified Plus Jakarta Sans TTF assets [skip ci]'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
