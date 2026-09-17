@@ -1,6 +1,6 @@
-# Arus Finance V30 — Vivo 1915 Android 12 UAT RC
+# Arus Finance V30 — Vivo 1915 Android 12 UAT RC2
 
-This checklist is the physical-device gate for the current V30 baseline. CI compile/test success is not treated as a physical-device PASS.
+This checklist is the physical-device gate for the final V30 baseline after the Android/OEM biometric lifecycle fix. CI compile/test success is not treated as a physical-device PASS.
 
 ## 1. Fresh install / first use
 
@@ -24,6 +24,8 @@ This checklist is the physical-device gate for the current V30 baseline. CI comp
 - Enable biometrics in Arus Settings.
 - Lock and reopen Arus.
 - Vivo fingerprint prompt must be allowed even if the OEM biometric-enrollment list is empty while device biometric authentication is otherwise supported.
+- A successful fingerprint result that arrives during Flutter's transient `inactive` state must keep the finance UI covered and unlock only on the immediately following `resumed` event.
+- If Arus actually enters `hidden`, `paused`, or `detached` after that transient success, the pending result must be discarded and must never unlock the app later.
 - Canceling the fingerprint prompt must not create an automatic retry loop.
 - PIN fallback remains usable.
 - Manual biometric retry remains available.
@@ -68,4 +70,4 @@ This checklist is the physical-device gate for the current V30 baseline. CI comp
 
 ## 9. Completion rule
 
-Physical-device PASS may only be recorded after the checks above are exercised on the target **Vivo 1915 / Android 12** using the APK produced from this exact RC source snapshot.
+Physical-device PASS may only be recorded after the checks above are exercised on the target **Vivo 1915 / Android 12** using the APK produced from this exact RC2 source snapshot.
