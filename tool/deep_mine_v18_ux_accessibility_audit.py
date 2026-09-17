@@ -19,7 +19,7 @@ a11y_test = read('test/accessibility_guidelines_test.dart')
 transactions = read('lib/features/transactions/transactions_screen.dart')
 
 checks = {
-    'startup progress is a labeled live region': "label: 'Memuat Arus Finance'" in app and 'liveRegion: true' in app,
+    'startup progress is a labeled live region': "label: 'Memuat SAKU'" in app and 'liveRegion: true' in app,
     'global error banner is announced': "label: 'Kesalahan: ${controller.errorMessage!}'" in shell and "tooltip: 'Tutup pesan kesalahan'" in shell,
     'onboarding is large-text scroll safe': 'LayoutBuilder(' in onboarding and 'SingleChildScrollView(' in onboarding and "header: true" in onboarding,
     'onboarding prevents duplicate save': (
