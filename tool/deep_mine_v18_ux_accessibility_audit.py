@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 read = lambda p: (ROOT / p).read_text()
 app = read('lib/app.dart')
+splash = read('lib/features/saku_splash_screen.dart')
 shell = read('lib/app_shell.dart')
 onboarding = read('lib/features/onboarding_screen.dart')
 quick = read('lib/features/quick_add/quick_add_sheet.dart')
@@ -14,12 +15,18 @@ planning = read('lib/features/planning/planning_screen.dart')
 detail = read('lib/features/transactions/transaction_detail_screen.dart')
 widgets = read('lib/shared/finance_widgets.dart')
 theme = read('lib/shared/app_theme.dart')
+brand = read('lib/shared/saku_brand.dart')
 recovery = read('lib/features/recovery/recovery_screen.dart')
 a11y_test = read('test/accessibility_guidelines_test.dart')
 transactions = read('lib/features/transactions/transactions_screen.dart')
 
 checks = {
-    'startup progress is a labeled live region': "label: 'Memuat Arus Finance'" in app and 'liveRegion: true' in app,
+    # V31 replaced the generic spinner with a branded cold-start screen. Keep
+    # the exact accessibility contract: startup state must remain a labeled
+    # live region even though the public product name is now SAKU.
+    'startup progress is a labeled live region': (
+        "label: 'SAKU sedang dibuka'" in splash and 'liveRegion: true' in splash
+    ),
     'global error banner is announced': "label: 'Kesalahan: ${controller.errorMessage!}'" in shell and "tooltip: 'Tutup pesan kesalahan'" in shell,
     'onboarding is large-text scroll safe': 'LayoutBuilder(' in onboarding and 'SingleChildScrollView(' in onboarding and "header: true" in onboarding,
     'onboarding prevents duplicate save': (
@@ -48,7 +55,12 @@ checks = {
     'bill/recurring account choices honor expense account domain': planning.count('AccountType.creditCard') >= 2,
     'full local wipe requires typed HAPUS confirmation': 'Ketik HAPUS' in settings and "value.trim() == 'HAPUS'" in settings,
     'recovery progress/status are live regions': "label: 'Pemulihan sedang berjalan'" in recovery and 'liveRegion: true' in recovery,
-    '48dp minimum control theme retained': theme.count('Size(48, 48)') >= 8,
+    # V31 centralized the established 48dp value into a brand/design token.
+    # Verify both the token itself and every control theme still consumes it.
+    '48dp minimum control theme retained': (
+        'static const minTouchTarget = 48.0;' in brand
+        and theme.count('Size(SakuBrand.minTouchTarget, SakuBrand.minTouchTarget)') >= 8
+    ),
     'empty transaction state has direct add action': 'Catat transaksi pertama' in transactions and 'QuickAddSheet.show' in transactions,
     'Flutter a11y guideline test retained': all(x in a11y_test for x in [
         'androidTapTargetGuideline', 'iOSTapTargetGuideline',
