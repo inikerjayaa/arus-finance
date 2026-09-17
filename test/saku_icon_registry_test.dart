@@ -42,6 +42,9 @@ void main() {
     expect(SakuIconRegistry.isCustomKey(valid), isTrue);
     expect(SakuIconRegistry.sourceFor(valid), SakuResolvedIconSource.userCustom);
     expect(SakuIconRegistry.isCustomKey('brand:bca'), isFalse);
+    expect(SakuIconRegistry.isCustomKey('custom:../../secret.png'), isFalse);
+    expect(SakuIconRegistry.isCustomKey('custom:not-a-hash.png'), isFalse);
+    expect(SakuIconRegistry.isCustomKey('custom:${'a' * 64}.svg'), isFalse);
   });
 
   test('custom image signatures accept supported formats only', () {
