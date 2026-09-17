@@ -6,8 +6,8 @@ import '../../core/services/visual_identity_store.dart';
 import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
-import '../../shared/icon_catalog.dart';
 import '../../shared/icon_picker_sheet.dart';
+import '../../shared/saku_visual_icon.dart';
 import '../../shared/visual_palette.dart';
 
 class CategoriesScreen extends StatelessWidget {
@@ -70,7 +70,6 @@ class CategoriesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
-          final entry = IconCatalog.fallbackFor(identity.iconKey);
           final color = VisualPalette.fallbackFor(identity.colorKey)
               .resolve(Theme.of(dialogContext).brightness);
           return AlertDialog(
@@ -101,11 +100,15 @@ class CategoriesScreen extends StatelessWidget {
                     leading: CircleAvatar(
                       backgroundColor: color.withValues(alpha: .14),
                       foregroundColor: color,
-                      child: Icon(entry.fallbackIcon),
+                      child: SakuVisualIcon(
+                        iconKey: identity.iconKey,
+                        size: 24,
+                        color: color,
+                      ),
                     ),
                     title: const Text('Ikon & warna'),
                     subtitle: Text(
-                      '${entry.label} • ${VisualPalette.fallbackFor(identity.colorKey).label}',
+                      '${SakuVisualIconResolver.labelFor(identity.iconKey)} • ${VisualPalette.fallbackFor(identity.colorKey).label}',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: visuals == null
@@ -380,13 +383,16 @@ class _CategoryAvatar extends StatelessWidget {
       builder: (context, snapshot) {
         final identity = snapshot.data ??
             visuals.suggestCategory(category.name, category.type);
-        final entry = IconCatalog.fallbackFor(identity.iconKey);
         final color = VisualPalette.fallbackFor(identity.colorKey)
             .resolve(Theme.of(context).brightness);
         return CircleAvatar(
           backgroundColor: color.withValues(alpha: .14),
           foregroundColor: color,
-          child: Icon(entry.fallbackIcon),
+          child: SakuVisualIcon(
+            iconKey: identity.iconKey,
+            size: 24,
+            color: color,
+          ),
         );
       },
     );
