@@ -20,6 +20,46 @@ VULCANICO_SHADE = (0xE8, 0x3A, 0x02)
 SKIN = (0xFF, 0xB4, 0x8F)
 ON_NOTURNO = (0xFD, 0xFC, 0xF9)
 
+ANDROID_ADAPTIVE_FOREGROUND = '''<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <group
+        android:pivotX="120"
+        android:pivotY="120"
+        android:scaleX="0.72"
+        android:scaleY="0.72">
+        <group android:translateY="24">
+            <path android:fillColor="#FF4103" android:pathData="M50,78 Q120,55 190,78 L186,148 Q182,174 128,176 L91,176 Q50,172 48,140 Z"/>
+            <path android:fillColor="#E83A02" android:pathData="M165,75 Q205,100 180,164 Q162,177 143,173 Q174,120 165,75 Z"/>
+            <path android:fillColor="#FFB48F" android:pathData="M90,28 L150,50 L145,92 Q120,105 84,88 Z"/>
+            <group android:rotation="-10" android:pivotX="105" android:pivotY="40">
+                <path android:fillColor="#FDFCF9" android:pathData="M65,12 H145 Q155,12 155,22 V58 Q155,68 145,68 H65 Q55,68 55,58 V22 Q55,12 65,12 Z"/>
+            </group>
+            <path android:fillColor="@android:color/transparent" android:strokeColor="#001621" android:strokeWidth="5.5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M55,86 Q118,110 184,83"/>
+            <path android:fillColor="@android:color/transparent" android:strokeColor="#001621" android:strokeWidth="4.5" android:strokeLineCap="round" android:pathData="M70,125 H82 M91,124 H103 M112,123 H124 M133,122 H145 M154,121 H166"/>
+            <path android:fillColor="#001621" android:pathData="M174,96 A8,8 0,1 0,190 96 A8,8 0,1 0,174 96"/>
+            <path android:fillColor="@android:color/transparent" android:strokeColor="#FF4103" android:strokeWidth="7" android:strokeLineCap="round" android:pathData="M170,55 L176,40 M185,65 L202,52"/>
+        </group>
+    </group>
+</vector>
+'''
+
+ANDROID_ADAPTIVE_ICON = '''<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/saku_launcher_background"/>
+    <foreground android:drawable="@drawable/saku_launcher_foreground"/>
+</adaptive-icon>
+'''
+
+ANDROID_LAUNCHER_COLORS = '''<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="saku_launcher_background">#001621</color>
+</resources>
+'''
+
 
 def _quad(p0: tuple[float, float], p1: tuple[float, float], p2: tuple[float, float], steps: int = 28) -> list[tuple[float, float]]:
     out: list[tuple[float, float]] = []
@@ -188,6 +228,20 @@ def patch_android() -> None:
         "xxxhdpi": 192,
     }.items():
         _write_png(res / f"mipmap-{density}/ic_launcher.png", size)
+        _write_png(res / f"mipmap-{density}/ic_launcher_round.png", size)
+
+    drawable = res / "drawable"
+    drawable.mkdir(parents=True, exist_ok=True)
+    (drawable / "saku_launcher_foreground.xml").write_text(ANDROID_ADAPTIVE_FOREGROUND)
+
+    values = res / "values"
+    values.mkdir(parents=True, exist_ok=True)
+    (values / "saku_launcher_colors.xml").write_text(ANDROID_LAUNCHER_COLORS)
+
+    adaptive = res / "mipmap-anydpi-v26"
+    adaptive.mkdir(parents=True, exist_ok=True)
+    (adaptive / "ic_launcher.xml").write_text(ANDROID_ADAPTIVE_ICON)
+    (adaptive / "ic_launcher_round.xml").write_text(ANDROID_ADAPTIVE_ICON)
 
 
 def patch_ios() -> None:
