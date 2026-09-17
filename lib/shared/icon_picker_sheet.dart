@@ -1,6 +1,8 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../core/services/visual_identity_store.dart';
+import 'custom_visual_icon.dart';
 import 'icon_catalog.dart';
 import 'visual_palette.dart';
 
@@ -42,6 +44,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
   IconCatalogGroup? _group;
   late String _iconKey;
   late String _colorKey;
+  bool _pickingCustom = false;
 
   @override
   void initState() {
@@ -64,15 +67,16 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
     final entries = IconCatalog.search(
       _search.text,
       group: _group,
-      limit: 120,
+      limit: 160,
     );
-    final selected = IconCatalog.fallbackFor(_iconKey);
     final selectedColor =
         VisualPalette.fallbackFor(_colorKey).resolve(brightness);
+    final customSelected = CustomVisualIconData.isValid(_iconKey);
+    final selected = customSelected ? null : IconCatalog.fallbackFor(_iconKey);
 
     return SafeArea(
       child: FractionallySizedBox(
-        heightFactor: .9,
+        heightFactor: .92,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             18,
@@ -96,7 +100,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                 textInputAction: TextInputAction.search,
                 decoration: const InputDecoration(
                   labelText: 'Cari ikon',
-                  hintText: 'BCA, makanan, Netflix, sepatu…',
+                  hintText: 'BCA, DANA, YouTube, ChatGPT, makanan…',
                   prefixIcon: Icon(Icons.search_rounded),
                 ),
                 onChanged: (_) => setState(() {}),
@@ -124,12 +128,31 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: _pickingCustom ? null : _pickCustomIcon,
+                icon: const Icon(Icons.add_photo_alternate_rounded),
+                label: Text(
+                  _pickingCustom ? 'Membuka galeri…' : 'Pakai ikon custom dari perangkat',
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'PNG, JPG, atau WEBP • maksimal 512 KB • disimpan lokal dan ikut backup.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               Expanded(
                 child: entries.isEmpty
                     ? Center(
                         child: Text(
-                          'Ikon tidak ditemukan.',
+                          'Ikon tidak ditemukan. Kamu tetap bisa memakai ikon custom.',
+                          textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -172,8 +195,8 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      entry.fallbackIcon,
+                                    VisualIcon(
+                                      iconKey: entry.key,
                                       size: 30,
                                       color: isSelected
                                           ? theme.colorScheme.onPrimaryContainer
@@ -233,7 +256,10 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                         backgroundColor:
                             selectedColor.withValues(alpha: .16),
                         foregroundColor: selectedColor,
-                        child: Icon(selected.fallbackIcon),
+                        child: VisualIcon(
+                          iconKey: _iconKey,
+                          color: selectedColor,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -241,7 +267,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              selected.label,
+                              customSelected ? 'Ikon custom' : selected!.label,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -275,15 +301,59 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
     );
   }
 
+  Future<void> _pickCustomIcon() async {
+    setState(() => _pickingCustom = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (!mounted || result == null || result.files.isEmpty) return;
+      final file = result.files.single;
+      final bytes = file.bytes;
+      final mimeType = CustomVisualIconData.mimeTypeForExtension(file.extension);
+      if (bytes == null) {
+        _showError('File belum bisa dibaca dari perangkat. Coba pilih gambar lain.');
+        return;
+      }
+      if (mimeType == null) {
+        _showError('Gunakan PNG, JPG, JPEG, atau WEBP.');
+        return;
+      }
+      if (bytes.length > CustomVisualIconData.maxBytes) {
+        _showError('Ikon custom terlalu besar. Maksimal 512 KB.');
+        return;
+      }
+      final key = CustomVisualIconData.encode(bytes: bytes, mimeType: mimeType);
+      if (!mounted) return;
+      setState(() => _iconKey = key);
+    } on ArgumentError catch (error) {
+      if (mounted) _showError(error.message?.toString() ?? 'Ikon tidak valid.');
+    } catch (_) {
+      if (mounted) _showError('Ikon custom belum berhasil dipilih. Coba lagi.');
+    } finally {
+      if (mounted) setState(() => _pickingCustom = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   String _groupLabel(IconCatalogGroup group) {
     return switch (group) {
       IconCatalogGroup.finance => 'Keuangan',
       IconCatalogGroup.bank => 'Bank',
       IconCatalogGroup.wallet => 'E-wallet',
+      IconCatalogGroup.transport => 'Transport',
+      IconCatalogGroup.marketplace => 'Marketplace',
       IconCatalogGroup.subscription => 'Subscription',
+      IconCatalogGroup.ai => 'AI',
+      IconCatalogGroup.telco => 'Telco',
+      IconCatalogGroup.utility => 'Utilitas',
       IconCatalogGroup.food => 'Makanan',
       IconCatalogGroup.shopping => 'Belanja',
-      IconCatalogGroup.transport => 'Transport',
       IconCatalogGroup.home => 'Rumah',
       IconCatalogGroup.health => 'Kesehatan',
       IconCatalogGroup.lifestyle => 'Lifestyle',
