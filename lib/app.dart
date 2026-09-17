@@ -15,6 +15,7 @@ import 'features/onboarding_screen.dart';
 import 'features/recovery/recovery_screen.dart';
 import 'features/settings/lock_gate.dart';
 import 'shared/app_theme.dart';
+import 'shared/saku_brand.dart';
 
 class ArusApp extends StatefulWidget {
   const ArusApp({
@@ -32,8 +33,10 @@ class ArusApp extends StatefulWidget {
 }
 
 class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
-  final ThemePreferencesService _themePreferences = ThemePreferencesService.instance;
-  final ScreenProtectionService _screenProtection = ScreenProtectionService.instance;
+  final ThemePreferencesService _themePreferences =
+      ThemePreferencesService.instance;
+  final ScreenProtectionService _screenProtection =
+      ScreenProtectionService.instance;
   bool? _onboardingDone;
   bool _onboardingJustCompleted = false;
   bool _privacyShielded = false;
@@ -87,7 +90,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
         state == AppLifecycleState.detached) {
       // This lifecycle shield is intentionally independent from the optional
       // Android screenshot flag. App-switcher snapshots stay protected even
-      // when the user explicitly allows screenshots while Arus is active.
+      // when the user explicitly allows screenshots while SAKU is active.
       if (!_privacyShielded && mounted) {
         setState(() {
           _privacyShielded = true;
@@ -105,7 +108,8 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   }
 
   void _checkpointRecoveryOnBackground() {
-    if (widget.controller.initializing || widget.controller.errorMessage != null) {
+    if (widget.controller.initializing ||
+        widget.controller.errorMessage != null) {
       return;
     }
     unawaited(
@@ -157,13 +161,13 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Arus Finance',
+      title: SakuBrand.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(_themePreferences.themeId),
       darkTheme: AppTheme.dark(_themePreferences.themeId),
       themeMode: _themePreferences.themeMode,
       // Security wraps the Navigator itself. A dialog, modal bottom sheet, or
-      // pushed route must never sit above the lock/privacy layers after Arus
+      // pushed route must never sit above the lock/privacy layers after SAKU
       // leaves the foreground.
       builder: (context, child) => _buildSecurityEnvelope(child),
       home: _buildHome(),
@@ -193,10 +197,10 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
         protectedNavigator,
         if (_privacyShielded)
           ColoredBox(
-            color: const Color(0xFF101114),
+            color: SakuBrand.noturno,
             child: Semantics(
               container: true,
-              label: 'Arus disembunyikan saat aplikasi tidak aktif',
+              label: 'SAKU disembunyikan saat aplikasi tidak aktif',
               child: const Center(
                 child: Icon(
                   Icons.lock_outline,
@@ -215,7 +219,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       return Scaffold(
         body: Center(
           child: Semantics(
-            label: 'Memuat Arus Finance',
+            label: 'Memuat SAKU',
             liveRegion: true,
             child: const CircularProgressIndicator(),
           ),
