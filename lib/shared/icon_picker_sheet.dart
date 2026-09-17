@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -75,20 +72,9 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
     if (_importing) return;
     setState(() => _importing = true);
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final picked = result.files.single;
-      Uint8List? bytes = picked.bytes;
-      if (bytes == null && picked.path != null) {
-        bytes = await File(picked.path!).readAsBytes();
-      }
-      if (bytes == null) {
-        throw const FormatException('File ikon tidak dapat dibaca.');
-      }
+      final picked = await FilePicker.pickFile(type: FileType.image);
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
       final stored = await CustomIconRepository().save(bytes);
       if (!mounted) return;
       setState(() => _iconKey = stored.key);
@@ -343,7 +329,6 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
           theme: theme,
           keyValue: entry.key,
           label: entry.label,
-          icon: entry.fallbackIcon,
         );
       },
     );
@@ -368,7 +353,6 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
           theme: theme,
           keyValue: entry.key,
           label: entry.label,
-          icon: entry.fallbackIcon,
         );
       },
     );
@@ -378,7 +362,6 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
     required ThemeData theme,
     required String keyValue,
     required String label,
-    required IconData icon,
   }) {
     final isSelected = keyValue == _iconKey;
     return Semantics(
