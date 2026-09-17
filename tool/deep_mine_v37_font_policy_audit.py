@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BRAND = (ROOT / 'lib/shared/saku_brand.dart').read_text()
 THEME = (ROOT / 'lib/shared/app_theme.dart').read_text()
+SPLASH = (ROOT / 'lib/shared/saku_splash.dart').read_text()
 PUBSPEC = (ROOT / 'pubspec.yaml').read_text()
 LICENSE = ROOT / 'third_party/plus_jakarta_sans/OFL.txt'
 SOURCE = ROOT / 'third_party/plus_jakarta_sans/SOURCE.md'
@@ -22,6 +23,8 @@ LIB_TEXT = '\n'.join(
 checks = {
     'SAKU reserves Plus Jakarta Sans family': "fontFamily = 'PlusJakartaSans'" in BRAND,
     'theme consumes canonical SAKU font family': 'fontFamily: SakuBrand.fontFamily' in THEME,
+    'SAKU splash uses bundled bold weight 700': 'fontWeight: FontWeight.w700' in SPLASH,
+    'SAKU splash does not request unbundled weight 800': 'FontWeight.w800' not in SPLASH,
     'official OFL is committed': LICENSE.exists() and 'SIL OPEN FONT LICENSE Version 1.1' in LICENSE.read_text(),
     'upstream source policy is committed': SOURCE.exists() and 'tokotype/PlusJakartaSans' in SOURCE.read_text(),
     'pubspec registers Plus Jakarta Sans family': 'family: PlusJakartaSans' in PUBSPEC,
