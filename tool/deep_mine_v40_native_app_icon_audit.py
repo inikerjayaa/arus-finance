@@ -98,6 +98,15 @@ def generated_android_audit() -> None:
         if "@color/saku_launcher_background" not in text or "@drawable/saku_launcher_foreground" not in text:
             fail(f"Android adaptive launcher wiring invalid: {filename}")
 
+    manifest = ROOT / "android/app/src/main/AndroidManifest.xml"
+    if not manifest.exists():
+        fail("generated AndroidManifest.xml missing")
+    manifest_text = manifest.read_text()
+    if 'android:icon="@mipmap/ic_launcher"' not in manifest_text:
+        fail("Android manifest must bind app icon to SAKU ic_launcher")
+    if 'android:roundIcon="@mipmap/ic_launcher_round"' not in manifest_text:
+        fail("Android manifest must bind roundIcon to SAKU ic_launcher_round")
+
 
 def generated_ios_audit() -> None:
     appicon = ROOT / "ios/Runner/Assets.xcassets/AppIcon.appiconset"
