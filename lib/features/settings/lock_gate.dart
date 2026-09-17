@@ -28,6 +28,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   bool _foreground = true;
   bool _biometricInFlight = false;
   bool _biometricAutoSuppressed = false;
+  bool _biometricSuccessPendingResume = false;
   bool _biometricAvailable = false;
   bool _recovering = false;
   int _lifecycleGeneration = 0;
@@ -73,6 +74,26 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     _lifecycleGeneration++;
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
+
+      // Some Android OEMs complete BiometricPrompt successfully while Flutter
+      // still reports `inactive`, just before the matching `resumed` event.
+      // Keep the lock surface in place while inactive, then consume that
+      // already-authenticated result on the immediate resume instead of
+      // discarding it and making fingerprint appear broken.
+      if (_biometricSuccessPendingResume && _hasPin && mounted) {
+        _biometricSuccessPendingResume = false;
+        _biometricAutoSuppressed = false;
+        setState(() {
+          _locked = false;
+          _recovering = false;
+          _error = null;
+          _biometricError = null;
+          _pin.clear();
+        });
+        return;
+      }
+      _biometricSuccessPendingResume = false;
+
       if (_hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
@@ -92,6 +113,14 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
       _foreground = false;
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.hidden ||
+          state == AppLifecycleState.detached) {
+        // A successful biometric result may bridge only the transient
+        // system-overlay `inactive` state. Never carry it across a real
+        // background/hidden transition.
+        _biometricSuccessPendingResume = false;
+      }
       if (!_biometricInFlight &&
           (state == AppLifecycleState.paused ||
               state == AppLifecycleState.hidden ||
@@ -141,6 +170,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     if (_biometricInFlight || !_foreground || !_hasPin) return;
     if (manual) {
       _biometricAutoSuppressed = false;
+      _biometricSuccessPendingResume = false;
       if (mounted && _biometricError != null) {
         setState(() => _biometricError = null);
       }
@@ -150,6 +180,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       final ok = await widget.security.authenticateBiometric();
       if (!mounted || !_hasPin) return;
       if (!ok) {
+        _biometricSuccessPendingResume = false;
         _biometricAutoSuppressed = true;
         if (_foreground) {
           setState(() {
@@ -160,9 +191,14 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         return;
       }
       if (!_foreground) {
+        // BiometricPrompt can report success a few milliseconds before Flutter
+        // receives `resumed` on some Android OEMs. Stay locked until resume,
+        // but do not throw away the successful OS authentication.
+        _biometricSuccessPendingResume = true;
         _biometricAutoSuppressed = true;
         return;
       }
+      _biometricSuccessPendingResume = false;
       setState(() {
         _locked = false;
         _recovering = false;
