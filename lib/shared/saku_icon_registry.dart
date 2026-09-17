@@ -10,6 +10,7 @@ class SakuIconChoice {
     required this.label,
     required this.group,
     required this.fallbackIcon,
+    this.keywords = const <String>[],
     this.assetPath,
   });
 
@@ -17,6 +18,7 @@ class SakuIconChoice {
   final String label;
   final SakuIconGroup group;
   final IconData fallbackIcon;
+  final List<String> keywords;
   final String? assetPath;
 
   bool get hasBundledAsset => assetPath != null && assetPath!.isNotEmpty;
@@ -42,6 +44,7 @@ abstract final class SakuIconRegistry {
         label: item.name,
         group: item.group,
         fallbackIcon: _fallbackForGroup(item.group),
+        keywords: item.keywords,
         assetPath: item.assetPath,
       ),
     ),
@@ -87,13 +90,32 @@ abstract final class SakuIconRegistry {
     for (final choice in candidates) {
       final label = _normalize(choice.label);
       final key = _normalize(choice.key.substring(brandPrefix.length));
+      final keywords = choice.keywords
+          .map(_normalize)
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      final keywordPhrase = _normalize(choice.keywords.join(' '));
+
+      final keywordExact =
+          keywordPhrase == needle || keywords.any((value) => value == needle);
+      final keywordPrefix = keywordPhrase.startsWith(needle) ||
+          keywords.any((value) => value.startsWith(needle));
+      final keywordContains = keywordPhrase.contains(needle) ||
+          keywords.any((value) => value.contains(needle));
+
       var score = -1;
       if (label == needle || key == needle) {
         score = 100;
+      } else if (keywordExact) {
+        score = 90;
       } else if (label.startsWith(needle) || key.startsWith(needle)) {
         score = 80;
+      } else if (keywordPrefix) {
+        score = 70;
       } else if (label.contains(needle) || key.contains(needle)) {
         score = 60;
+      } else if (keywordContains) {
+        score = 50;
       }
       if (score >= 0) ranked.add((choice: choice, score: score));
     }
