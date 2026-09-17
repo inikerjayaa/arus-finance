@@ -2,6 +2,7 @@ import 'package:sqlite3/sqlite3.dart';
 
 import '../../domain/enums.dart';
 import '../../shared/icon_catalog.dart';
+import '../../shared/saku_icon_registry.dart';
 import '../../shared/visual_palette.dart';
 import '../db/app_database.dart';
 
@@ -183,8 +184,7 @@ class VisualIdentityStore {
     final iconKey = row['visual_icon_key'];
     final colorKey = row['visual_color_key'];
     if (iconKey is! String || colorKey is! String) return null;
-    if (IconCatalog.byKey(iconKey) == null ||
-        VisualPalette.byKey(colorKey) == null) {
+    if (!_isKnownIconKey(iconKey) || VisualPalette.byKey(colorKey) == null) {
       return null;
     }
     return VisualIdentity(iconKey: iconKey, colorKey: colorKey);
@@ -209,13 +209,18 @@ class VisualIdentityStore {
   }
 
   void _validateVisualKeys(String iconKey, String colorKey) {
-    if (IconCatalog.byKey(iconKey) == null) {
+    if (!_isKnownIconKey(iconKey)) {
       throw ArgumentError('Ikon visual tidak dikenal: $iconKey');
     }
     if (VisualPalette.byKey(colorKey) == null) {
       throw ArgumentError('Warna visual tidak dikenal: $colorKey');
     }
   }
+
+  static bool _isKnownIconKey(String iconKey) =>
+      IconCatalog.byKey(iconKey) != null ||
+      SakuIconRegistry.isBrandKey(iconKey) ||
+      SakuIconRegistry.isCustomKey(iconKey);
 
   void _requireEntity(String table, String id, String label) {
     final exists = _db.select('SELECT 1 FROM $table WHERE id=? LIMIT 1', [id]);
