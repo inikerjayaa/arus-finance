@@ -79,7 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Arus Finance',
+                                  'SAKU',
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -149,7 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Nama ini hanya dipakai untuk membuat Arus terasa lebih personal dan disimpan lokal di perangkat.',
+          'Nama ini hanya dipakai untuk membuat SAKU terasa lebih personal dan disimpan lokal di perangkat.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -184,7 +184,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         Semantics(
           header: true,
           child: Text(
-            'Buat PIN Arus',
+            'Buat PIN SAKU',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w900,
             ),
@@ -192,7 +192,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Gunakan 4–8 digit. PIN ini melindungi Arus di perangkatmu dan tidak dikirim ke server.',
+          'Gunakan 4–8 digit. PIN ini melindungi SAKU di perangkatmu dan tidak dikirim ke server.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -259,7 +259,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Kode ini dipakai jika kamu lupa PIN. Arus hanya menyimpan verifikasinya, jadi kode asli tidak dapat ditampilkan lagi setelah halaman ini ditutup.',
+          'Kode ini dipakai jika kamu lupa PIN. SAKU hanya menyimpan verifikasinya, jadi kode asli tidak dapat ditampilkan lagi setelah halaman ini ditutup.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -315,7 +315,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: !_recoverySaved || _saving ? null : _finish,
-          child: Text(_saving ? 'Menyiapkan Arus…' : 'Masuk ke Arus'),
+          child: Text(_saving ? 'Menyiapkan SAKU…' : 'Masuk ke SAKU'),
         ),
       ],
     );
@@ -371,7 +371,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Keamanan Arus belum berhasil disiapkan. Coba lagi.';
+          _error = 'Keamanan SAKU belum berhasil disiapkan. Coba lagi.';
         });
       }
     } finally {
@@ -392,7 +392,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (mounted) widget.onDone();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Arus belum selesai disiapkan. Coba lagi.');
+        setState(() => _error = 'SAKU belum selesai disiapkan. Coba lagi.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);

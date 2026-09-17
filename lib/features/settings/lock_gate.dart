@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/services/security_service.dart';
+import '../../shared/saku_brand.dart';
 import 'pin_recovery_panel.dart';
 
 class LockGate extends StatefulWidget {
@@ -243,13 +244,13 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         if (_checking)
           _buildSecuritySurface(
             context,
-            ColoredBox(
-              color: const Color(0xFF101114),
+            const ColoredBox(
+              color: SakuBrand.noturno,
               child: Center(
                 child: Semantics(
-                  label: 'Memeriksa keamanan Arus',
+                  label: 'Memeriksa keamanan SAKU',
                   liveRegion: true,
-                  child: const CircularProgressIndicator(),
+                  child: CircularProgressIndicator(),
                 ),
               ),
             ),
@@ -307,7 +308,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Arus terkunci',
+                    'SAKU terkunci',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,

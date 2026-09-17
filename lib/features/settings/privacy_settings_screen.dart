@@ -31,7 +31,7 @@ class PrivacySettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Arus tetap menyembunyikan isi aplikasi saat masuk app switcher. Di Android, Anda juga dapat mengatur apakah screenshot dan perekaman layar diblokir saat aplikasi aktif.',
+                'SAKU tetap menyembunyikan isi aplikasi saat masuk app switcher. Di Android, Anda juga dapat mengatur apakah screenshot dan perekaman layar diblokir saat aplikasi aktif.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -56,7 +56,7 @@ class PrivacySettingsScreen extends StatelessWidget {
               Text(
                 protection.supported
                     ? 'Default: aktif. Pengaturan ini hanya tersimpan di perangkat ini dan tidak mengubah data keuangan.'
-                    : 'Kontrol screenshot runtime belum tersedia di platform/perangkat ini. Arus tidak akan mengklaim perlindungan yang tidak dapat diverifikasi.',
+                    : 'Kontrol screenshot runtime belum tersedia di platform/perangkat ini. SAKU tidak akan mengklaim perlindungan yang tidak dapat diverifikasi.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -74,8 +74,8 @@ class PrivacySettingsScreen extends StatelessWidget {
       return 'Toggle runtime tidak tersedia; app-switcher shield tetap aktif.';
     }
     return service.enabled
-        ? 'Aktif — Android memblokir tangkapan layar saat Arus aktif.'
-        : 'Nonaktif — screenshot dapat menangkap isi Arus saat aplikasi aktif.';
+        ? 'Aktif — Android memblokir tangkapan layar saat SAKU aktif.'
+        : 'Nonaktif — screenshot dapat menangkap isi SAKU saat aplikasi aktif.';
   }
 
   Future<void> _changeProtection(
@@ -89,7 +89,7 @@ class PrivacySettingsScreen extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Izinkan screenshot?'),
           content: const Text(
-            'Saat perlindungan ini dimatikan, screenshot atau perekaman layar dapat menangkap data keuangan ketika Arus sedang aktif. Perlindungan app switcher tetap aktif.',
+            'Saat perlindungan ini dimatikan, screenshot atau perekaman layar dapat menangkap data keuangan ketika SAKU sedang aktif. Perlindungan app switcher tetap aktif.',
           ),
           actions: [
             TextButton(

@@ -3,6 +3,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 read=lambda r:(ROOT/r).read_text()
 app=read('lib/app.dart')
+brand=read('lib/shared/saku_brand.dart')
 hardener=read('tool/native_hardening.py')
 service=read('lib/core/services/screen_protection_service.dart')
 settings=read('lib/features/settings/settings_screen.dart')
@@ -19,8 +20,12 @@ checks={
    'Widget _buildSecurityEnvelope(Widget? routedChild)' in app and
    'if (_privacyShielded)' in app
  ),
- 'shield is opaque':'0xFF101114' in app,
- 'shield has assistive label':'Arus disembunyikan saat aplikasi tidak aktif' in app,
+ # V31 uses the approved NOTURNO surface as the opaque privacy cover.
+ 'shield is opaque':(
+   'color: SakuBrand.noturno' in app and
+   'static const noturno = Color(0xFF001621);' in brand
+ ),
+ 'shield has assistive label':'SAKU disembunyikan saat aplikasi tidak aktif' in app,
  'app switcher shield is documented independent':'intentionally independent' in app,
  'Android hardener imports WindowManager':'android.view.WindowManager' in hardener,
  'Android starts secure before Dart':'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in hardener,
@@ -35,7 +40,7 @@ checks={
  'boot applies screen preference':'_screenProtection.loadAndApply()' in app,
  'settings exposes privacy screen':"title: const Text('Privasi layar')" in settings,
  'disable path requires warning':'Izinkan screenshot?' in privacy and 'Matikan perlindungan' in privacy,
- 'unsupported platform is truthful':'Arus tidak akan mengklaim perlindungan yang tidak dapat diverifikasi.' in privacy,
+ 'unsupported platform is truthful':'SAKU tidak akan mengklaim perlindungan yang tidak dapat diverifikasi.' in privacy,
  'V23 UAT covers app switcher':'App Switcher Snapshot' in docs,
  'V23 UAT covers screenshot':'Android Screenshot / Screen Share' in docs,
  'V23 UAT covers biometric inactive transition':'Biometric / System Overlay Transition' in docs,
