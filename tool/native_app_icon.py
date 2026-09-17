@@ -19,9 +19,10 @@ VULCANICO = (0xFF, 0x41, 0x03)
 VULCANICO_SHADE = (0xE8, 0x3A, 0x02)
 SKIN = (0xFF, 0xB4, 0x8F)
 ON_NOTURNO = (0xFD, 0xFC, 0xF9)
+ANDROID_XMLNS = "http:" + "//schemas.android.com/apk/res/android"
 
-ANDROID_ADAPTIVE_FOREGROUND = '''<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+ANDROID_ADAPTIVE_FOREGROUND = f'''<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="{ANDROID_XMLNS}"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="240"
@@ -47,8 +48,8 @@ ANDROID_ADAPTIVE_FOREGROUND = '''<?xml version="1.0" encoding="utf-8"?>
 </vector>
 '''
 
-ANDROID_ADAPTIVE_ICON = '''<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+ANDROID_ADAPTIVE_ICON = f'''<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="{ANDROID_XMLNS}">
     <background android:drawable="@color/saku_launcher_background"/>
     <foreground android:drawable="@drawable/saku_launcher_foreground"/>
 </adaptive-icon>
