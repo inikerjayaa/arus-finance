@@ -31,6 +31,9 @@ class SakuIconChoice {
 abstract final class SakuIconRegistry {
   static const brandPrefix = 'brand:';
   static const customPrefix = 'custom:';
+  static final RegExp _customKeyPattern = RegExp(
+    r'^custom:[0-9a-f]{64}\.(png|jpg|webp)$',
+  );
 
   static final List<SakuIconChoice> choices = List<SakuIconChoice>.unmodifiable(
     SakuBrandIconCatalog.items.map(
@@ -57,7 +60,7 @@ abstract final class SakuIconRegistry {
       key != null && key.startsWith(brandPrefix) && byKey(key) != null;
 
   static bool isCustomKey(String? key) =>
-      key != null && key.startsWith(customPrefix) && key.length > customPrefix.length;
+      key != null && _customKeyPattern.hasMatch(key);
 
   static SakuResolvedIconSource sourceFor(String? key) {
     if (isCustomKey(key)) return SakuResolvedIconSource.userCustom;
