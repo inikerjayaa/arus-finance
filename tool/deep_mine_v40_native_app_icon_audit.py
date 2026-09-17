@@ -32,6 +32,11 @@ def source_audit() -> None:
         "NOTURNO = (0x00, 0x16, 0x21)",
         "VULCANICO = (0xFF, 0x41, 0x03)",
         'mipmap-{density}/ic_launcher.png',
+        'mipmap-{density}/ic_launcher_round.png',
+        "ANDROID_ADAPTIVE_FOREGROUND",
+        "mipmap-anydpi-v26",
+        "saku_launcher_background",
+        'android:scaleX="0.72"',
         "AppIcon.appiconset",
         "ios-marketing",
         "1024x1024",
@@ -65,14 +70,33 @@ def generated_android_audit() -> None:
         "xxxhdpi": 192,
     }
     for density, size in expected.items():
-        path = res / f"mipmap-{density}/ic_launcher.png"
-        if not path.exists():
-            fail(f"generated Android SAKU launcher icon missing: {path.relative_to(ROOT)}")
-        width, height, color_type = png_meta(path)
-        if (width, height) != (size, size):
-            fail(f"Android launcher size mismatch for {density}: {width}x{height}")
-        if color_type != 2:
-            fail(f"Android launcher must be opaque RGB PNG for {density}")
+        for filename in ("ic_launcher.png", "ic_launcher_round.png"):
+            path = res / f"mipmap-{density}/{filename}"
+            if not path.exists():
+                fail(f"generated Android SAKU launcher icon missing: {path.relative_to(ROOT)}")
+            width, height, color_type = png_meta(path)
+            if (width, height) != (size, size):
+                fail(f"Android launcher size mismatch for {density}/{filename}: {width}x{height}")
+            if color_type != 2:
+                fail(f"Android launcher must be opaque RGB PNG for {density}/{filename}")
+
+    foreground = res / "drawable/saku_launcher_foreground.xml"
+    colors = res / "values/saku_launcher_colors.xml"
+    if not foreground.exists() or not colors.exists():
+        fail("Android adaptive launcher foreground/background resources missing")
+    foreground_text = foreground.read_text()
+    if 'android:scaleX="0.72"' not in foreground_text or 'android:scaleY="0.72"' not in foreground_text:
+        fail("Android adaptive launcher foreground must preserve 72% safe-area scale")
+    if "#001621" not in colors.read_text():
+        fail("Android adaptive launcher background must remain Noturno #001621")
+
+    for filename in ("ic_launcher.xml", "ic_launcher_round.xml"):
+        adaptive = res / f"mipmap-anydpi-v26/{filename}"
+        if not adaptive.exists():
+            fail(f"Android adaptive launcher XML missing: {adaptive.relative_to(ROOT)}")
+        text = adaptive.read_text()
+        if "@color/saku_launcher_background" not in text or "@drawable/saku_launcher_foreground" not in text:
+            fail(f"Android adaptive launcher wiring invalid: {filename}")
 
 
 def generated_ios_audit() -> None:
