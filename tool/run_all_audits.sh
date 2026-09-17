@@ -44,6 +44,7 @@ python3 tool/deep_mine_v36_custom_icon_backup_audit.py
 python3 tool/deep_mine_v37_font_policy_audit.py
 python3 tool/deep_mine_v38_native_branding_audit.py
 python3 tool/deep_mine_v39_native_splash_audit.py
+python3 tool/deep_mine_v40_native_app_icon_audit.py
 python3 tool/reference_v27_git_bootstrap_audit.py
 python3 tool/reference_v17_native_execution_audit.py
 python3 tool/version_continuity_audit.py
