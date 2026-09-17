@@ -19,8 +19,8 @@ checks={
    'Widget _buildSecurityEnvelope(Widget? routedChild)' in app and
    'if (_privacyShielded)' in app
  ),
- 'shield is opaque':'0xFF101114' in app,
- 'shield has assistive label':'Arus disembunyikan saat aplikasi tidak aktif' in app,
+ 'shield is opaque':'color: SakuBrand.noturno' in app,
+ 'shield has assistive label':'SAKU disembunyikan saat aplikasi tidak aktif' in app,
  'app switcher shield is documented independent':'intentionally independent' in app,
  'Android hardener imports WindowManager':'android.view.WindowManager' in hardener,
  'Android starts secure before Dart':'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in hardener,

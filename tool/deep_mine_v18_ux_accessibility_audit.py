@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 read = lambda p: (ROOT / p).read_text()
 app = read('lib/app.dart')
+splash = read('lib/shared/saku_splash.dart')
 shell = read('lib/app_shell.dart')
 onboarding = read('lib/features/onboarding_screen.dart')
 quick = read('lib/features/quick_add/quick_add_sheet.dart')
@@ -19,7 +20,11 @@ a11y_test = read('test/accessibility_guidelines_test.dart')
 transactions = read('lib/features/transactions/transactions_screen.dart')
 
 checks = {
-    'startup progress is a labeled live region': "label: 'Memuat Arus Finance'" in app and 'liveRegion: true' in app,
+    'startup progress is a labeled live region': (
+        'SakuSplashScreen' in app
+        and "label: 'SAKU sedang dibuka'" in splash
+        and 'liveRegion: true' in splash
+    ),
     'global error banner is announced': "label: 'Kesalahan: ${controller.errorMessage!}'" in shell and "tooltip: 'Tutup pesan kesalahan'" in shell,
     'onboarding is large-text scroll safe': 'LayoutBuilder(' in onboarding and 'SingleChildScrollView(' in onboarding and "header: true" in onboarding,
     'onboarding prevents duplicate save': (
