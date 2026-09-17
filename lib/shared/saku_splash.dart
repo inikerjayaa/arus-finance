@@ -7,7 +7,7 @@ class SakuSplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: SakuBrand.noturno,
       body: SafeArea(
         child: Center(
@@ -15,7 +15,7 @@ class SakuSplashScreen extends StatelessWidget {
             container: true,
             label: 'SAKU sedang dibuka',
             liveRegion: true,
-            child: Column(
+            child: const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
@@ -59,71 +59,39 @@ class _SakuPocketPainter extends CustomPainter {
     final skin = Paint()..color = const Color(0xFFFFB48F);
     final white = Paint()..color = SakuBrand.onNoturno;
 
-    // Pocket — compact, rounded Design-4 silhouette.
     final pocket = Path()
       ..moveTo(size.width * .20, size.height * .48)
-      ..quadraticBezierTo(
-        size.width * .50,
-        size.height * .38,
-        size.width * .80,
-        size.height * .48,
-      )
+      ..quadraticBezierTo(size.width * .50, size.height * .38,
+          size.width * .80, size.height * .48)
       ..lineTo(size.width * .78, size.height * .78)
-      ..quadraticBezierTo(
-        size.width * .76,
-        size.height * .91,
-        size.width * .52,
-        size.height * .92,
-      )
+      ..quadraticBezierTo(size.width * .76, size.height * .91,
+          size.width * .52, size.height * .92)
       ..lineTo(size.width * .38, size.height * .92)
-      ..quadraticBezierTo(
-        size.width * .20,
-        size.height * .90,
-        size.width * .19,
-        size.height * .75,
-      )
+      ..quadraticBezierTo(size.width * .20, size.height * .90,
+          size.width * .19, size.height * .75)
       ..close();
     canvas.drawPath(pocket, orange);
 
-    // Subtle right-side depth from the approved orange mark.
     final shade = Path()
       ..moveTo(size.width * .70, size.height * .46)
-      ..quadraticBezierTo(
-        size.width * .86,
-        size.height * .60,
-        size.width * .75,
-        size.height * .87,
-      )
-      ..quadraticBezierTo(
-        size.width * .67,
-        size.height * .93,
-        size.width * .59,
-        size.height * .91,
-      )
-      ..quadraticBezierTo(
-        size.width * .74,
-        size.height * .68,
-        size.width * .70,
-        size.height * .46,
-      )
+      ..quadraticBezierTo(size.width * .86, size.height * .60,
+          size.width * .75, size.height * .87)
+      ..quadraticBezierTo(size.width * .67, size.height * .93,
+          size.width * .59, size.height * .91)
+      ..quadraticBezierTo(size.width * .74, size.height * .68,
+          size.width * .70, size.height * .46)
       ..close();
     canvas.drawPath(shade, orangeShade);
 
-    // Forearm entering the pocket.
     final arm = Path()
       ..moveTo(size.width * .38, size.height * .20)
       ..lineTo(size.width * .63, size.height * .30)
       ..lineTo(size.width * .61, size.height * .55)
-      ..quadraticBezierTo(
-        size.width * .50,
-        size.height * .62,
-        size.width * .35,
-        size.height * .52,
-      )
+      ..quadraticBezierTo(size.width * .50, size.height * .62,
+          size.width * .35, size.height * .52)
       ..close();
     canvas.drawPath(arm, skin);
 
-    // White sleeve/cuff.
     final cuff = RRect.fromRectAndRadius(
       Rect.fromLTWH(
         size.width * .25,
@@ -139,21 +107,15 @@ class _SakuPocketPainter extends CustomPainter {
     canvas.drawRRect(cuff, white);
     canvas.restore();
 
-    // Pocket opening.
     dark
       ..strokeWidth = size.width * .035
       ..color = SakuBrand.noturno;
     final opening = Path()
       ..moveTo(size.width * .23, size.height * .51)
-      ..quadraticBezierTo(
-        size.width * .49,
-        size.height * .61,
-        size.width * .77,
-        size.height * .49,
-      );
+      ..quadraticBezierTo(size.width * .49, size.height * .61,
+          size.width * .77, size.height * .49);
     canvas.drawPath(opening, dark);
 
-    // Stitch line.
     dark.strokeWidth = size.width * .03;
     for (var i = 0; i < 5; i++) {
       final x = size.width * (.28 + i * .09);
@@ -161,14 +123,12 @@ class _SakuPocketPainter extends CustomPainter {
       canvas.drawLine(Offset(x, y), Offset(x + size.width * .045, y), dark);
     }
 
-    // Rivet.
     canvas.drawCircle(
       Offset(size.width * .72, size.height * .60),
       size.width * .035,
       Paint()..color = SakuBrand.noturno,
     );
 
-    // Small motion marks.
     final accent = Paint()
       ..color = SakuBrand.vulcanico
       ..strokeWidth = size.width * .045
