@@ -61,6 +61,12 @@ def _tracked_canonical_files() -> list[Path]:
     Native bootstrap/tests may create untracked cache/probe files whose bytes can
     differ between Linux and macOS runners. Those files are not canonical source
     and must never affect the cross-platform source identity.
+
+    Historical readiness fixtures intentionally remove pubspec.lock to prove the
+    project reports DEPENDENCY_LOCK=BLOCKED. That one tracked file may therefore
+    be absent while calculating a readiness source hash. Actual native evidence
+    creation still requires pubspec.lock in main(). Every other missing tracked
+    canonical file remains a hard failure.
     """
     try:
         result = subprocess.run(
@@ -89,6 +95,8 @@ def _tracked_canonical_files() -> list[Path]:
             continue
         path = ROOT / rel
         if not path.is_file():
+            if rel_posix == 'pubspec.lock':
+                continue
             raise SystemExit(f'FAIL: tracked canonical source missing from worktree: {rel_posix}')
         files.append(path)
     return files
