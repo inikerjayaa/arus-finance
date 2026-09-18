@@ -34,9 +34,25 @@ DEVICE_MODEL=
 ANDROID_VERSION=
 ```
 
-### Verifikasi APK di Windows PowerShell
+### Verifikasi APK — cara utama
 
-Setelah ZIP artifact diekstrak:
+Setelah ZIP artifact diekstrak, dari root repo jalankan:
+
+```powershell
+python .\tool\verify_device_uat_artifact.py "C:\path\ke\folder-artifact"
+```
+
+Expected:
+
+- output `PASS: Android device-UAT APK checksum matches CI evidence`;
+- `APK_SHA256=` tercetak;
+- fingerprint certificate SHA-256 ditampilkan bila format output `apksigner` dikenali.
+
+Verifier ini hanya membaca file artifact. Ia tidak meng-install APK dan tidak menyentuh device.
+
+### Verifikasi manual di Windows PowerShell
+
+Jika ingin cek manual:
 
 ```powershell
 Get-FileHash .\app-release.apk -Algorithm SHA256
