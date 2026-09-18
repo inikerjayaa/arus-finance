@@ -52,7 +52,7 @@ class SecurityService {
       // Prefer the enrolled-biometric list when the platform reports it
       // correctly. Some Android/OEM combinations return an empty list even
       // though BiometricPrompt can authenticate an enrolled fingerprint.
-      // Do not hide Arus' biometric option solely because that advisory list
+      // Do not hide SAKU's biometric option solely because that advisory list
       // is empty on Android; the actual authenticate(biometricOnly: true)
       // call remains the source of truth.
       try {
@@ -185,7 +185,7 @@ class SecurityService {
     return _rotateRecoveryAndSetPin(newPin);
   }
 
-  /// Allows PIN reset only through biometrics the user already enabled in Arus.
+  /// Allows PIN reset only through biometrics the user already enabled in SAKU.
   /// A successful reset also rotates the recovery code.
   Future<String?> resetPinWithBiometric({required String newPin}) async {
     _validatePin(newPin);
@@ -216,10 +216,10 @@ class SecurityService {
     if (!await biometricEnabled()) return false;
     try {
       return await _auth.authenticate(
-        localizedReason: 'Buka Arus Finance',
+        localizedReason: 'Buka SAKU',
         biometricOnly: true,
         // Do not let the plugin re-open the biometric prompt after an OS
-        // lifecycle transition. Cancel must return control to Arus so the
+        // lifecycle transition. Cancel must return control to SAKU so the
         // user can fall back to the app PIN. LockGate owns any later retry.
         persistAcrossBackgrounding: false,
       );
