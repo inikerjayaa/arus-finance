@@ -28,11 +28,12 @@ checks = {
     'global error banner is announced': "label: 'Kesalahan: ${controller.errorMessage!}'" in shell and "tooltip: 'Tutup pesan kesalahan'" in shell,
     'onboarding is large-text scroll safe': 'LayoutBuilder(' in onboarding and 'SingleChildScrollView(' in onboarding and "header: true" in onboarding,
     'onboarding prevents duplicate save': (
-        onboarding.count('if (_saving) return;') >= 2
-        and 'if (_saving || !_recoverySaved || _recoveryCode == null) return;' in onboarding
-        and 'onPressed: _saving ? null : _continueName' in onboarding
-        and 'onPressed: _saving ? null : _createPinAndRecovery' in onboarding
-        and 'onPressed: !_recoverySaved || _saving ? null : _finish' in onboarding
+        'Future<void> _createAccountAndRecovery() async {' in onboarding
+        and 'if (_saving) return;' in onboarding
+        and 'onPressed: _saving ? null : _createAccountAndRecovery' in onboarding
+        and 'Future<void> _finish() async {' in onboarding
+        and 'if (_saving || _recoveryCode == null) return;' in onboarding
+        and 'onPressed: _saving ? null : _finish' in onboarding
     ),
     'quick add filters income to asset accounts': '_mode == 1' in quick and 'a.accountClass == AccountClass.asset' in quick,
     'quick add allows expense only on asset/card domain': 'a.accountType == AccountType.creditCard' in quick and '_eligibleAccounts' in quick,

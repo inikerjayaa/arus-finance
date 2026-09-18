@@ -28,9 +28,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pin = TextEditingController();
   final _pinConfirm = TextEditingController();
 
-  int _step = 0;
   bool _saving = false;
-  bool _recoverySaved = false;
   String? _recoveryCode;
   String? _error;
 
@@ -79,13 +77,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Arus Finance',
+                                  'SAKU',
                                   style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 Text(
-                                  'Langkah ${_step + 1} dari 3',
+                                  _recoveryCode == null
+                                      ? 'Siapkan sekali, lalu langsung gunakan.'
+                                      : 'Satu hal terakhir sebelum dashboard.',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -95,12 +95,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
-                      LinearProgressIndicator(value: (_step + 1) / 3),
                       const SizedBox(height: 30),
-                      if (_step == 0) _buildNameStep(theme),
-                      if (_step == 1) _buildPinStep(theme),
-                      if (_step == 2) _buildRecoveryStep(theme),
+                      if (_recoveryCode == null)
+                        _buildSetupForm(theme)
+                      else
+                        _buildRecoveryView(theme),
                       if (_error != null) ...[
                         const SizedBox(height: 14),
                         Semantics(
@@ -134,22 +133,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildNameStep(ThemeData theme) {
+  Widget _buildSetupForm(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Semantics(
           header: true,
           child: Text(
-            'Siapa nama kamu?',
+            'Mulai dengan SAKU',
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Nama ini hanya dipakai untuk membuat Arus terasa lebih personal dan disimpan lokal di perangkat.',
+          'Isi nama dan PIN di satu halaman. PIN hanya disimpan aman di perangkat ini.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -160,48 +159,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           controller: _name,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          textInputAction: TextInputAction.done,
+          textInputAction: TextInputAction.next,
           maxLength: 40,
           decoration: const InputDecoration(
             labelText: 'Nama',
             hintText: 'Contoh: Ema',
           ),
-          onSubmitted: (_) => _continueName(),
         ),
-        const SizedBox(height: 14),
-        FilledButton(
-          onPressed: _saving ? null : _continueName,
-          child: Text(_saving ? 'Menyimpan…' : 'Lanjut'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPinStep(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            'Buat PIN Arus',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Gunakan 4–8 digit. PIN ini melindungi Arus di perangkatmu dan tidak dikirim ke server.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 4),
         TextField(
           key: const Key('onboarding_pin_input'),
           controller: _pin,
-          autofocus: true,
           obscureText: true,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
@@ -209,7 +177,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(8),
           ],
-          decoration: const InputDecoration(labelText: 'PIN baru'),
+          decoration: const InputDecoration(
+            labelText: 'PIN',
+            helperText: '4–8 digit',
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -222,28 +193,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(8),
           ],
-          decoration: const InputDecoration(labelText: 'Ulangi PIN'),
-          onSubmitted: (_) => _createPinAndRecovery(),
+          decoration: const InputDecoration(labelText: 'Konfirmasi PIN'),
+          onSubmitted: (_) => _createAccountAndRecovery(),
         ),
         const SizedBox(height: 18),
         FilledButton(
-          onPressed: _saving ? null : _createPinAndRecovery,
-          child: Text(_saving ? 'Menyiapkan keamanan…' : 'Buat PIN'),
-        ),
-        TextButton(
-          onPressed: _saving
-              ? null
-              : () => setState(() {
-                    _step = 0;
-                    _error = null;
-                  }),
-          child: const Text('Kembali'),
+          key: const Key('onboarding_create_button'),
+          onPressed: _saving ? null : _createAccountAndRecovery,
+          child: Text(_saving ? 'Menyiapkan SAKU…' : 'Buat SAKU'),
         ),
       ],
     );
   }
 
-  Widget _buildRecoveryStep(ThemeData theme) {
+  Widget _buildRecoveryView(ThemeData theme) {
     final code = _recoveryCode;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,13 +216,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: Text(
             'Simpan kode pemulihan',
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Kode ini dipakai jika kamu lupa PIN. Arus hanya menyimpan verifikasinya, jadi kode asli tidak dapat ditampilkan lagi setelah halaman ini ditutup.',
+          'Gunakan kode ini jika kamu lupa PIN. SAKU hanya menyimpan verifikasinya, jadi kode asli tidak dapat ditampilkan lagi setelah halaman ini ditutup.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -280,12 +243,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 key: const Key('onboarding_recovery_code'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
                 ),
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
+                key: const Key('onboarding_copy_recovery'),
                 onPressed: code == null
                     ? null
                     : () async {
@@ -301,77 +265,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        CheckboxListTile(
-          key: const Key('onboarding_recovery_saved'),
-          contentPadding: EdgeInsets.zero,
-          value: _recoverySaved,
-          onChanged: _saving
-              ? null
-              : (value) => setState(() => _recoverySaved = value ?? false),
-          title: const Text('Saya sudah menyimpan kode ini di tempat aman'),
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         FilledButton(
-          onPressed: !_recoverySaved || _saving ? null : _finish,
-          child: Text(_saving ? 'Menyiapkan Arus…' : 'Masuk ke Arus'),
+          key: const Key('onboarding_enter_dashboard'),
+          onPressed: _saving ? null : _finish,
+          child: Text(_saving ? 'Membuka dashboard…' : 'Masuk ke Dashboard'),
         ),
       ],
     );
   }
 
-  Future<void> _continueName() async {
+  Future<void> _createAccountAndRecovery() async {
     if (_saving) return;
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      await _profile.saveName(_name.text);
-      if (!mounted) return;
-      setState(() => _step = 1);
-    } on ArgumentError catch (error) {
-      if (mounted) setState(() => _error = error.message?.toString());
-    } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'Nama belum berhasil disimpan. Coba lagi.');
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
 
-  Future<void> _createPinAndRecovery() async {
-    if (_saving) return;
+    final cleanName = _name.text.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (cleanName.isEmpty) {
+      setState(() => _error = 'Nama tidak boleh kosong.');
+      return;
+    }
+    if (cleanName.length > 40) {
+      setState(() => _error = 'Nama maksimal 40 karakter.');
+      return;
+    }
+
     final pin = _pin.text;
     if (!RegExp(r'^\d{4,8}$').hasMatch(pin)) {
       setState(() => _error = 'PIN harus terdiri dari 4–8 digit.');
       return;
     }
     if (pin != _pinConfirm.text) {
-      setState(() => _error = 'Ulangi PIN dengan angka yang sama.');
+      setState(() => _error = 'Konfirmasi PIN harus sama dengan PIN.');
       return;
     }
+
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
+      await _profile.saveName(cleanName);
       await widget.security.setPin(pin);
       final recovery = await widget.security.createRecoveryCode();
       if (!mounted) return;
       setState(() {
         _recoveryCode = recovery;
-        _recoverySaved = false;
-        _step = 2;
         _pin.clear();
         _pinConfirm.clear();
       });
+    } on ArgumentError catch (error) {
+      if (mounted) setState(() => _error = error.message?.toString());
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Keamanan Arus belum berhasil disiapkan. Coba lagi.';
+          _error = 'SAKU belum berhasil disiapkan. Coba lagi.';
         });
       }
     } finally {
@@ -380,7 +326,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
-    if (_saving || !_recoverySaved || _recoveryCode == null) return;
+    if (_saving || _recoveryCode == null) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -392,7 +338,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (mounted) widget.onDone();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Arus belum selesai disiapkan. Coba lagi.');
+        setState(() => _error = 'SAKU belum selesai disiapkan. Coba lagi.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);

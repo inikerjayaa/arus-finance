@@ -53,8 +53,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Lanjut'), findsOneWidget);
-    await tester.ensureVisible(find.text('Lanjut'));
+    expect(find.byKey(const Key('onboarding_name_input')), findsOneWidget);
+    expect(find.byKey(const Key('onboarding_pin_input')), findsOneWidget);
+    expect(find.byKey(const Key('onboarding_pin_confirm_input')), findsOneWidget);
+    expect(find.text('Buat SAKU'), findsOneWidget);
+    await tester.ensureVisible(find.text('Buat SAKU'));
     expect(tester.takeException(), isNull);
   });
 
