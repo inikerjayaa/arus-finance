@@ -11,7 +11,15 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_NAMES = {'key.properties'}
 EXCLUDED_SUFFIXES = {'.jks', '.keystore'}
-EXCLUDED_DIRS = {'build', '.dart_tool', '.git', 'Pods', '.symlinks'}
+EXCLUDED_DIRS = {'build', '.dart_tool', '.git', 'Pods', '.symlinks', '__pycache__'}
+CANONICAL_ROOTS = {'lib', 'test', 'tool', 'docs', 'toolchain', '.github'}
+CANONICAL_EXTRAS = {
+    'pubspec.yaml',
+    'pubspec.lock',
+    'analysis_options.yaml',
+    'bootstrap.sh',
+    '.gitignore',
+}
 
 
 def sha256_file(path: Path) -> str:
@@ -47,24 +55,108 @@ def cmd_output(args: list[str]) -> str:
     return out[:8000]
 
 
-def source_manifest_hash(*, include_native: bool) -> tuple[str, int]:
-    roots = [ROOT / x for x in ('lib', 'test', 'tool', 'docs', 'toolchain', '.github')]
-    extras = [ROOT / x for x in ('pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml', 'bootstrap.sh', '.gitignore')]
-    if include_native:
-        if (ROOT / 'android').exists(): roots.append(ROOT / 'android')
-        if (ROOT / 'ios').exists(): roots.append(ROOT / 'ios')
+def _fixture_canonical_files() -> list[Path]:
+    """Deterministic fallback for isolated historical fixtures with no .git."""
     files: list[Path] = []
-    for base in roots:
-        if base.exists():
-            for p in base.rglob('*'):
-                if not p.is_file(): continue
-                rel = p.relative_to(ROOT)
-                if any(part in EXCLUDED_DIRS for part in rel.parts): continue
-                if p.name in EXCLUDED_NAMES or p.suffix in EXCLUDED_SUFFIXES: continue
-                files.append(p)
-    for p in extras:
-        if p.exists(): files.append(p)
+    for root_name in CANONICAL_ROOTS:
+        base = ROOT / root_name
+        if not base.exists():
+            continue
+        for path in base.rglob('*'):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(ROOT)
+            if any(part in EXCLUDED_DIRS for part in rel.parts):
+                continue
+            if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES:
+                continue
+            files.append(path)
+    for rel_text in CANONICAL_EXTRAS:
+        path = ROOT / rel_text
+        if path.is_file():
+            files.append(path)
+    return files
+
+
+def _tracked_canonical_files() -> list[Path]:
+    """Return canonical files from Git, with fixture-only non-Git fallback.
+
+    Real checkouts use only `git ls-files`, so runner-created untracked residue
+    can never change cross-platform canonical source identity. Historical unit
+    fixtures intentionally copy this script into a temporary directory without
+    `.git`; only that isolated case falls back to a deterministic filesystem
+    scan of the canonical roots.
+
+    Historical readiness fixtures also intentionally remove pubspec.lock to
+    prove DEPENDENCY_LOCK=BLOCKED. That one tracked file may therefore be absent
+    while calculating a readiness source hash. Actual native evidence creation
+    still requires pubspec.lock in main(). Every other missing tracked canonical
+    file remains a hard failure.
+    """
+    if not (ROOT / '.git').exists():
+        return _fixture_canonical_files()
+
+    try:
+        result = subprocess.run(
+            ['git', 'ls-files', '-z'],
+            cwd=ROOT,
+            capture_output=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise SystemExit(f'FAIL: cannot enumerate tracked canonical source: {error}')
+
+    files: list[Path] = []
+    for raw in result.stdout.split(b'\0'):
+        if not raw:
+            continue
+        rel = Path(os.fsdecode(raw))
+        rel_posix = rel.as_posix()
+        if not (
+            (rel.parts and rel.parts[0] in CANONICAL_ROOTS)
+            or rel_posix in CANONICAL_EXTRAS
+        ):
+            continue
+        if any(part in EXCLUDED_DIRS for part in rel.parts):
+            continue
+        if rel.name in EXCLUDED_NAMES or rel.suffix in EXCLUDED_SUFFIXES:
+            continue
+        path = ROOT / rel
+        if not path.is_file():
+            if rel_posix == 'pubspec.lock':
+                continue
+            raise SystemExit(f'FAIL: tracked canonical source missing from worktree: {rel_posix}')
+        files.append(path)
+    return files
+
+
+def _generated_native_files() -> list[Path]:
+    files: list[Path] = []
+    for name in ('android', 'ios'):
+        base = ROOT / name
+        if not base.exists():
+            continue
+        for path in base.rglob('*'):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(ROOT)
+            if any(part in EXCLUDED_DIRS for part in rel.parts):
+                continue
+            if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES:
+                continue
+            files.append(path)
+    return files
+
+
+def source_manifest_hash(*, include_native: bool) -> tuple[str, int]:
+    # Canonical identity is based on the checked-out tracked source only.
+    # Generated Android/iOS shells are added solely to the full native-shell
+    # evidence hash and never to the cross-platform canonical comparison.
+    files = _tracked_canonical_files()
+    if include_native:
+        files.extend(_generated_native_files())
     files = sorted(set(files), key=lambda p: p.relative_to(ROOT).as_posix())
+
     h = hashlib.sha256()
     for p in files:
         rel = p.relative_to(ROOT).as_posix()
