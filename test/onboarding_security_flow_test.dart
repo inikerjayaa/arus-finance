@@ -66,7 +66,9 @@ void main() {
       find.byKey(const Key('onboarding_pin_confirm_input')),
       '1234',
     );
-    await tester.tap(find.byKey(const Key('onboarding_save_setup')));
+    final saveButton = find.byKey(const Key('onboarding_save_setup'));
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(security.savedPin, '1234');
@@ -76,7 +78,10 @@ void main() {
     expect(find.byKey(const Key('onboarding_recovery_saved')), findsNothing);
     expect(done, isFalse);
 
-    await tester.tap(find.byKey(const Key('onboarding_enter_dashboard')));
+    final dashboardButton =
+        find.byKey(const Key('onboarding_enter_dashboard'));
+    await tester.ensureVisible(dashboardButton);
+    await tester.tap(dashboardButton);
     await tester.pumpAndSettle();
 
     expect(done, isTrue);
@@ -111,7 +116,9 @@ void main() {
       find.byKey(const Key('onboarding_pin_confirm_input')),
       '5678',
     );
-    await tester.tap(find.byKey(const Key('onboarding_save_setup')));
+    final saveButton = find.byKey(const Key('onboarding_save_setup'));
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
     await tester.pump();
 
     expect(find.text('Konfirmasi PIN harus sama.'), findsOneWidget);
