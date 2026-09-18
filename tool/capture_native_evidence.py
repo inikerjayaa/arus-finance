@@ -55,19 +55,47 @@ def cmd_output(args: list[str]) -> str:
     return out[:8000]
 
 
+def _fixture_canonical_files() -> list[Path]:
+    """Deterministic fallback for isolated historical fixtures with no .git."""
+    files: list[Path] = []
+    for root_name in CANONICAL_ROOTS:
+        base = ROOT / root_name
+        if not base.exists():
+            continue
+        for path in base.rglob('*'):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(ROOT)
+            if any(part in EXCLUDED_DIRS for part in rel.parts):
+                continue
+            if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES:
+                continue
+            files.append(path)
+    for rel_text in CANONICAL_EXTRAS:
+        path = ROOT / rel_text
+        if path.is_file():
+            files.append(path)
+    return files
+
+
 def _tracked_canonical_files() -> list[Path]:
-    """Return only canonical files tracked by Git.
+    """Return canonical files from Git, with fixture-only non-Git fallback.
 
-    Native bootstrap/tests may create untracked cache/probe files whose bytes can
-    differ between Linux and macOS runners. Those files are not canonical source
-    and must never affect the cross-platform source identity.
+    Real checkouts use only `git ls-files`, so runner-created untracked residue
+    can never change cross-platform canonical source identity. Historical unit
+    fixtures intentionally copy this script into a temporary directory without
+    `.git`; only that isolated case falls back to a deterministic filesystem
+    scan of the canonical roots.
 
-    Historical readiness fixtures intentionally remove pubspec.lock to prove the
-    project reports DEPENDENCY_LOCK=BLOCKED. That one tracked file may therefore
-    be absent while calculating a readiness source hash. Actual native evidence
-    creation still requires pubspec.lock in main(). Every other missing tracked
-    canonical file remains a hard failure.
+    Historical readiness fixtures also intentionally remove pubspec.lock to
+    prove DEPENDENCY_LOCK=BLOCKED. That one tracked file may therefore be absent
+    while calculating a readiness source hash. Actual native evidence creation
+    still requires pubspec.lock in main(). Every other missing tracked canonical
+    file remains a hard failure.
     """
+    if not (ROOT / '.git').exists():
+        return _fixture_canonical_files()
+
     try:
         result = subprocess.run(
             ['git', 'ls-files', '-z'],
