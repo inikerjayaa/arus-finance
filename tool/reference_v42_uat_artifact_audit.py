@@ -9,13 +9,21 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = ROOT / "tool/verify_device_uat_artifact.py"
+VERIFY_TARGET = ROOT / "tool/verify_device_uat_artifact.py"
+EVIDENCE_TARGET = ROOT / "tool/capture_native_evidence.py"
 
-spec = importlib.util.spec_from_file_location("verify_device_uat_artifact", TARGET)
-if spec is None or spec.loader is None:
-    raise SystemExit("FAIL: unable to load verify_device_uat_artifact.py")
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+
+def _load(name: str, target: Path):
+    spec = importlib.util.spec_from_file_location(name, target)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"FAIL: unable to load {target.name}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+verify_module = _load("verify_device_uat_artifact", VERIFY_TARGET)
+evidence_module = _load("capture_native_evidence", EVIDENCE_TARGET)
 
 with TemporaryDirectory() as tmp:
     directory = Path(tmp)
@@ -32,14 +40,29 @@ with TemporaryDirectory() as tmp:
     )
 
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        good = module.verify(directory)
+        good = verify_module.verify(directory)
     if good != 0:
         raise SystemExit(f"FAIL: valid UAT fixture returned {good}")
 
     apk.write_bytes(payload + b"-tampered")
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        tampered = module.verify(directory)
+        tampered = verify_module.verify(directory)
     if tampered == 0:
         raise SystemExit("FAIL: tampered UAT fixture was accepted")
 
+# Cross-platform canonical evidence must ignore untracked runner residue.
+canonical_before, count_before = evidence_module.source_manifest_hash(include_native=False)
+probe = ROOT / "docs/.v42-untracked-evidence-probe.tmp"
+if probe.exists():
+    raise SystemExit("FAIL: V42 evidence probe path unexpectedly exists")
+try:
+    probe.write_text("runner-specific transient content\n")
+    canonical_after, count_after = evidence_module.source_manifest_hash(include_native=False)
+finally:
+    probe.unlink(missing_ok=True)
+
+if canonical_after != canonical_before or count_after != count_before:
+    raise SystemExit("FAIL: untracked runner residue changed canonical source identity")
+
 print("PASS: V42 UAT artifact verifier accepts valid checksum and rejects tampering")
+print("PASS: V42 canonical evidence ignores untracked runner residue")
