@@ -1,0 +1,133 @@
+name: SAKU Stable Device UAT APK
+
+on:
+  workflow_run:
+    workflows: ["Arus Native Verification"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saku-stable-device-uat-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  android-stable-uat:
+    name: Stable-signed Android device UAT APK
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Resolve exact main source
+        id: source
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout exact proven source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.source.outputs.sha }}
+          persist-credentials: false
+
+      - name: Require dedicated UAT signing secrets
+        env:
+          SAKU_UAT_KEYSTORE_B64: ${{ secrets.SAKU_UAT_KEYSTORE_B64 }}
+          SAKU_UAT_KEYSTORE_PASSWORD: ${{ secrets.SAKU_UAT_KEYSTORE_PASSWORD }}
+        shell: bash
+        run: |
+          test -n "$SAKU_UAT_KEYSTORE_B64" || {
+            echo 'FAIL: repository secret SAKU_UAT_KEYSTORE_B64 is not configured.' >&2
+            exit 1
+          }
+          test -n "$SAKU_UAT_KEYSTORE_PASSWORD" || {
+            echo 'FAIL: repository secret SAKU_UAT_KEYSTORE_PASSWORD is not configured.' >&2
+            exit 1
+          }
+
+      - name: Install JDK 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install pinned Flutter from official archive
+        run: python3 tool/install_pinned_flutter_ci.py --install-dir "$RUNNER_TEMP/arus-flutter-3.47.2"
+
+      - name: Ensure Android API 36
+        run: bash tool/ensure_android_sdk_36_ci.sh
+
+      - name: Generate hardened native shell and prove source
+        run: bash bootstrap.sh
+
+      - name: Materialize dedicated UAT signing key
+        env:
+          SAKU_UAT_KEYSTORE_B64: ${{ secrets.SAKU_UAT_KEYSTORE_B64 }}
+          SAKU_UAT_KEYSTORE_PASSWORD: ${{ secrets.SAKU_UAT_KEYSTORE_PASSWORD }}
+        shell: bash
+        run: |
+          KEYSTORE="$RUNNER_TEMP/saku-uat.jks"
+          printf '%s' "$SAKU_UAT_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          test -s "$KEYSTORE" || {
+            echo 'FAIL: decoded UAT keystore is empty.' >&2
+            exit 1
+          }
+          chmod 600 "$KEYSTORE"
+          cat > android/key.properties <<EOF
+          storePassword=$SAKU_UAT_KEYSTORE_PASSWORD
+          keyPassword=$SAKU_UAT_KEYSTORE_PASSWORD
+          keyAlias=saku-uat
+          storeFile=$KEYSTORE
+          EOF
+          python3 tool/configure_android_release_signing.py
+          python3 tool/verify_android_release_signing.py
+
+      - name: Build stable-signed Android device UAT APK
+        shell: bash
+        run: |
+          flutter build apk --release
+          APK='build/app/outputs/flutter-apk/app-release.apk'
+          test -f "$APK" || {
+            echo 'FAIL: expected Android device-UAT APK is missing.' >&2
+            exit 1
+          }
+          mkdir -p build/arus_evidence
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          test -x "$APKSIGNER" || {
+            echo 'FAIL: apksigner 36.0.0 is unavailable.' >&2
+            exit 1
+          }
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee build/arus_evidence/android-stable-uat-apk-signing.txt
+          if grep -Fq 'CN=Android Debug' build/arus_evidence/android-stable-uat-apk-signing.txt; then
+            echo 'FAIL: stable UAT APK unexpectedly uses Android Debug signing.' >&2
+            exit 1
+          fi
+          sha256sum "$APK" | tee build/arus_evidence/android-stable-uat-apk.sha256
+          printf '%s\n' '${{ steps.source.outputs.sha }}' > build/arus_evidence/android-stable-uat-source-sha.txt
+
+      - name: Remove materialized signing files
+        if: always()
+        shell: bash
+        run: |
+          rm -f android/key.properties "$RUNNER_TEMP/saku-uat.jks"
+
+      - name: Upload stable device-UAT APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: saku-android-device-uat-stable
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/arus_evidence/android-stable-uat-apk.sha256
+            build/arus_evidence/android-stable-uat-apk-signing.txt
+            build/arus_evidence/android-stable-uat-source-sha.txt
+          if-no-files-found: error
+          retention-days: 14
