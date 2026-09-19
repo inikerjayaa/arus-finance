@@ -44,6 +44,9 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   late bool _lastInitializing;
   late bool _lastFatalRecovery;
 
+  bool get _isBooting =>
+      _onboardingDone == null || widget.controller.initializing;
+
   @override
   void initState() {
     super.initState();
@@ -167,19 +170,20 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
       theme: AppTheme.light(_themePreferences.themeId),
       darkTheme: AppTheme.dark(_themePreferences.themeId),
       themeMode: _themePreferences.themeMode,
-      // Security wraps the Navigator itself. A dialog, modal bottom sheet, or
-      // pushed route must never sit above the lock/privacy layers after SAKU
-      // leaves the foreground.
+      // Security wraps the Navigator itself after boot. During cold-start the
+      // brand-only splash contains no financial content, so it stays visible
+      // instead of being covered by LockGate's security-check surface.
       builder: (context, child) => _buildSecurityEnvelope(child),
       home: _buildHome(),
     );
   }
 
   Widget _buildSecurityEnvelope(Widget? routedChild) {
-    final lockedNavigator = _buildRootLock(
-      routedChild ?? const SizedBox.shrink(),
-    );
-    return _buildPrivacyProtectedHome(lockedNavigator);
+    final child = routedChild ?? const SizedBox.shrink();
+    if (_isBooting) {
+      return _buildPrivacyProtectedHome(child);
+    }
+    return _buildPrivacyProtectedHome(_buildRootLock(child));
   }
 
   Widget _buildRootLock(Widget child) {
@@ -219,7 +223,7 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     // The brand splash is strictly a cold-start/initialization state. It is
     // never inserted into normal resume/navigation flow, so returning from the
     // background still goes through LockGate without replaying the splash.
-    if (_onboardingDone == null || widget.controller.initializing) {
+    if (_isBooting) {
       return const SakuSplashScreen();
     }
     if (_onboardingDone == false) {
