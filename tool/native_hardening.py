@@ -2,7 +2,7 @@
 
 Production finance data remains local/device-owned. The hardener keeps raw OS
 app-data backup/device transfer disabled and applies the native requirements of
-Arus' current security/reminder plugins.
+SAKU's current security/reminder plugins.
 """
 from pathlib import Path
 import re
@@ -38,13 +38,6 @@ def _patch_main_activity() -> None:
 
     kotlin_class = '''class MainActivity : FlutterFragmentActivity() {
     private val screenProtectionChannel = "arus.finance/screen_protection"
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Fail secure before Dart starts. A persisted OFF preference may clear
-        // this flag only after the runtime MethodChannel is available.
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -86,7 +79,6 @@ def _patch_main_activity() -> None:
         )
         text = re.sub(r'\bFlutterActivity\s*\(\)', 'FlutterFragmentActivity()', text)
         for value in [
-            'android.os.Bundle',
             'android.view.WindowManager',
             'io.flutter.embedding.android.FlutterFragmentActivity',
             'io.flutter.embedding.engine.FlutterEngine',
@@ -103,14 +95,6 @@ def _patch_main_activity() -> None:
 
     java_class = '''public class MainActivity extends FlutterFragmentActivity {
     private static final String SCREEN_PROTECTION_CHANNEL = "arus.finance/screen_protection";
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // Fail secure before Dart starts. A persisted OFF preference may clear
-        // this flag only after the runtime MethodChannel is available.
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-    }
 
     @Override
     public void configureFlutterEngine(FlutterEngine flutterEngine) {
@@ -160,7 +144,6 @@ def _patch_main_activity() -> None:
             text,
         )
         for value in [
-            'android.os.Bundle',
             'android.view.WindowManager',
             'io.flutter.embedding.android.FlutterFragmentActivity',
             'io.flutter.embedding.engine.FlutterEngine',
@@ -306,7 +289,7 @@ def patch_ios() -> None:
         with plist.open('rb') as f:
             data = plistlib.load(f)
         data['NSFaceIDUsageDescription'] = (
-            'Gunakan Face ID untuk membuka data keuangan Arus di perangkat ini.'
+            'Gunakan Face ID untuk membuka data keuangan SAKU di perangkat ini.'
         )
         with plist.open('wb') as f:
             plistlib.dump(data, f, sort_keys=False)
@@ -339,7 +322,7 @@ def patch_ios() -> None:
 def main() -> None:
     patch_android()
     patch_ios()
-    print('Native hardening applied (idempotent, biometric + reminder + runtime screen protection ready).')
+    print('Native hardening applied (idempotent, biometric + reminder + opt-in runtime screen protection ready).')
 
 
 if __name__ == '__main__':
