@@ -7,7 +7,7 @@ class SakuSplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: SakuBrand.noturno,
       body: SafeArea(
         child: Center(
@@ -15,31 +15,57 @@ class SakuSplashScreen extends StatelessWidget {
             container: true,
             label: 'SAKU sedang dibuka',
             liveRegion: true,
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 150,
-                  height: 150,
-                  child: CustomPaint(painter: _SakuPocketPainter()),
-                ),
-                SizedBox(height: 18),
-                Text(
-                  'SAKU',
-                  style: TextStyle(
-                    color: SakuBrand.onNoturno,
-                    fontFamily: SakuBrand.fontFamily,
-                    fontSize: 44,
-                    height: 1,
-                    letterSpacing: 3.2,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            child: SakuBrandLockup(
+              markSize: 150,
+              wordmarkSize: 44,
+              wordmarkColor: SakuBrand.onNoturno,
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Reusable SAKU mark + wordmark lockup.
+///
+/// The visual is drawn locally so onboarding/splash branding never depends on
+/// network assets and always stays consistent with SAKU's canonical palette.
+class SakuBrandLockup extends StatelessWidget {
+  const SakuBrandLockup({
+    super.key,
+    this.markSize = 120,
+    this.wordmarkSize = 36,
+    this.wordmarkColor = SakuBrand.noturno,
+  });
+
+  final double markSize;
+  final double wordmarkSize;
+  final Color wordmarkColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: markSize,
+          height: markSize,
+          child: const CustomPaint(painter: _SakuPocketPainter()),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'SAKU',
+          style: TextStyle(
+            color: wordmarkColor,
+            fontFamily: SakuBrand.fontFamily,
+            fontSize: wordmarkSize,
+            height: 1,
+            letterSpacing: 3.2,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
