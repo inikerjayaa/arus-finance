@@ -122,7 +122,9 @@ class LocalNotificationService {
     final used = <int>{};
     return raw.map((draft) {
       var id = _stableId(draft.payload);
-      while (!used.add(id)) id = id >= 2000000000 ? 10000 : id + 1;
+      while (!used.add(id)) {
+        id = id >= 2000000000 ? 10000 : id + 1;
+      }
       final signatureSource = [draft.payload, draft.title, draft.body, draft.when.toUtc().toIso8601String()].join('|');
       return _ReminderSpec(id: id, title: draft.title, body: draft.body, when: draft.when, payload: draft.payload, signature: sha256.convert(utf8.encode(signatureSource)).toString());
     }).toList(growable: false);
@@ -159,7 +161,9 @@ class LocalNotificationService {
   Future<void> _cleanLegacyIdsOnce() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_legacyCleanedKey) ?? false) return;
-    for (var id = 1000; id <= 1047; id++) await _plugin.cancel(id: id);
+    for (var id = 1000; id <= 1047; id++) {
+      await _plugin.cancel(id: id);
+    }
     await prefs.setBool(_legacyCleanedKey, true);
   }
 
