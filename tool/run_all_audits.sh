@@ -5,6 +5,7 @@ python3 tool/reference_financial_audit.py
 python3 tool/local_only_source_audit.py
 python3 tool/dart_source_audit.py
 python3 tool/dart_delimiter_audit.py
+python3 tool/saku_user_facing_brand_audit.py
 python3 tool/reference_local_durability_audit.py
 python3 tool/reference_schema_migration_audit.py
 python3 tool/reference_csv_import_audit.py
