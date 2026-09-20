@@ -61,7 +61,14 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(onPressed: _busy ? null : _restorePortable, icon: const Icon(Icons.folder_open_outlined), label: const Text('Pulihkan dari file .arusbackup')),
-                  if (_busy) ...[const SizedBox(height: 18), const Semantics(label: 'Pemulihan sedang berjalan', liveRegion: true, child: LinearProgressIndicator())],
+                  if (_busy) ...[
+                    const SizedBox(height: 18),
+                    Semantics(
+                      label: 'Pemulihan sedang berjalan',
+                      liveRegion: true,
+                      child: const LinearProgressIndicator(),
+                    ),
+                  ],
                   if (_status != null) ...[const SizedBox(height: 14), Semantics(liveRegion: true, child: Text(_status!, textAlign: TextAlign.center, style: theme.textTheme.bodySmall))],
                   const SizedBox(height: 16),
                   Text('Database lama dipindahkan ke area quarantine sebelum replacement dimulai. Jika recovery terputus sebelum replacement tervalidasi, startup berikutnya mengembalikan database lama.', textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
