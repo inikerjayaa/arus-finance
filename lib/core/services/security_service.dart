@@ -42,7 +42,10 @@ class SecurityService {
       try {
         if ((await _auth.getAvailableBiometrics()).isNotEmpty) return true;
       } on LocalAuthException {
-      } catch (_) {}
+        // Some Android devices report support even when enumeration fails.
+      } catch (_) {
+        // Fall through to the Android support fallback below.
+      }
       return defaultTargetPlatform == TargetPlatform.android;
     } catch (_) {
       return false;
@@ -255,7 +258,9 @@ class SecurityService {
   bool _constantTimeEquals(List<int> a, List<int> b) {
     if (a.length != b.length) return false;
     var diff = 0;
-    for (var i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+    for (var i = 0; i < a.length; i++) {
+      diff |= a[i] ^ b[i];
+    }
     return diff == 0;
   }
 }
