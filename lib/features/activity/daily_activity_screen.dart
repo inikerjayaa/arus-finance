@@ -94,7 +94,7 @@ class _DailyActivityScreenState extends State<DailyActivityScreen> {
             Semantics(
               header: true,
               child: Text(
-                'Kalender Arus',
+                'Kalender SAKU',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -551,47 +551,52 @@ class _MiniSummary extends StatelessWidget {
     required this.icon,
     required this.color,
   });
-
   final String label;
   final String value;
   final IconData icon;
   final Color color;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-        label: '$label $value',
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: .18)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: color),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        value,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: color,
-                            ),
-                        softWrap: true,
-                      ),
-                    ],
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: color,
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 class _ActivityTile extends StatelessWidget {
@@ -602,101 +607,42 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final presentation = _presentation(transaction, theme);
-    final title = transaction.categoryName ??
-        transaction.note ??
-        _typeLabel(transaction.type);
-    final subtitleParts = <String>[
-      DateFormat('HH:mm').format(transaction.occurredAt.toLocal()),
-      transaction.accountName,
-      if (transaction.destinationAccountName != null)
-        '→ ${transaction.destinationAccountName}',
-      if (transaction.note != null && transaction.note != title)
-        transaction.note!,
-    ];
+    final spending = transaction.type.isSpending;
+    final incoming = transaction.type.isIncoming;
+    final color = spending
+        ? theme.colorScheme.error
+        : incoming
+            ? theme.colorScheme.primary
+            : theme.colorScheme.onSurfaceVariant;
+    final prefix = spending ? '-' : incoming ? '+' : '';
 
     return ListTile(
       onTap: onTap,
-      minVerticalPadding: 10,
       leading: CircleAvatar(
-        backgroundColor: presentation.color.withValues(alpha: .12),
-        child: Icon(presentation.icon, color: presentation.color),
+        backgroundColor: color.withValues(alpha: .10),
+        child: Icon(_iconFor(transaction.type), color: color),
       ),
-      title: Text(title),
-      subtitle: Text(subtitleParts.join(' • ')),
+      title: Text(transaction.displayTitle),
+      subtitle: Text(transaction.accountName),
       trailing: Text(
-        '${presentation.prefix}${Money.format(transaction.amountMinor, currency: transaction.currency)}',
-        style: theme.textTheme.bodyMedium?.copyWith(
+        '$prefix${Money.format(transaction.amountMinor)}',
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: color,
           fontWeight: FontWeight.w800,
-          color: presentation.color,
         ),
       ),
     );
   }
 
-  static ({IconData icon, Color color, String prefix}) _presentation(
-    TransactionView tx,
-    ThemeData theme,
-  ) {
-    switch (tx.type) {
-      case TransactionType.expense:
-        return (
-          icon: Icons.arrow_upward_rounded,
-          color: theme.colorScheme.error,
-          prefix: '-',
-        );
-      case TransactionType.income:
-      case TransactionType.refund:
-        return (
-          icon: Icons.arrow_downward_rounded,
-          color: theme.colorScheme.primary,
-          prefix: '+',
-        );
-      case TransactionType.transfer:
-        return (
-          icon: Icons.swap_horiz_rounded,
-          color: theme.colorScheme.secondary,
-          prefix: '',
-        );
-      case TransactionType.creditCardPayment:
-        return (
-          icon: Icons.credit_card_rounded,
-          color: theme.colorScheme.secondary,
-          prefix: '',
-        );
-      case TransactionType.loanDisbursement:
-      case TransactionType.loanPayment:
-        return (
-          icon: Icons.request_quote_rounded,
-          color: theme.colorScheme.secondary,
-          prefix: '',
-        );
-      case TransactionType.adjustment:
-        return (
-          icon: Icons.tune_rounded,
-          color: theme.colorScheme.secondary,
-          prefix: '',
-        );
-      case TransactionType.openingBalance:
-        return (
-          icon: Icons.flag_rounded,
-          color: theme.colorScheme.secondary,
-          prefix: '',
-        );
-    }
-  }
-
-  static String _typeLabel(TransactionType type) {
+  IconData _iconFor(TransactionType type) {
     return switch (type) {
-      TransactionType.expense => 'Pengeluaran',
-      TransactionType.income => 'Pemasukan',
-      TransactionType.transfer => 'Transfer',
-      TransactionType.refund => 'Refund',
-      TransactionType.adjustment => 'Penyesuaian',
-      TransactionType.openingBalance => 'Saldo awal',
-      TransactionType.creditCardPayment => 'Pembayaran kartu kredit',
-      TransactionType.loanDisbursement => 'Pencairan pinjaman',
-      TransactionType.loanPayment => 'Pembayaran pinjaman',
+      TransactionType.expense => Icons.arrow_upward_rounded,
+      TransactionType.income => Icons.arrow_downward_rounded,
+      TransactionType.transfer => Icons.swap_horiz_rounded,
+      TransactionType.adjustment => Icons.tune_rounded,
+      TransactionType.debtBorrow => Icons.south_west_rounded,
+      TransactionType.debtLend => Icons.north_east_rounded,
+      TransactionType.debtRepayment => Icons.handshake_outlined,
     };
   }
 }
