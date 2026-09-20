@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 abstract final class SakuBrand {
   static const appName = 'SAKU';
 
-  // Primary brand palette selected for the release direction.
+  // Locked release palette.
+  static const cyprus = Color(0xFF004741);
   static const noturno = Color(0xFF001621);
   static const vulcanico = Color(0xFFFF4103);
   static const sand = Color(0xFFF0EDE4);
@@ -19,6 +20,11 @@ abstract final class SakuBrand {
   /// Keep the font local to the application; do not runtime-fetch it.
   static const fontFamily = 'PlusJakartaSans';
 
-  static const Radius controlRadius = Radius.circular(16);
-  static const Radius cardRadius = Radius.circular(22);
+  // A compact, consistent geometry vocabulary for the final cosmetic pass.
+  static const double pageInset = 20;
+  static const double sectionGap = 24;
+  static const double itemGap = 12;
+  static const double compactGap = 8;
+  static const Radius controlRadius = Radius.circular(14);
+  static const Radius cardRadius = Radius.circular(20);
 }
