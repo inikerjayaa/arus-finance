@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../domain/enums.dart';
 import '../domain/models.dart';
 import 'money.dart';
+import 'saku_brand.dart';
 
 class MetricCard extends StatelessWidget {
   const MetricCard({
@@ -11,6 +13,7 @@ class MetricCard extends StatelessWidget {
     this.caption,
     this.icon,
   });
+
   final String label;
   final String value;
   final String? caption;
@@ -20,51 +23,67 @@ class MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final spoken = [label, value, ?caption].join(', ');
+
     return Semantics(
       container: true,
       label: spoken,
       child: ExcludeSemantics(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (icon != null) ...[
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: .08),
+                    borderRadius:
+                        const BorderRadius.all(SakuBrand.controlRadius),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 19,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 18, color: theme.colorScheme.primary),
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: theme.textTheme.labelLarge?.copyWith(
+                    Text(
+                      label,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      softWrap: true,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.2,
+                      ),
+                    ),
+                    if (caption != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        caption!,
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  value,
-                  softWrap: true,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (caption != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    caption!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -78,6 +97,7 @@ class TransactionTile extends StatelessWidget {
     required this.transaction,
     this.onTap,
   });
+
   final TransactionView transaction;
   final VoidCallback? onTap;
 
@@ -132,9 +152,15 @@ class TransactionTile extends StatelessWidget {
     final isExpense = transaction.type == TransactionType.expense;
     final isIncome = transaction.type == TransactionType.income ||
         transaction.type == TransactionType.refund;
-    final prefix = isExpense ? '−' : isIncome ? '+' : '';
-    final amount = '$prefix${Money.format(transaction.amountMinor, currency: transaction.currency)}';
+    final prefix = isExpense
+        ? '−'
+        : isIncome
+            ? '+'
+            : '';
+    final amount =
+        '$prefix${Money.format(transaction.amountMinor, currency: transaction.currency)}';
     final subtitleParts = <String>[transaction.accountName];
+
     if (transaction.destinationAccountName != null) {
       subtitleParts.add('ke ${transaction.destinationAccountName}');
     }
@@ -151,7 +177,13 @@ class TransactionTile extends StatelessWidget {
         '$childLabel ${Money.format(transaction.childExpenseMinor, currency: transaction.currency)}',
       );
     }
+
     final subtitle = subtitleParts.join(' • ');
+    final amountColor = isExpense
+        ? theme.colorScheme.error
+        : isIncome
+            ? theme.colorScheme.primary
+            : theme.colorScheme.onSurface;
 
     return Semantics(
       button: onTap != null,
@@ -160,13 +192,39 @@ class TransactionTile extends StatelessWidget {
       child: ExcludeSemantics(
         child: ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          leading: CircleAvatar(
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            child: Icon(icon, color: theme.colorScheme.primary),
+          minVerticalPadding: 10,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          leading: Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: .56),
+              borderRadius: const BorderRadius.all(SakuBrand.controlRadius),
+            ),
+            child: Icon(
+              icon,
+              size: 19,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          title: Text(title),
-          subtitle: Text(subtitle),
+          title: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           trailing: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 132),
             child: Text(
@@ -174,7 +232,9 @@ class TransactionTile extends StatelessWidget {
               textAlign: TextAlign.end,
               softWrap: true,
               style: theme.textTheme.titleSmall?.copyWith(
+                color: amountColor,
                 fontWeight: FontWeight.w700,
+                letterSpacing: -.1,
               ),
             ),
           ),
