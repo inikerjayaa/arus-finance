@@ -1,4 +1,3 @@
-import 'package:arus_finance/core/services/security_service.dart';
 import 'package:arus_finance/features/onboarding_screen.dart';
 import 'package:arus_finance/shared/app_theme.dart';
 import 'package:arus_finance/shared/finance_widgets.dart';
@@ -12,10 +11,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light(),
-          home: OnboardingScreen(
-            security: SecurityService(),
-            onDone: () {},
-          ),
+          home: OnboardingScreen(onDone: () {}),
         ),
       );
       await tester.pumpAndSettle();
@@ -43,10 +39,7 @@ void main() {
             size: Size(390, 844),
             textScaler: TextScaler.linear(2.0),
           ),
-          child: OnboardingScreen(
-            security: SecurityService(),
-            onDone: () {},
-          ),
+          child: OnboardingScreen(onDone: () {}),
         ),
       ),
     );
@@ -54,8 +47,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('onboarding_name_input')), findsOneWidget);
-    expect(find.byKey(const Key('onboarding_pin_input')), findsOneWidget);
-    expect(find.byKey(const Key('onboarding_pin_confirm_input')), findsOneWidget);
+    expect(find.byKey(const Key('onboarding_create_button')), findsOneWidget);
     expect(find.text('Buat SAKU'), findsOneWidget);
     await tester.ensureVisible(find.text('Buat SAKU'));
     expect(tester.takeException(), isNull);
