@@ -93,13 +93,13 @@ class MainActivity: FlutterActivity()
     assert '"isSupported"' in a and '"setEnabled"' in a
     assert 'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in a
     assert 'window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)' in a
-    assert a.index('window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)') < a.index('configureFlutterEngine')
+    assert 'override fun onCreate' not in a
     assert 'parent="Theme.AppCompat.DayNight"' in st
 
     with plist.open('rb') as f:
         data = plistlib.load(f)
-    assert 'NSFaceIDUsageDescription' in data
+    assert data['NSFaceIDUsageDescription'].startswith('Gunakan Face ID untuk membuka data keuangan SAKU')
     assert 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' in project.read_text()
     assert "platform :ios, '15.0'" in podfile.read_text()
 
-print('PASS: native hardening fixture is idempotent + biometric/reminder/runtime-screen-protection ready')
+print('PASS: native hardening fixture is idempotent + biometric/reminder/opt-in-screen-protection ready')
