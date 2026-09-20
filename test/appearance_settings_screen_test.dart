@@ -15,7 +15,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Arus Original'), findsOneWidget);
+    expect(find.text('SAKU Original'), findsOneWidget);
     expect(find.text('Ocean'), findsOneWidget);
     expect(service.themeId, ArusThemeId.original);
     expect(service.themeMode, ThemeMode.system);
