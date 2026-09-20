@@ -7,7 +7,7 @@ class SakuSplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: SakuBrand.noturno,
       body: SafeArea(
         child: Center(
@@ -15,7 +15,7 @@ class SakuSplashScreen extends StatelessWidget {
             container: true,
             label: 'SAKU sedang dibuka',
             liveRegion: true,
-            child: SakuBrandLockup(
+            child: const SakuBrandLockup(
               markSize: 150,
               wordmarkSize: 44,
               wordmarkColor: SakuBrand.onNoturno,
