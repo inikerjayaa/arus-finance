@@ -34,6 +34,8 @@ class ArusApp extends StatefulWidget {
 }
 
 class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
+  static const _minimumColdStartSplash = Duration(milliseconds: 1200);
+
   final ThemePreferencesService _themePreferences =
       ThemePreferencesService.instance;
   final ScreenProtectionService _screenProtection =
@@ -41,15 +43,20 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
   bool? _onboardingDone;
   bool _onboardingJustCompleted = false;
   bool _privacyShielded = false;
+  bool _minimumSplashElapsed = false;
+  late final DateTime _bootStartedAt;
   late bool _lastInitializing;
   late bool _lastFatalRecovery;
 
   bool get _isBooting =>
-      _onboardingDone == null || widget.controller.initializing;
+      !_minimumSplashElapsed ||
+      _onboardingDone == null ||
+      widget.controller.initializing;
 
   @override
   void initState() {
     super.initState();
+    _bootStartedAt = DateTime.now();
     _captureRootControllerState();
     widget.controller.addListener(_controllerChanged);
     _themePreferences.addListener(_appearanceChanged);
@@ -160,6 +167,15 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
             .catchError((_) {}),
       );
     }
+
+    final elapsed = DateTime.now().difference(_bootStartedAt);
+    final remaining = _minimumColdStartSplash - elapsed;
+    if (remaining > Duration.zero) {
+      await Future<void>.delayed(remaining);
+    }
+    if (mounted) {
+      setState(() => _minimumSplashElapsed = true);
+    }
   }
 
   @override
@@ -228,7 +244,6 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
     }
     if (_onboardingDone == false) {
       return OnboardingScreen(
-        security: widget.security,
         profile: widget.controller.userProfileService,
         onDone: () => setState(() {
           _onboardingJustCompleted = true;
