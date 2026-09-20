@@ -32,9 +32,6 @@ class LocalNotificationService {
       final info = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(info.identifier));
     } catch (e) {
-      // A silent UTC fallback can move an 08:00 local reminder by many hours.
-      // Failing closed is safer: finance writes remain unaffected and the
-      // user can retry reminder setup after the platform timezone is readable.
       throw StateError('Zona waktu perangkat tidak dapat dibaca untuk menjadwalkan pengingat lokal: $e');
     }
 
@@ -65,15 +62,9 @@ class LocalNotificationService {
     if (value) {
       var granted = true;
       if (Platform.isAndroid) {
-        granted = await _plugin
-                .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-                ?.requestNotificationsPermission() ??
-            true;
+        granted = await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission() ?? true;
       } else if (Platform.isIOS) {
-        granted = await _plugin
-                .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-                ?.requestPermissions(alert: true, sound: true, badge: false) ??
-            false;
+        granted = await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, sound: true, badge: false) ?? false;
       }
       if (!granted) return false;
     } else {
@@ -90,122 +81,50 @@ class LocalNotificationService {
     await prefs.setBool(_detailsKey, value);
   }
 
-  Future<void> syncSchedules({
-    required List<BillModel> bills,
-    required List<RecurringRuleModel> recurring,
-  }) async {
+  Future<void> syncSchedules({required List<BillModel> bills, required List<RecurringRuleModel> recurring}) async {
     if (!await enabled()) return;
     await initialize();
-
     final details = await showDetails();
     final desired = _buildDesiredReminders(bills, recurring, details);
     final prefs = await SharedPreferences.getInstance();
     final previous = _readState(prefs);
-    final desiredState = <String, String>{
-      for (final reminder in desired) '${reminder.id}': reminder.signature,
-    };
-
-    // Cancel only reminders that Arus owned and no longer needs.
+    final desiredState = <String, String>{for (final reminder in desired) '${reminder.id}': reminder.signature};
     for (final idText in previous.keys) {
       if (desiredState.containsKey(idText)) continue;
       final id = int.tryParse(idText);
       if (id != null) await _plugin.cancel(id: id);
     }
-
-    // Re-schedule only changed/new reminders. Unchanged items remain untouched.
     for (final reminder in desired) {
       if (previous['${reminder.id}'] == reminder.signature) continue;
       await _schedule(reminder);
     }
-
     await prefs.setString(_stateKey, jsonEncode(desiredState));
   }
 
-  List<_ReminderSpec> _buildDesiredReminders(
-    List<BillModel> bills,
-    List<RecurringRuleModel> recurring,
-    bool details,
-  ) {
+  List<_ReminderSpec> _buildDesiredReminders(List<BillModel> bills, List<RecurringRuleModel> recurring, bool details) {
     final now = tz.TZDateTime.now(tz.local);
     final raw = <_ReminderDraft>[];
-
-    final billList = bills
-        .where((b) => b.status != BillStatus.paid && b.status != BillStatus.skipped)
-        .toList()
-      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
-
+    final billList = bills.where((b) => b.status != BillStatus.paid && b.status != BillStatus.skipped).toList()..sort((a, b) => a.dueDate.compareTo(b.dueDate));
     for (final bill in billList) {
       if (raw.length >= 32) break;
-      var scheduled = tz.TZDateTime(
-        tz.local,
-        bill.dueDate.year,
-        bill.dueDate.month,
-        bill.dueDate.day,
-        9,
-      ).subtract(const Duration(days: 1));
-      if (!scheduled.isAfter(now)) {
-        scheduled = tz.TZDateTime(
-          tz.local,
-          bill.dueDate.year,
-          bill.dueDate.month,
-          bill.dueDate.day,
-          8,
-        );
-      }
+      var scheduled = tz.TZDateTime(tz.local, bill.dueDate.year, bill.dueDate.month, bill.dueDate.day, 9).subtract(const Duration(days: 1));
+      if (!scheduled.isAfter(now)) scheduled = tz.TZDateTime(tz.local, bill.dueDate.year, bill.dueDate.month, bill.dueDate.day, 8);
       if (!scheduled.isAfter(now)) continue;
-      raw.add(_ReminderDraft(
-        payload: 'bill:${bill.id}',
-        title: 'Tagihan mendekati jatuh tempo',
-        body: details
-            ? '${bill.name} • ${Money.format(bill.expectedAmountMinor, currency: bill.currency)}'
-            : 'Buka Arus untuk melihat detail tagihan.',
-        when: scheduled,
-      ));
+      raw.add(_ReminderDraft(payload: 'bill:${bill.id}', title: 'Tagihan mendekati jatuh tempo', body: details ? '${bill.name} • ${Money.format(bill.expectedAmountMinor, currency: bill.currency)}' : 'Buka SAKU untuk melihat detail tagihan.', when: scheduled));
     }
-
-    final recurringList = recurring.where((r) => r.active).toList()
-      ..sort((a, b) => a.nextRun.compareTo(b.nextRun));
+    final recurringList = recurring.where((r) => r.active).toList()..sort((a, b) => a.nextRun.compareTo(b.nextRun));
     for (final rule in recurringList) {
       if (raw.length >= 48) break;
-      final scheduled = tz.TZDateTime(
-        tz.local,
-        rule.nextRun.year,
-        rule.nextRun.month,
-        rule.nextRun.day,
-        8,
-      );
+      final scheduled = tz.TZDateTime(tz.local, rule.nextRun.year, rule.nextRun.month, rule.nextRun.day, 8);
       if (!scheduled.isAfter(now)) continue;
-      raw.add(_ReminderDraft(
-        payload: 'recurring:${rule.id}',
-        title: 'Transaksi berulang',
-        body: details
-            ? '${rule.name} • ${Money.format(rule.amountMinor, currency: rule.currency)}'
-            : 'Buka Arus untuk meninjau transaksi berulang.',
-        when: scheduled,
-      ));
+      raw.add(_ReminderDraft(payload: 'recurring:${rule.id}', title: 'Transaksi berulang', body: details ? '${rule.name} • ${Money.format(rule.amountMinor, currency: rule.currency)}' : 'Buka SAKU untuk meninjau transaksi berulang.', when: scheduled));
     }
-
     final used = <int>{};
     return raw.map((draft) {
       var id = _stableId(draft.payload);
-      while (!used.add(id)) {
-        id = id >= 2000000000 ? 10000 : id + 1;
-      }
-      final signatureSource = [
-        draft.payload,
-        draft.title,
-        draft.body,
-        draft.when.toUtc().toIso8601String(),
-      ].join('|');
-      final signature = sha256.convert(utf8.encode(signatureSource)).toString();
-      return _ReminderSpec(
-        id: id,
-        title: draft.title,
-        body: draft.body,
-        when: draft.when,
-        payload: draft.payload,
-        signature: signature,
-      );
+      while (!used.add(id)) id = id >= 2000000000 ? 10000 : id + 1;
+      final signatureSource = [draft.payload, draft.title, draft.body, draft.when.toUtc().toIso8601String()].join('|');
+      return _ReminderSpec(id: id, title: draft.title, body: draft.body, when: draft.when, payload: draft.payload, signature: sha256.convert(utf8.encode(signatureSource)).toString());
     }).toList(growable: false);
   }
 
@@ -240,10 +159,7 @@ class LocalNotificationService {
   Future<void> _cleanLegacyIdsOnce() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_legacyCleanedKey) ?? false) return;
-    // V6 used sequential 1000..1047 IDs and cancel-all scheduling.
-    for (var id = 1000; id <= 1047; id++) {
-      await _plugin.cancel(id: id);
-    }
+    for (var id = 1000; id <= 1047; id++) await _plugin.cancel(id: id);
     await prefs.setBool(_legacyCleanedKey, true);
   }
 
@@ -256,7 +172,7 @@ class LocalNotificationService {
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'arus_reminders',
-          'Pengingat Arus',
+          'Pengingat SAKU',
           channelDescription: 'Pengingat lokal tagihan dan transaksi berulang.',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
@@ -271,13 +187,7 @@ class LocalNotificationService {
 }
 
 class _ReminderDraft {
-  const _ReminderDraft({
-    required this.payload,
-    required this.title,
-    required this.body,
-    required this.when,
-  });
-
+  const _ReminderDraft({required this.payload, required this.title, required this.body, required this.when});
   final String payload;
   final String title;
   final String body;
@@ -285,15 +195,7 @@ class _ReminderDraft {
 }
 
 class _ReminderSpec extends _ReminderDraft {
-  const _ReminderSpec({
-    required this.id,
-    required super.payload,
-    required super.title,
-    required super.body,
-    required super.when,
-    required this.signature,
-  });
-
+  const _ReminderSpec({required this.id, required super.payload, required super.title, required super.body, required super.when, required this.signature});
   final int id;
   final String signature;
 }
