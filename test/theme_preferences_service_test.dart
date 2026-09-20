@@ -11,7 +11,7 @@ void main() {
     await service.load();
   });
 
-  test('theme preferences default to Arus Original and system mode', () {
+  test('theme preferences default to SAKU Original and system mode', () {
     expect(service.themeId, ArusThemeId.original);
     expect(service.themeMode, ThemeMode.system);
   });
@@ -43,7 +43,7 @@ void main() {
     expect(
       ArusThemeId.values.map((theme) => theme.label),
       containsAll(<String>[
-        'Arus Original',
+        'SAKU Original',
         'Ocean',
         'Forest',
         'Graphite',

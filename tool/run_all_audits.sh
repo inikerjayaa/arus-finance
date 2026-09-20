@@ -5,6 +5,7 @@ python3 tool/reference_financial_audit.py
 python3 tool/local_only_source_audit.py
 python3 tool/dart_source_audit.py
 python3 tool/dart_delimiter_audit.py
+python3 tool/saku_user_facing_brand_audit.py
 python3 tool/reference_local_durability_audit.py
 python3 tool/reference_schema_migration_audit.py
 python3 tool/reference_csv_import_audit.py
@@ -51,4 +52,4 @@ python3 tool/reference_v17_native_execution_audit.py
 python3 tool/version_continuity_audit.py
 python3 tool/reference_native_hardening_audit.py
 python3 tool/reference_android_signing_audit.py
-printf '\nPASS: all non-native Arus audits\n'
+printf '\nPASS: all non-native SAKU audits\n'

@@ -74,12 +74,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     _lifecycleGeneration++;
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
-
-      // Some Android OEMs complete BiometricPrompt successfully while Flutter
-      // still reports `inactive`, just before the matching `resumed` event.
-      // Keep the lock surface in place while inactive, then consume that
-      // already-authenticated result on the immediate resume instead of
-      // discarding it and making fingerprint appear broken.
       if (_biometricSuccessPendingResume && _hasPin && mounted) {
         _biometricSuccessPendingResume = false;
         _biometricAutoSuppressed = false;
@@ -116,9 +110,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       if (state == AppLifecycleState.paused ||
           state == AppLifecycleState.hidden ||
           state == AppLifecycleState.detached) {
-        // A successful biometric result may bridge only the transient
-        // system-overlay `inactive` state. Never carry it across a real
-        // background/hidden transition.
         _biometricSuccessPendingResume = false;
       }
       if (!_biometricInFlight &&
@@ -191,9 +182,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         return;
       }
       if (!_foreground) {
-        // BiometricPrompt can report success a few milliseconds before Flutter
-        // receives `resumed` on some Android OEMs. Stay locked until resume,
-        // but do not throw away the successful OS authentication.
         _biometricSuccessPendingResume = true;
         _biometricAutoSuppressed = true;
         return;
@@ -247,7 +235,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
               color: const Color(0xFF101114),
               child: Center(
                 child: Semantics(
-                  label: 'Memeriksa keamanan Arus',
+                  label: 'Memeriksa keamanan SAKU',
                   liveRegion: true,
                   child: const CircularProgressIndicator(),
                 ),
@@ -270,10 +258,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   }
 
   Widget _buildSecuritySurface(BuildContext context, Widget child) {
-    // LockGate intentionally sits above the app's root Navigator so dialogs,
-    // sheets, and pushed routes cannot escape the lock. The lock surface owns
-    // a tiny private Navigator/Overlay so PIN text input still has a valid
-    // selection/focus overlay without borrowing the sensitive Navigator below.
     return Positioned.fill(
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -307,7 +291,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Arus terkunci',
+                    'SAKU terkunci',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,

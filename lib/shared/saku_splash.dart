@@ -27,6 +27,24 @@ class SakuSplashScreen extends StatelessWidget {
   }
 }
 
+/// Reusable SAKU mark without the wordmark.
+///
+/// Use this when a compact brand identifier is needed, such as the app bar.
+/// The mark is never fetched from the network.
+class SakuBrandMark extends StatelessWidget {
+  const SakuBrandMark({super.key, this.size = 32});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: const CustomPaint(painter: _SakuPocketPainter()),
+    );
+  }
+}
+
 /// Reusable SAKU mark + wordmark lockup.
 ///
 /// The visual is drawn locally so onboarding/splash branding never depends on
@@ -48,11 +66,7 @@ class SakuBrandLockup extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: markSize,
-          height: markSize,
-          child: const CustomPaint(painter: _SakuPocketPainter()),
-        ),
+        SakuBrandMark(size: markSize),
         const SizedBox(height: 14),
         Text(
           'SAKU',

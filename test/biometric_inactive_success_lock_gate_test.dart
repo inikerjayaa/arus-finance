@@ -50,7 +50,7 @@ void main() {
       await tester.pump();
 
       expect(security.biometricCalls, 1);
-      expect(find.text('Arus terkunci'), findsOneWidget);
+      expect(find.text('SAKU terkunci'), findsOneWidget);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
@@ -62,14 +62,14 @@ void main() {
       await tester.pump();
 
       // Never expose finance data while the app is still inactive.
-      expect(find.text('Arus terkunci'), findsOneWidget);
+      expect(find.text('SAKU terkunci'), findsOneWidget);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       await tester.pump();
 
       expect(security.biometricCalls, 1);
-      expect(find.text('Arus terkunci'), findsNothing);
+      expect(find.text('SAKU terkunci'), findsNothing);
       expect(find.text('Sensitive finance data'), findsOneWidget);
     },
   );
@@ -96,14 +96,11 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      // Flutter's valid Android background path is inactive -> hidden ->
-      // paused. Either hidden or paused must invalidate the transient success.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       await tester.pump();
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();
 
-      // And the valid return path is paused -> hidden -> inactive -> resumed.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       await tester.pump();
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -112,9 +109,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Arus terkunci'), findsOneWidget);
-      // Resume may start a fresh biometric request, but the previous successful
-      // result must never unlock the app after a genuine background cycle.
+      expect(find.text('SAKU terkunci'), findsOneWidget);
       expect(security.biometricCalls, greaterThanOrEqualTo(1));
     },
   );

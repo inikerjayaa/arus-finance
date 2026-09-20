@@ -71,15 +71,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Total Saldo'), findsOneWidget);
+      expect(find.text('Total saldo'), findsOneWidget);
       expect(find.text('Pemasukan'), findsOneWidget);
       expect(find.text('Pengeluaran'), findsOneWidget);
       expect(find.textContaining('3.465.000'), findsWidgets);
       expect(find.textContaining('500.000'), findsWidgets);
       expect(find.textContaining('35.000'), findsWidgets);
 
-      // Available-to-spend remains an accounting concept, but it must not
-      // compete with the three headline numbers in the primary Home card.
       expect(find.textContaining('1.465.000'), findsNothing);
       expect(find.textContaining('Tersedia untuk dibelanjakan'), findsNothing);
       expect(find.text('Saldo tersedia'), findsNothing);
