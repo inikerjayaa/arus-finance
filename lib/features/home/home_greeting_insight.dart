@@ -13,18 +13,11 @@ String homeGreetingFor(DateTime value, {String? name}) {
     _ => 'Selamat malam',
   };
   final cleanName = name?.trim();
-  return cleanName == null || cleanName.isEmpty
-      ? greeting
-      : '$greeting, $cleanName';
+  return cleanName == null || cleanName.isEmpty ? greeting : '$greeting, $cleanName';
 }
 
 class HomeGreetingInsight extends StatefulWidget {
-  const HomeGreetingInsight({
-    super.key,
-    required this.controller,
-    required this.visible,
-  });
-
+  const HomeGreetingInsight({super.key, required this.controller, required this.visible});
   final AppController controller;
   final bool visible;
 
@@ -46,9 +39,7 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
   @override
   void didUpdateWidget(covariant HomeGreetingInsight oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.visible && !widget.visible && !_consumed) {
-      setState(() => _consumed = true);
-    }
+    if (oldWidget.visible && !widget.visible && !_consumed) setState(() => _consumed = true);
   }
 
   Future<void> _requestOnce() async {
@@ -59,9 +50,7 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
     try {
       final insight = await service.build();
       if (mounted) setState(() => _insight = insight);
-    } catch (_) {
-      // Insight is optional and must never block access to finance data.
-    }
+    } catch (_) {}
   }
 
   @override
@@ -73,17 +62,14 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
       child: Semantics(
         container: true,
-        label: 'Insight Arus. ${insight.title}. ${insight.message}',
+        label: 'Insight SAKU. ${insight.title}. ${insight.message}',
         child: ExcludeSemantics(
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
             decoration: BoxDecoration(
-              color:
-                  theme.colorScheme.tertiaryContainer.withValues(alpha: .58),
+              color: theme.colorScheme.tertiaryContainer.withValues(alpha: .58),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: theme.colorScheme.tertiary.withValues(alpha: .22),
-              ),
+              border: Border.all(color: theme.colorScheme.tertiary.withValues(alpha: .22)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,39 +81,18 @@ class _HomeGreetingInsightState extends State<HomeGreetingInsight> {
                     color: theme.colorScheme.tertiary.withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 20,
-                    color: theme.colorScheme.tertiary,
-                  ),
+                  child: Icon(Icons.auto_awesome_rounded, size: 20, color: theme.colorScheme.tertiary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Insight Arus',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.tertiary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      Text('Insight SAKU', style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.tertiary, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 3),
-                      Text(
-                        insight.title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      Text(insight.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 3),
-                      Text(
-                        insight.message,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.3,
-                        ),
-                      ),
+                      Text(insight.message, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
                     ],
                   ),
                 ),
