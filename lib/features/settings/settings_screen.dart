@@ -317,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          _sectionTitle(theme, 'Tentang Arus'),
+          _sectionTitle(theme, 'Tentang SAKU'),
           const SizedBox(height: 8),
           Card(
             child: const Padding(
@@ -332,12 +332,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Arus Finance',
+                          'SAKU',
                           style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                         SizedBox(height: 4),
-                        Text('Dibuat oleh Akbar bersama Bantuan AI'),
-                        SizedBox(height: 3),
                         Text('Local-first • data tetap di perangkatmu'),
                       ],
                     ),
@@ -424,7 +422,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _setPin(BuildContext context) async {
-    if (_hasPin == true) {
+    final creatingPin = _hasPin != true;
+    if (!creatingPin) {
       final current = await _askSecret(
         context,
         title: 'Konfirmasi PIN saat ini',
@@ -447,18 +446,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(_hasPin == true ? 'Ubah PIN' : 'Buat PIN'),
+          title: Text(creatingPin ? 'Buat PIN' : 'Ubah PIN'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
+                key: const Key('settings_pin_input'),
                 autofocus: true,
                 obscureText: true,
                 keyboardType: TextInputType.number,
                 maxLength: 8,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
-                  labelText: 'PIN baru',
+                  labelText: creatingPin ? 'PIN' : 'PIN baru',
                   errorText: error,
                   counterText: '',
                 ),
@@ -469,12 +469,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 10),
               TextFormField(
+                key: const Key('settings_pin_confirm_input'),
                 obscureText: true,
                 keyboardType: TextInputType.number,
                 maxLength: 8,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
-                  labelText: 'Ulangi PIN',
+                  labelText: 'Konfirmasi PIN',
                   counterText: '',
                 ),
                 onChanged: (value) => confirm = value,
@@ -507,9 +508,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (result == null) return;
     try {
       await widget.security.setPin(result);
+      String? recoveryCode;
+      if (creatingPin) {
+        recoveryCode = await widget.security.createRecoveryCode();
+      }
       await _reloadSecurity();
+      if (!context.mounted) return;
+      if (recoveryCode != null) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RecoveryCodeSettingsScreen(
+              security: widget.security,
+              initialCode: recoveryCode,
+            ),
+          ),
+        );
+      }
     } catch (error) {
-      if (context.mounted) _snack(context, error.toString());
+      await _reloadSecurity();
+      if (context.mounted) {
+        _snack(
+          context,
+          creatingPin
+              ? 'PIN tersimpan, tetapi kode pemulihan belum berhasil ditampilkan. Buka Kode pemulihan untuk membuatnya.'
+              : error.toString(),
+        );
+      }
     }
   }
 
@@ -619,7 +643,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(tempFile.path)],
-          text: 'Arus Finance — export transaksi',
+          text: 'SAKU — export transaksi',
         ),
       );
     } catch (error) {
@@ -636,20 +660,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _backup(BuildContext context) async {
     final pass = await _askSecret(
       context,
-      title: 'Passphrase backup',
+      title: 'Buat kata sandi backup',
       label: 'Minimal 8 karakter',
       obscure: true,
     );
     if (pass == null || !context.mounted) return;
     final confirm = await _askSecret(
       context,
-      title: 'Konfirmasi passphrase',
-      label: 'Ketik ulang passphrase',
+      title: 'Ulangi kata sandi backup',
+      label: 'Ketik ulang kata sandi',
       obscure: true,
     );
     if (confirm == null || !context.mounted) return;
     if (pass != confirm) {
-      _snack(context, 'Passphrase tidak sama. Backup dibatalkan.');
+      _snack(context, 'Kata sandi tidak sama. Backup dibatalkan.');
       return;
     }
     File? tempFile;
@@ -658,7 +682,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(tempFile.path)],
-          text: 'Arus Finance encrypted backup',
+          text: 'SAKU — backup terenkripsi',
         ),
       );
     } catch (error) {
@@ -679,7 +703,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final pass = await _askSecret(
       context,
       title: 'Buka backup',
-      label: 'Passphrase',
+      label: 'Kata sandi backup',
       obscure: true,
     );
     if (pass == null || !context.mounted) return;
@@ -707,9 +731,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await AppScope.of(context).refresh();
       await _reloadRecovery();
       if (context.mounted) _snack(context, 'Restore berhasil.');
-    } catch (error) {
+    } catch (_) {
       if (context.mounted) {
-        _snack(context, 'Restore gagal. Data lama tidak diubah. $error');
+        _snack(
+          context,
+          'Restore gagal. Kata sandi tidak cocok atau file backup tidak dapat dibaca. Data lama tidak diubah.',
+        );
       }
     }
   }
