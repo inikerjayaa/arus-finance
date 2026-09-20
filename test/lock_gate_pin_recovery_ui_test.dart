@@ -56,7 +56,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Arus terkunci'), findsOneWidget);
+    expect(find.text('SAKU terkunci'), findsOneWidget);
     expect(find.text('Sensitive home'), findsOneWidget);
 
     await tester.tap(find.text('Lupa PIN?'));
@@ -83,16 +83,16 @@ void main() {
     expect(find.text('RSTU-VWXY-2345-6789'), findsOneWidget);
 
     final openButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Buka Arus'),
+      find.widgetWithText(FilledButton, 'Buka SAKU'),
     );
     expect(openButton.onPressed, isNull);
 
     await tester.tap(find.byKey(const Key('replacement_recovery_saved')));
     await tester.pump();
-    await tester.tap(find.text('Buka Arus'));
+    await tester.tap(find.text('Buka SAKU'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Arus terkunci'), findsNothing);
+    expect(find.text('SAKU terkunci'), findsNothing);
     expect(find.text('Sensitive home'), findsOneWidget);
   });
 }
