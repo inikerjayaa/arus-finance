@@ -19,60 +19,29 @@ class AppearanceSettingsScreen extends StatelessWidget {
             children: [
               Semantics(
                 header: true,
-                child: Text(
-                  'Tampilan Arus',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                child: Text('Tampilan SAKU', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
               ),
               const SizedBox(height: 6),
               Text(
                 'Tema hanya mengubah tampilan di perangkat ini. Data dan perhitungan keuangan tidak berubah.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 20),
-              Text(
-                'Mode',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text('Mode', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               SegmentedButton<ThemeMode>(
                 segments: const [
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    icon: Icon(Icons.brightness_auto_rounded),
-                    label: Text('System'),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.light,
-                    icon: Icon(Icons.light_mode_rounded),
-                    label: Text('Light'),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark,
-                    icon: Icon(Icons.dark_mode_rounded),
-                    label: Text('Dark'),
-                  ),
+                  ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto_rounded), label: Text('System')),
+                  ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_rounded), label: Text('Light')),
+                  ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_rounded), label: Text('Dark')),
                 ],
                 selected: {service.themeMode},
                 onSelectionChanged: (value) {
-                  if (value.isNotEmpty) {
-                    service.setThemeMode(value.first);
-                  }
+                  if (value.isNotEmpty) service.setThemeMode(value.first);
                 },
               ),
               const SizedBox(height: 24),
-              Text(
-                'Tema warna',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text('Tema warna', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Card(
                 child: Column(
@@ -83,18 +52,15 @@ class AppearanceSettingsScreen extends StatelessWidget {
                         selected: service.themeId == ArusThemeId.values[i],
                         onTap: () => service.setThemeId(ArusThemeId.values[i]),
                       ),
-                      if (i != ArusThemeId.values.length - 1)
-                        const Divider(height: 1),
+                      if (i != ArusThemeId.values.length - 1) const Divider(height: 1),
                     ],
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Arus Original tetap menjadi default. High Contrast disediakan untuk kebutuhan keterbacaan yang lebih kuat.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                'SAKU Original tetap menjadi default. High Contrast disediakan untuk kebutuhan keterbacaan yang lebih kuat.',
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ],
           );
@@ -105,12 +71,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
 }
 
 class _ThemePresetTile extends StatelessWidget {
-  const _ThemePresetTile({
-    required this.themeId,
-    required this.selected,
-    required this.onTap,
-  });
-
+  const _ThemePresetTile({required this.themeId, required this.selected, required this.onTap});
   final ArusThemeId themeId;
   final bool selected;
   final VoidCallback onTap;
@@ -129,11 +90,7 @@ class _ThemePresetTile extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.$1,
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: colors.$1, border: Border.all(color: theme.colorScheme.outlineVariant)),
               child: const SizedBox.expand(),
             ),
             Align(
@@ -141,11 +98,7 @@ class _ThemePresetTile extends StatelessWidget {
               child: Container(
                 width: 22,
                 height: 22,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.$2,
-                  border: Border.all(color: theme.colorScheme.surface, width: 2),
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: colors.$2, border: Border.all(color: theme.colorScheme.surface, width: 2)),
               ),
             ),
           ],
@@ -153,9 +106,7 @@ class _ThemePresetTile extends StatelessWidget {
       ),
       title: Text(themeId.label),
       subtitle: Text(_description(themeId)),
-      trailing: selected
-          ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
-          : const Icon(Icons.chevron_right),
+      trailing: selected ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary) : const Icon(Icons.chevron_right),
     );
   }
 
@@ -173,7 +124,7 @@ class _ThemePresetTile extends StatelessWidget {
 
   static String _description(ArusThemeId themeId) {
     return switch (themeId) {
-      ArusThemeId.original => 'Hijau lembut khas Arus',
+      ArusThemeId.original => 'Hijau Cyprus khas SAKU',
       ArusThemeId.ocean => 'Biru-teal bersih dan modern',
       ArusThemeId.forest => 'Hijau natural dengan rasa premium',
       ArusThemeId.graphite => 'Netral, profesional, minim distraksi',
