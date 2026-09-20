@@ -62,7 +62,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Arus terkunci'), findsOneWidget);
+      expect(find.text('SAKU terkunci'), findsOneWidget);
       await tester.enterText(find.byType(TextField), '1234');
       await tester.tap(find.text('Buka'));
       await tester.pumpAndSettle();
@@ -72,11 +72,11 @@ void main() {
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
       // Flutter/Android leaves the foreground through `inactive` before the
-      // later hidden/paused states. Arus must fail closed at this earliest
+      // later hidden/paused states. SAKU must fail closed at this earliest
       // transition, not wait for the app to become fully paused.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
-      expect(find.text('Arus terkunci'), findsOneWidget);
+      expect(find.text('SAKU terkunci'), findsOneWidget);
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
       await tester.tap(
