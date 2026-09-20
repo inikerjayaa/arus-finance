@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../app_controller.dart';
-import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
