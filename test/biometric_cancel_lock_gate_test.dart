@@ -49,31 +49,26 @@ void main() {
       await tester.pump();
       expect(security.biometricCalls, 1);
 
-      // Reproduce Android biometric dialog lifecycle: system prompt can make
-      // Flutter inactive then resumed before authenticate() completes.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(security.biometricCalls, 1);
 
-      // User presses Cancel in the system biometric prompt.
       security.pendingBiometric!.complete(false);
       await tester.pump();
       await tester.pump();
       expect(security.biometricCalls, 1);
-      expect(find.text('Arus terkunci'), findsOneWidget);
+      expect(find.text('SAKU terkunci'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Gunakan biometrik'), findsOneWidget);
 
-      // Another synthetic resume must not reopen biometric automatically.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(security.biometricCalls, 1);
 
-      // User can explicitly try biometric again; success unlocks the app.
       await tester.tap(find.text('Gunakan biometrik'));
       await tester.pump();
       expect(security.biometricCalls, 2);
