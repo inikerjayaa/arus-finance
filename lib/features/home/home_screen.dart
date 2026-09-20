@@ -9,6 +9,7 @@ import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
 import '../../shared/money.dart';
+import '../../shared/saku_brand.dart';
 import '../activity/daily_activity_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
@@ -57,7 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return RefreshIndicator(
       onRefresh: controller.refresh,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 12, 18, 120),
+        padding: const EdgeInsets.fromLTRB(
+          SakuBrand.pageInset,
+          12,
+          SakuBrand.pageInset,
+          120,
+        ),
         children: [
           Row(
             children: [
@@ -89,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: controller,
             visible: controller.navigationIndex == 0,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           if (enabled.isEmpty)
             Card(
               child: Padding(
@@ -198,14 +204,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               if (recent.isEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(22),
-                    child: Text(
-                      'Belum ada transaksi. Tekan tombol + untuk mencatat pengeluaran pertama.',
-                      style: theme.textTheme.bodyMedium,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'Belum ada transaksi. Tekan + untuk mencatat pengeluaran pertama.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 )
@@ -242,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
           break;
       }
       if (content != null) {
-        if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 12));
+        if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
         widgets.add(content);
       }
     }
@@ -287,7 +293,8 @@ class _HomeGreeting extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -.35,
         ),
       ),
     );
@@ -311,18 +318,11 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final backgroundStart =
-        dark ? const Color(0xFF211A36) : const Color(0xFFF4EEFF);
-    final backgroundEnd =
-        dark ? const Color(0xFF2E2348) : const Color(0xFFE9E0FF);
-    final border = dark ? const Color(0xFFA890FF) : const Color(0xFF7D5CE7);
-    final foreground =
-        dark ? const Color(0xFFF8F4FF) : const Color(0xFF2D1C55);
-    final muted = dark ? const Color(0xFFCFC3EE) : const Color(0xFF66558C);
-    final incomeColor =
-        dark ? const Color(0xFF70E5AD) : const Color(0xFF167A52);
-    final spendingColor =
-        dark ? const Color(0xFFFF8996) : const Color(0xFFB93F51);
+    final background = dark ? const Color(0xFF073833) : SakuBrand.cyprus;
+    final foreground = SakuBrand.onNoturno;
+    final muted = SakuBrand.mutedOnNoturno;
+    final incomeColor = dark ? const Color(0xFF8EDDB8) : const Color(0xFFB6E8CE);
+    final spendingColor = dark ? const Color(0xFFFFA08A) : const Color(0xFFFFB39F);
 
     final totalLabel = Money.format(totalBalanceMinor, currency: currency);
     final incomeLabel = Money.format(incomeMinor, currency: currency);
@@ -335,20 +335,11 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
       child: ExcludeSemantics(
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [backgroundStart, backgroundEnd],
+            color: background,
+            borderRadius: const BorderRadius.all(SakuBrand.cardRadius),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: dark ? .08 : .10),
             ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: border, width: 1.4),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-                color: border.withValues(alpha: dark ? .12 : .16),
-              ),
-            ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -357,18 +348,18 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.account_balance_wallet_rounded,
-                      size: 19,
-                      color: border,
+                    const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 18,
+                      color: SakuBrand.vulcanico,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Total Saldo',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: foreground,
-                          fontWeight: FontWeight.w700,
+                        'Total saldo',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: muted,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -380,59 +371,56 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
                   softWrap: true,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     color: foreground,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -.6,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.55,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 Container(
                   height: 1,
-                  color: border.withValues(alpha: .22),
+                  color: Colors.white.withValues(alpha: .12),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   'Bulan ini',
-                  style: theme.textTheme.labelLarge?.copyWith(
+                  style: theme.textTheme.labelMedium?.copyWith(
                     color: muted,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final income = _HighlightMetric(
                       label: 'Pemasukan',
                       value: incomeLabel,
-                      icon: Icons.arrow_downward_rounded,
+                      icon: Icons.south_west_rounded,
                       color: incomeColor,
                       foreground: foreground,
-                      surface: dark
-                          ? Colors.white.withValues(alpha: .07)
-                          : Colors.white.withValues(alpha: .62),
+                      muted: muted,
                     );
                     final spending = _HighlightMetric(
                       label: 'Pengeluaran',
                       value: spendingLabel,
-                      icon: Icons.arrow_upward_rounded,
+                      icon: Icons.north_east_rounded,
                       color: spendingColor,
                       foreground: foreground,
-                      surface: dark
-                          ? Colors.white.withValues(alpha: .07)
-                          : Colors.white.withValues(alpha: .62),
+                      muted: muted,
                     );
                     if (constraints.maxWidth < 330) {
                       return Column(
                         children: [
                           income,
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           spending,
                         ],
                       );
                     }
                     return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: income),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 18),
                         Expanded(child: spending),
                       ],
                     );
@@ -454,7 +442,7 @@ class _HighlightMetric extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.foreground,
-    required this.surface,
+    required this.muted,
   });
 
   final String label;
@@ -462,55 +450,43 @@ class _HighlightMetric extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Color foreground;
-  final Color surface;
+  final Color muted;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .14),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w800,
-                  ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: muted,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  softWrap: true,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: foreground,
-                    fontWeight: FontWeight.w800,
-                  ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value,
+                softWrap: true,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w700,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
