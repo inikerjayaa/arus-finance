@@ -103,8 +103,8 @@ class _PinRecoveryPanelState extends State<PinRecoveryPanel> {
         const SizedBox(height: 8),
         Text(
           canRecover
-              ? 'Buat PIN baru menggunakan kode pemulihan atau biometrik yang sebelumnya sudah kamu aktifkan di Arus.'
-              : 'Perangkat ini belum memiliki kode pemulihan atau biometrik Arus yang aktif.',
+              ? 'Buat PIN baru menggunakan kode pemulihan atau biometrik yang sebelumnya sudah kamu aktifkan di SAKU.'
+              : 'Perangkat ini belum memiliki kode pemulihan atau biometrik SAKU yang aktif.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -119,7 +119,7 @@ class _PinRecoveryPanelState extends State<PinRecoveryPanel> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-              'Arus tidak memiliki server atau akun online untuk melewati PIN. Jika PIN masih kamu ingat, kembali lalu buka Arus dan buat kode pemulihan dari Pengaturan.',
+              'SAKU tidak memiliki server atau akun online untuk melewati PIN. Jika PIN masih kamu ingat, kembali lalu buka SAKU dan buat kode pemulihan dari Pengaturan.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onErrorContainer,
               ),
@@ -226,7 +226,7 @@ class _PinRecoveryPanelState extends State<PinRecoveryPanel> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Kode pemulihan lama sudah tidak berlaku. Simpan kode baru ini karena Arus tidak menyimpan plaintext-nya.',
+          'Kode pemulihan lama sudah tidak berlaku. Simpan kode baru ini karena SAKU tidak dapat menampilkan kode aslinya lagi.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -278,7 +278,7 @@ class _PinRecoveryPanelState extends State<PinRecoveryPanel> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _savedReplacement ? widget.onRecovered : null,
-          child: const Text('Buka Arus'),
+          child: const Text('Buka SAKU'),
         ),
       ],
     );
