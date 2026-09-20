@@ -13,7 +13,7 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('screen protection defaults ON and applies secure native state', () async {
+  test('screen protection defaults OFF and applies non-secure native state', () async {
     SharedPreferences.setMockInitialValues({});
     final applied = <bool>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -31,11 +31,11 @@ void main() {
 
     expect(service.loaded, isTrue);
     expect(service.supported, isTrue);
-    expect(service.enabled, isTrue);
-    expect(applied, [true]);
+    expect(service.enabled, isFalse);
+    expect(applied, [false]);
   });
 
-  test('preference-store failure at boot falls back to secure ON', () async {
+  test('preference-store failure at boot keeps opt-in protection OFF', () async {
     final applied = <bool>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
@@ -55,11 +55,11 @@ void main() {
 
     expect(service.loaded, isTrue);
     expect(service.supported, isTrue);
-    expect(service.enabled, isTrue);
-    expect(applied, [true]);
+    expect(service.enabled, isFalse);
+    expect(applied, [false]);
   });
 
-  test('persisted OFF is applied only after the Android bridge confirms it', () async {
+  test('persisted OFF remains OFF after the Android bridge confirms it', () async {
     SharedPreferences.setMockInitialValues({
       'screen_protection_enabled_v1': false,
     });
@@ -81,7 +81,7 @@ void main() {
     expect(applied, [false]);
   });
 
-  test('runtime toggle persists locally after native state succeeds', () async {
+  test('runtime opt-in persists locally after native state succeeds', () async {
     SharedPreferences.setMockInitialValues({});
     final applied = <bool>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -96,12 +96,12 @@ void main() {
 
     final service = ScreenProtectionService(channel: channel);
     await service.loadAndApply();
-    await service.setEnabled(false);
+    await service.setEnabled(true);
 
     final prefs = await SharedPreferences.getInstance();
-    expect(service.enabled, isFalse);
-    expect(prefs.getBool('screen_protection_enabled_v1'), isFalse);
-    expect(applied, [true, false]);
+    expect(service.enabled, isTrue);
+    expect(prefs.getBool('screen_protection_enabled_v1'), isTrue);
+    expect(applied, [false, true]);
   });
 
   test('preference-open failure after native change rolls back previous state', () async {
@@ -131,20 +131,20 @@ void main() {
     await service.loadAndApply();
 
     await expectLater(
-      service.setEnabled(false),
+      service.setEnabled(true),
       throwsA(isA<StateError>()),
     );
 
-    expect(service.enabled, isTrue);
+    expect(service.enabled, isFalse);
     expect(service.supported, isTrue);
-    expect(applied, [true, false, true]);
+    expect(applied, [false, true, false]);
   });
 
   test('failed rollback stops claiming reliable runtime control', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     var preferenceCalls = 0;
-    var secureEnableCalls = 0;
+    var disableCalls = 0;
     final applied = <bool>[];
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -153,9 +153,9 @@ void main() {
       if (call.method == 'setEnabled') {
         final enabled = (call.arguments as Map)['enabled'] as bool;
         applied.add(enabled);
-        if (enabled) {
-          secureEnableCalls++;
-          if (secureEnableCalls > 1) {
+        if (!enabled) {
+          disableCalls++;
+          if (disableCalls > 1) {
             throw PlatformException(code: 'REVERT_FAILED');
           }
         }
@@ -175,13 +175,13 @@ void main() {
     await service.loadAndApply();
 
     await expectLater(
-      service.setEnabled(false),
+      service.setEnabled(true),
       throwsA(isA<StateError>()),
     );
 
-    expect(service.enabled, isFalse);
+    expect(service.enabled, isTrue);
     expect(service.supported, isFalse);
-    expect(applied, [true, false, true]);
+    expect(applied, [false, true, false]);
   });
 
   test('unsupported platform is reported without claiming native blocking', () async {
@@ -197,12 +197,13 @@ void main() {
 
     expect(service.loaded, isTrue);
     expect(service.supported, isFalse);
-    await expectLater(service.setEnabled(false), throwsA(isA<StateError>()));
+    expect(service.enabled, isFalse);
+    await expectLater(service.setEnabled(true), throwsA(isA<StateError>()));
   });
 
-  test('failed saved OFF preference falls back to truthful secure ON state', () async {
+  test('failed saved ON preference never claims unverified protection', () async {
     SharedPreferences.setMockInitialValues({
-      'screen_protection_enabled_v1': false,
+      'screen_protection_enabled_v1': true,
     });
     final applied = <bool>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -211,7 +212,7 @@ void main() {
       if (call.method == 'setEnabled') {
         final enabled = (call.arguments as Map)['enabled'] as bool;
         applied.add(enabled);
-        if (!enabled) {
+        if (enabled) {
           throw PlatformException(code: 'APPLY_FAILED');
         }
         return true;
@@ -222,8 +223,8 @@ void main() {
     final service = ScreenProtectionService(channel: channel);
     await service.loadAndApply();
 
-    expect(service.supported, isTrue);
-    expect(service.enabled, isTrue);
-    expect(applied, [false, true]);
+    expect(service.supported, isFalse);
+    expect(service.enabled, isFalse);
+    expect(applied, [true]);
   });
 }

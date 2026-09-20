@@ -28,6 +28,43 @@ class _SettingsSecurity extends SecurityService {
 
 void main() {
   testWidgets(
+    'first PIN setup can hand recovery code directly to the save screen',
+    (tester) async {
+      final security = _SettingsSecurity(recoveryExists: true);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecoveryCodeSettingsScreen(
+            security: security,
+            initialCode: 'ABCD-EFGH-JKLM-NPQR',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Simpan kode pemulihan'), findsOneWidget);
+      expect(find.text('ABCD-EFGH-JKLM-NPQR'), findsOneWidget);
+      expect(find.byKey(const Key('recovery_settings_pin')), findsNothing);
+
+      final finishBeforeSave = tester.widget<FilledButton>(
+        find.byKey(const Key('recovery_settings_finish')),
+      );
+      expect(finishBeforeSave.onPressed, isNull);
+
+      await tester.tap(find.byKey(const Key('recovery_settings_saved')));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('recovery_settings_finish')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
+
+  testWidgets(
     'legacy user can create recovery code only after current PIN confirmation',
     (tester) async {
       final security = _SettingsSecurity();

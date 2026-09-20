@@ -7,9 +7,11 @@ class RecoveryCodeSettingsScreen extends StatefulWidget {
   const RecoveryCodeSettingsScreen({
     super.key,
     required this.security,
+    this.initialCode,
   });
 
   final SecurityService security;
+  final String? initialCode;
 
   @override
   State<RecoveryCodeSettingsScreen> createState() =>
@@ -18,17 +20,20 @@ class RecoveryCodeSettingsScreen extends StatefulWidget {
 
 class _RecoveryCodeSettingsScreenState
     extends State<RecoveryCodeSettingsScreen> {
-  bool _loading = true;
+  late bool _loading;
   bool _busy = false;
-  bool _hasRecovery = false;
+  late bool _hasRecovery;
   bool _saved = false;
-  String? _code;
+  late String? _code;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _code = widget.initialCode;
+    _hasRecovery = widget.initialCode != null;
+    _loading = widget.initialCode == null;
+    if (_loading) _load();
   }
 
   Future<void> _load() async {
@@ -83,8 +88,8 @@ class _RecoveryCodeSettingsScreenState
         const SizedBox(height: 10),
         Text(
           _hasRecovery
-              ? 'Arus tidak dapat menampilkan kode lama lagi. Kamu dapat membuat kode baru kapan saja; kode lama langsung tidak berlaku.'
-              : 'Kode ini dapat dipakai untuk membuat PIN baru jika kamu lupa PIN. Arus hanya menyimpan verifikasinya di perangkat.',
+              ? 'SAKU tidak dapat menampilkan kode lama lagi. Kamu dapat membuat kode baru kapan saja; kode lama langsung tidak berlaku.'
+              : 'Kode ini dapat dipakai untuk membuat PIN baru jika kamu lupa PIN. SAKU hanya menyimpan verifikasinya di perangkat.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -105,7 +110,7 @@ class _RecoveryCodeSettingsScreenState
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Tidak ada akun atau server Arus yang menyimpan salinan kode. Simpan kode baru di tempat yang aman.',
+                  'Tidak ada akun atau server SAKU yang menyimpan salinan kode. Simpan kode baru di tempat yang aman.',
                 ),
               ),
             ],
@@ -150,7 +155,7 @@ class _RecoveryCodeSettingsScreenState
         const Icon(Icons.key_rounded, size: 48),
         const SizedBox(height: 18),
         Text(
-          'Simpan kode baru ini',
+          'Simpan kode pemulihan',
           textAlign: TextAlign.center,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w900,
@@ -158,7 +163,7 @@ class _RecoveryCodeSettingsScreenState
         ),
         const SizedBox(height: 8),
         Text(
-          'Kode hanya ditampilkan kali ini. Setelah halaman ini ditutup, Arus tidak dapat menampilkan plaintext kode lagi.',
+          'Kode hanya ditampilkan kali ini. Setelah halaman ini ditutup, SAKU tidak dapat menampilkan kode asli lagi.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -209,17 +214,23 @@ class _RecoveryCodeSettingsScreenState
         const SizedBox(height: 12),
         FilledButton(
           key: const Key('recovery_settings_finish'),
-          onPressed: _saved
-              ? () => setState(() {
-                    _hasRecovery = true;
-                    _code = null;
-                    _saved = false;
-                  })
-              : null,
+          onPressed: _saved ? _finishOneTimeCode : null,
           child: const Text('Selesai'),
         ),
       ],
     );
+  }
+
+  void _finishOneTimeCode() {
+    if (widget.initialCode != null) {
+      Navigator.pop(context);
+      return;
+    }
+    setState(() {
+      _hasRecovery = true;
+      _code = null;
+      _saved = false;
+    });
   }
 
   Future<void> _confirmPinAndGenerate() async {
@@ -282,7 +293,7 @@ class _RecoveryCodeSettingsScreenState
               LengthLimitingTextInputFormatter(8),
             ],
             decoration: InputDecoration(
-              labelText: 'PIN Arus saat ini',
+              labelText: 'PIN SAKU saat ini',
               errorText: error,
             ),
             onChanged: (next) {

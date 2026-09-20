@@ -1,24 +1,8 @@
-import 'package:arus_finance/core/services/security_service.dart';
 import 'package:arus_finance/features/onboarding_screen.dart';
+import 'package:arus_finance/shared/saku_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class _OnboardingSecurity extends SecurityService {
-  String? savedPin;
-  int recoveryCalls = 0;
-
-  @override
-  Future<void> setPin(String pin) async {
-    savedPin = pin;
-  }
-
-  @override
-  Future<String> createRecoveryCode() async {
-    recoveryCalls++;
-    return 'ABCD-EFGH-JKLM-NPQR';
-  }
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,101 +11,54 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  testWidgets(
-      'fresh install shows name PIN and confirmation together then recovery code',
+  testWidgets('fresh install asks only for name before entering SAKU',
       (tester) async {
-    final security = _OnboardingSecurity();
     var done = false;
 
     await tester.pumpWidget(
       MaterialApp(
-        home: OnboardingScreen(
-          security: security,
-          onDone: () => done = true,
-        ),
+        home: OnboardingScreen(onDone: () => done = true),
       ),
     );
 
-    expect(find.text('Mulai dengan SAKU'), findsOneWidget);
+    expect(find.byType(SakuBrandLockup), findsOneWidget);
+    expect(find.text('SAKU'), findsOneWidget);
     expect(find.byKey(const Key('onboarding_name_input')), findsOneWidget);
-    expect(find.byKey(const Key('onboarding_pin_input')), findsOneWidget);
-    expect(
-      find.byKey(const Key('onboarding_pin_confirm_input')),
-      findsOneWidget,
-    );
-    expect(find.textContaining('Langkah '), findsNothing);
-    expect(find.text('Lanjut'), findsNothing);
-    expect(find.text('Kembali'), findsNothing);
+    expect(find.byKey(const Key('onboarding_create_button')), findsOneWidget);
+    expect(find.byKey(const Key('onboarding_pin_input')), findsNothing);
+    expect(find.byKey(const Key('onboarding_pin_confirm_input')), findsNothing);
+    expect(find.text('Mulai dengan SAKU'), findsNothing);
+    expect(find.textContaining('Siapkan sekali'), findsNothing);
+    expect(find.textContaining('Isi nama dan PIN'), findsNothing);
+    expect(find.textContaining('Contoh: Ema'), findsNothing);
+    expect(find.textContaining('Tidak perlu login'), findsNothing);
 
     await tester.enterText(
       find.byKey(const Key('onboarding_name_input')),
       '  Ema  ',
     );
-    await tester.enterText(
-      find.byKey(const Key('onboarding_pin_input')),
-      '1234',
-    );
-    await tester.enterText(
-      find.byKey(const Key('onboarding_pin_confirm_input')),
-      '1234',
-    );
     await tester.tap(find.byKey(const Key('onboarding_create_button')));
-    await tester.pumpAndSettle();
-
-    expect(security.savedPin, '1234');
-    expect(security.recoveryCalls, 1);
-    expect(find.text('Simpan kode pemulihan'), findsOneWidget);
-    expect(find.text('ABCD-EFGH-JKLM-NPQR'), findsOneWidget);
-    expect(find.byKey(const Key('onboarding_recovery_saved')), findsNothing);
-    expect(done, isFalse);
-
-    final dashboardButton = tester.widget<FilledButton>(
-      find.byKey(const Key('onboarding_enter_dashboard')),
-    );
-    expect(dashboardButton.onPressed, isNotNull);
-
-    await tester.tap(find.byKey(const Key('onboarding_enter_dashboard')));
     await tester.pumpAndSettle();
 
     expect(done, isTrue);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('onboarding_done_v1'), isTrue);
-    expect(prefs.getBool('onboarding_security_v2'), isTrue);
     expect(prefs.getString('profile_name_v1'), 'Ema');
   });
 
-  testWidgets('PIN confirmation mismatch stays on the single setup form',
-      (tester) async {
-    final security = _OnboardingSecurity();
+  testWidgets('blank name stays on onboarding with a clear error', (tester) async {
+    var done = false;
 
     await tester.pumpWidget(
       MaterialApp(
-        home: OnboardingScreen(
-          security: security,
-          onDone: () {},
-        ),
+        home: OnboardingScreen(onDone: () => done = true),
       ),
     );
 
-    await tester.enterText(
-      find.byKey(const Key('onboarding_name_input')),
-      'Ema',
-    );
-    await tester.enterText(
-      find.byKey(const Key('onboarding_pin_input')),
-      '1234',
-    );
-    await tester.enterText(
-      find.byKey(const Key('onboarding_pin_confirm_input')),
-      '4321',
-    );
     await tester.tap(find.byKey(const Key('onboarding_create_button')));
     await tester.pump();
 
-    expect(find.text('Konfirmasi PIN harus sama dengan PIN.'), findsOneWidget);
-    expect(find.text('Mulai dengan SAKU'), findsOneWidget);
-    expect(find.byKey(const Key('onboarding_recovery_code')), findsNothing);
-    expect(security.savedPin, isNull);
-    expect(security.recoveryCalls, 0);
+    expect(find.text('Nama tidak boleh kosong.'), findsOneWidget);
+    expect(done, isFalse);
   });
 }

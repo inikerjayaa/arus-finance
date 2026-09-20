@@ -14,7 +14,8 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  testWidgets('disabling screenshot protection requires explicit warning confirmation', (tester) async {
+  testWidgets('screenshot protection is opt-in and disabling still warns',
+      (tester) async {
     SharedPreferences.setMockInitialValues({});
     final applied = <bool>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -36,7 +37,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lindungi screenshot & rekaman layar'), findsOneWidget);
+    expect(find.textContaining('Default: nonaktif'), findsOneWidget);
+    expect(service.enabled, isFalse);
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
     expect(service.enabled, isTrue);
+    expect(find.text('Izinkan screenshot?'), findsNothing);
 
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
@@ -49,14 +56,15 @@ void main() {
     expect(service.enabled, isFalse);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('screen_protection_enabled_v1'), isFalse);
-    expect(applied, [true, false]);
+    expect(applied, [false, true, false]);
     expect(
       find.textContaining('app switcher', findRichText: true),
       findsOneWidget,
     );
   });
 
-  testWidgets('unsupported platform renders toggle off, disabled, and states limitation', (tester) async {
+  testWidgets('unsupported platform renders toggle off, disabled, and states limitation',
+      (tester) async {
     SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {

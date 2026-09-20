@@ -17,7 +17,7 @@ class ScreenProtectionService extends ChangeNotifier {
   final MethodChannel _channel;
   final Future<SharedPreferences> Function() _preferences;
 
-  bool _enabled = true;
+  bool _enabled = false;
   bool _loaded = false;
   bool _supported = false;
 
@@ -26,15 +26,15 @@ class ScreenProtectionService extends ChangeNotifier {
   bool get supported => _supported;
 
   Future<void> loadAndApply() async {
-    var preferred = true;
+    var preferred = false;
     try {
       final prefs = await _preferences();
-      preferred = prefs.getBool(_enabledKey) ?? true;
+      preferred = prefs.getBool(_enabledKey) ?? false;
     } catch (_) {
-      // A preference-store failure must never weaken startup protection.
-      // Android has already started with FLAG_SECURE from native hardening, so
-      // fall back to the secure default and keep the app usable.
-      preferred = true;
+      // Screenshot blocking is opt-in. If local preferences cannot be read,
+      // keep the runtime restriction OFF rather than silently changing the
+      // user's capture behavior.
+      preferred = false;
     }
 
     _supported = await _nativeSupported();
@@ -43,15 +43,10 @@ class ScreenProtectionService extends ChangeNotifier {
       try {
         await _applyNative(preferred);
       } catch (_) {
-        // Android starts with FLAG_SECURE already set by the native hardener.
-        // If Dart cannot apply a saved OFF preference, report the truthful
-        // fail-secure state instead of pretending screenshots are allowed.
-        _enabled = true;
-        try {
-          await _applyNative(true);
-        } catch (_) {
-          _supported = false;
-        }
+        // The bridge did not confirm the requested state. Do not claim active
+        // screenshot protection when native enforcement cannot be verified.
+        _enabled = false;
+        _supported = false;
       }
     }
     _loaded = true;
