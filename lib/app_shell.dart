@@ -45,12 +45,12 @@ class AppShell extends StatelessWidget {
         builder: (context, _) => Scaffold(
           appBar: AppBar(
             titleSpacing: 20,
-            title: const Semantics(
+            title: Semantics(
               label: 'SAKU',
               header: true,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
+                children: const [
                   SakuBrandMark(size: 30),
                   SizedBox(width: 9),
                   Text(
