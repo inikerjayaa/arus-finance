@@ -13,7 +13,7 @@ checks={
   'no_exact_alarm_permission':'SCHEDULE_EXACT_ALARM' not in hard and 'USE_EXACT_ALARM' not in hard,
   'privacy_default':"prefs.getBool(_detailsKey) ?? false" in src,
   'stable_ids':'int _stableId(String payload)' in src,
-  'per_item_hash':'final signature = sha256.convert' in src,
+  'per_item_hash':'sha256.convert(utf8.encode(signatureSource)).toString()' in src,
   'persist_hash_only':"for (final reminder in desired) '${reminder.id}': reminder.signature" in src,
   'differential_cancel':'await _plugin.cancel(id: id);' in src,
   'no_cancel_all_pending':'cancelAllPendingNotifications' not in src,
