@@ -70,7 +70,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Kalender Arus'), findsOneWidget);
+      expect(find.text('Kalender SAKU'), findsOneWidget);
 
       final list = find.byType(ListView).first;
       await tester.drag(list, const Offset(0, -520));
@@ -104,7 +104,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Bulan sebelumnya'));
+      final previousMonth = find.descendant(
+        of: find.byType(CalendarDatePicker),
+        matching: find.byIcon(Icons.chevron_left),
+      );
+      expect(previousMonth, findsOneWidget);
+      await tester.tap(previousMonth);
       await tester.pumpAndSettle();
 
       expect(find.text('Agustus 2026'), findsOneWidget);
