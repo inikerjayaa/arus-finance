@@ -12,6 +12,7 @@ import '../../core/services/local_notification_service.dart';
 import '../../core/services/security_service.dart';
 import '../../core/services/user_profile_controller_access.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/saku_splash.dart';
 import 'appearance_settings_screen.dart';
 import 'categories_screen.dart';
 import 'privacy_settings_screen.dart';
@@ -320,24 +321,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _sectionTitle(theme, 'Tentang SAKU'),
           const SizedBox(height: 8),
           Card(
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              child: Row(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.account_balance_wallet_rounded),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'SAKU',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                  Row(
+                    children: [
+                      const SakuBrandMark(size: 40),
+                      const SizedBox(width: 12),
+                      Text(
+                        'SAKU',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
-                        SizedBox(height: 4),
-                        Text('Local-first • data tetap di perangkatmu'),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'SAKU berawal dari hal sederhana. Istri saya biasa mencatat pengeluaran secara manual, dan saya ingin membuat proses itu lebih mudah untuknya. Dari kebutuhan kecil di rumah itulah SAKU lahir: alat pencatat keuangan yang sederhana, cepat, dan tetap menjaga data di perangkat pengguna.',
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Data keuangan utama tetap tersimpan di perangkatmu.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
