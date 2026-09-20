@@ -59,10 +59,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Center(
-                        child: SakuBrandLockup(
-                          markSize: 128,
-                          wordmarkSize: 38,
-                          wordmarkColor: wordmarkColor,
+                        child: Semantics(
+                          header: true,
+                          label: 'SAKU',
+                          child: SakuBrandLockup(
+                            markSize: 128,
+                            wordmarkSize: 38,
+                            wordmarkColor: wordmarkColor,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 42),
