@@ -22,7 +22,7 @@ class _PinSecurity extends SecurityService {
 
 void main() {
   testWidgets(
-    'leaving foreground locks above an already-open root navigator dialog',
+    'security surface replaces an already-open root navigator dialog when locked',
     (tester) async {
       final security = _PinSecurity();
       var committed = 0;
@@ -71,19 +71,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
-      // Flutter/Android leaves the foreground through `inactive` before the
-      // later hidden/paused states. SAKU must fail closed at this earliest
-      // transition, not wait for the app to become fully paused.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
       expect(find.text('SAKU terkunci'), findsOneWidget);
-      expect(find.text('Sensitive dialog'), findsOneWidget);
-
-      await tester.tap(
-        find.text('Commit sensitive action'),
-        warnIfMissed: false,
-      );
-      await tester.pump();
+      // Sensitive routes are deliberately unmounted, not left composited under
+      // the lock surface where a stale frame could expose financial data.
+      expect(find.text('Sensitive dialog'), findsNothing);
       expect(committed, 0);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -93,10 +86,10 @@ void main() {
       await tester.tap(find.text('Buka'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Sensitive dialog'), findsOneWidget);
-      await tester.tap(find.text('Commit sensitive action'));
-      await tester.pumpAndSettle();
-      expect(committed, 1);
+      // The sensitive route was discarded by fail-closed locking and must not
+      // silently reappear or commit after authentication.
+      expect(find.text('Sensitive dialog'), findsNothing);
+      expect(committed, 0);
     },
   );
 }
