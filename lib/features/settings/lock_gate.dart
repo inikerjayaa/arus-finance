@@ -118,16 +118,16 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
               state == AppLifecycleState.detached)) {
         _biometricAutoSuppressed = false;
       }
-      if ((_hasPin && !_locked) || _recovering) {
-        if (mounted) {
-          setState(() {
-            _locked = _hasPin;
-            _recovering = false;
-            _error = null;
-            _biometricError = null;
-            _pin.clear();
-          });
-        }
+      // Fail closed immediately. Do not leave the financial UI mounted behind
+      // the lock surface while Android is transitioning through lock/unlock.
+      if (mounted) {
+        setState(() {
+          _locked = _hasPin;
+          _recovering = false;
+          _error = null;
+          _biometricError = null;
+          _pin.clear();
+        });
       }
     }
   }
@@ -224,48 +224,45 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        if (_checking)
-          _buildSecuritySurface(
-            context,
-            ColoredBox(
-              color: const Color(0xFF101114),
-              child: Center(
-                child: Semantics(
-                  label: 'Memeriksa keamanan SAKU',
-                  liveRegion: true,
-                  child: const CircularProgressIndicator(),
-                ),
-              ),
+    // Security surfaces replace the child instead of merely covering it. This
+    // prevents a stale dashboard frame from being composited during resume.
+    if (_checking) {
+      return _buildSecuritySurface(
+        context,
+        ColoredBox(
+          color: const Color(0xFF101114),
+          child: Center(
+            child: Semantics(
+              label: 'Memeriksa keamanan SAKU',
+              liveRegion: true,
+              child: const CircularProgressIndicator(),
             ),
-          )
-        else if (_locked)
-          _buildSecuritySurface(
-            context,
-            _recovering
-                ? PinRecoveryPanel(
-                    security: widget.security,
-                    onRecovered: _finishRecovery,
-                    onCancel: () => setState(() => _recovering = false),
-                  )
-                : _buildLockedOverlay(context),
           ),
-      ],
-    );
+        ),
+      );
+    }
+    if (_locked) {
+      return _buildSecuritySurface(
+        context,
+        _recovering
+            ? PinRecoveryPanel(
+                security: widget.security,
+                onRecovered: _finishRecovery,
+                onCancel: () => setState(() => _recovering = false),
+              )
+            : _buildLockedOverlay(context),
+      );
+    }
+    return widget.child;
   }
 
   Widget _buildSecuritySurface(BuildContext context, Widget child) {
-    return Positioned.fill(
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: Theme.of(context),
-        home: PopScope<void>(
-          canPop: false,
-          child: child,
-        ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: Theme.of(context),
+      home: PopScope<void>(
+        canPop: false,
+        child: child,
       ),
     );
   }
