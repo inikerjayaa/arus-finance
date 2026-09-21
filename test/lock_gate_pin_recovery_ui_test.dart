@@ -41,7 +41,8 @@ class _RecoverySecurity extends SecurityService {
 }
 
 void main() {
-  testWidgets('forgot PIN recovery stays inside LockGate and unlocks after new code is saved',
+  testWidgets(
+      'forgot PIN recovery stays inside LockGate and unlocks after new code is saved',
       (tester) async {
     final security = _RecoverySecurity();
 
@@ -57,7 +58,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('SAKU terkunci'), findsOneWidget);
-    expect(find.text('Sensitive home'), findsOneWidget);
+    // Locked/checking security surfaces replace financial content rather than
+    // compositing it underneath. This is the no-financial-data-flash contract.
+    expect(find.text('Sensitive home'), findsNothing);
 
     await tester.tap(find.text('Lupa PIN?'));
     await tester.pumpAndSettle();
