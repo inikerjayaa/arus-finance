@@ -22,7 +22,7 @@ class _PinSecurity extends SecurityService {
 
 void main() {
   testWidgets(
-    'security surface replaces an already-open root navigator dialog when locked',
+    'transient inactive keeps session while real background replaces sensitive routes',
     (tester) async {
       final security = _PinSecurity();
       var committed = 0;
@@ -71,17 +71,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
+      // Screenshot/system UI/image-picker style transient interruption must not
+      // create a new authentication boundary or discard in-progress UI.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
-      expect(find.text('SAKU terkunci'), findsOneWidget);
-      // Sensitive routes are deliberately unmounted, not left composited under
-      // the lock surface where a stale frame could expose financial data.
-      expect(find.text('Sensitive dialog'), findsNothing);
+      expect(find.text('SAKU terkunci'), findsNothing);
+      expect(find.text('Sensitive dialog'), findsOneWidget);
       expect(committed, 0);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
+      expect(find.text('SAKU terkunci'), findsNothing);
+      expect(find.text('Sensitive dialog'), findsOneWidget);
+
+      // A genuine background boundary arms fail-closed authentication. Flutter
+      // deliberately does not render application frames while paused, so the
+      // security surface is asserted on the first resumed frame. The app-level
+      // privacy shield independently owns the background/Recent Apps cover.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      expect(committed, 0);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
+      expect(find.text('SAKU terkunci'), findsOneWidget);
+      expect(find.text('Sensitive dialog'), findsNothing);
+      expect(committed, 0);
+
       await tester.enterText(find.byType(TextField), '1234');
       await tester.tap(find.text('Buka'));
       await tester.pumpAndSettle();

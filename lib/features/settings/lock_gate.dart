@@ -31,6 +31,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   bool _biometricSuccessPendingResume = false;
   bool _biometricAvailable = false;
   bool _recovering = false;
+  bool _authenticationBoundaryCrossed = false;
   int _lifecycleGeneration = 0;
   final _pin = TextEditingController();
   String? _error;
@@ -77,6 +78,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       if (_biometricSuccessPendingResume && _hasPin && mounted) {
         _biometricSuccessPendingResume = false;
         _biometricAutoSuppressed = false;
+        _authenticationBoundaryCrossed = false;
         setState(() {
           _locked = false;
           _recovering = false;
@@ -88,7 +90,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       }
       _biometricSuccessPendingResume = false;
 
-      if (_hasPin && !_locked && mounted) {
+      // `inactive` is a transient Android/iOS interruption (screenshot UI,
+      // system overlays, biometric UI, etc.), not an authentication boundary.
+      // Only a genuine paused/detached transition arms re-authentication.
+      if (_authenticationBoundaryCrossed && _hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
           _recovering = false;
@@ -97,29 +102,28 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
           _pin.clear();
         });
       }
+      if (!_authenticationBoundaryCrossed) return;
       if (_biometricInFlight) return;
       unawaited(_refreshPinStateOnResume(_lifecycleGeneration));
       return;
     }
 
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden ||
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
+      // Privacy shielding is owned by ArusApp. Do not mutate authentication
+      // state here: these states are also emitted for transient system UI.
+      _foreground = false;
+      return;
+    }
+
+    if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _foreground = false;
-      if (state == AppLifecycleState.paused ||
-          state == AppLifecycleState.hidden ||
-          state == AppLifecycleState.detached) {
-        _biometricSuccessPendingResume = false;
-      }
-      if (!_biometricInFlight &&
-          (state == AppLifecycleState.paused ||
-              state == AppLifecycleState.hidden ||
-              state == AppLifecycleState.detached)) {
-        _biometricAutoSuppressed = false;
-      }
-      // Fail closed immediately. Do not leave the financial UI mounted behind
-      // the lock surface while Android is transitioning through lock/unlock.
+      _authenticationBoundaryCrossed = true;
+      _biometricSuccessPendingResume = false;
+      if (!_biometricInFlight) _biometricAutoSuppressed = false;
+      // Fail closed immediately for a real background/detach boundary. The
+      // financial navigator is replaced by the security surface, never merely
+      // covered, so no stale balance frame can flash on resume.
       if (mounted) {
         setState(() {
           _locked = _hasPin;
@@ -144,6 +148,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       _biometricAvailable = biometricAvailable;
       _locked = hasPin;
       _recovering = false;
+      _authenticationBoundaryCrossed = false;
       if (!hasPin) {
         _error = null;
         _biometricError = null;
@@ -187,6 +192,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
         return;
       }
       _biometricSuccessPendingResume = false;
+      _authenticationBoundaryCrossed = false;
       setState(() {
         _locked = false;
         _recovering = false;
@@ -207,6 +213,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     setState(() {
       _locked = !ok;
       if (ok) {
+        _authenticationBoundaryCrossed = false;
         _recovering = false;
         _error = null;
         _biometricError = null;
@@ -224,8 +231,6 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Security surfaces replace the child instead of merely covering it. This
-    // prevents a stale dashboard frame from being composited during resume.
     if (_checking) {
       return _buildSecuritySurface(
         context,
@@ -260,10 +265,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: Theme.of(context),
-      home: PopScope<void>(
-        canPop: false,
-        child: child,
-      ),
+      home: PopScope<void>(canPop: false, child: child),
     );
   }
 
@@ -281,25 +283,11 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.lock_outline_rounded,
-                    size: 56,
-                    color: theme.colorScheme.primary,
-                  ),
+                  Icon(Icons.lock_outline_rounded, size: 56, color: theme.colorScheme.primary),
                   const SizedBox(height: 18),
-                  Text(
-                    'SAKU terkunci',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text('SAKU terkunci', textAlign: TextAlign.center, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  Text(
-                    'Masukkan PIN untuk membuka data keuangan.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  Text('Masukkan PIN untuk membuka data keuangan.', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
                   const SizedBox(height: 24),
                   TextField(
                     key: const Key('lock_pin_input'),
@@ -311,37 +299,20 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                     enableSuggestions: false,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
-                    decoration: InputDecoration(
-                      labelText: 'PIN',
-                      errorText: _error,
-                    ),
+                    decoration: InputDecoration(labelText: 'PIN', errorText: _error),
                     onSubmitted: (_) => _unlockPin(),
                   ),
                   if (_error != null)
-                    Semantics(
-                      liveRegion: true,
-                      label: _error!,
-                      child: const SizedBox.shrink(),
-                    ),
+                    Semantics(liveRegion: true, label: _error!, child: const SizedBox.shrink()),
                   if (_biometricError != null) ...[
                     const SizedBox(height: 10),
                     Semantics(
                       liveRegion: true,
-                      child: Text(
-                        _biometricError!,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: Text(_biometricError!, textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error, fontWeight: FontWeight.w600)),
                     ),
                   ],
                   const SizedBox(height: 14),
-                  FilledButton(
-                    onPressed: _unlockPin,
-                    child: const Text('Buka'),
-                  ),
+                  FilledButton(onPressed: _unlockPin, child: const Text('Buka')),
                   TextButton(
                     onPressed: () => setState(() {
                       _recovering = true;
@@ -373,6 +344,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     setState(() {
       _hasPin = true;
       _locked = false;
+      _authenticationBoundaryCrossed = false;
       _recovering = false;
       _error = null;
       _biometricError = null;
