@@ -35,13 +35,20 @@ checks = {
     'lock gate tracks foreground lifecycle': 'bool _foreground = true;' in lock_gate,
     'lock gate prevents duplicate biometric prompts': 'bool _biometricInFlight = false;' in lock_gate,
     'lock gate uses lifecycle generation anti-race': 'int _lifecycleGeneration = 0;' in lock_gate and 'generation != _lifecycleGeneration' in lock_gate,
-    'lock gate locks synchronously on background': (
+    # V49 physical UAT refined the lifecycle contract: inactive/hidden can be
+    # transient system UI (screenshot, picker, biometric overlay) and therefore
+    # must not arm authentication. A real paused/detached boundary still locks
+    # synchronously and fail-closed; privacy shielding is tested separately.
+    'lock gate locks synchronously on real background boundary': (
         'AppLifecycleState.paused' in lifecycle and
-        'AppLifecycleState.hidden' in lifecycle and
         'AppLifecycleState.detached' in lifecycle and
-        'if (_hasPin && !_locked && mounted)' in lifecycle and
-        '_locked = true;' in lifecycle and
+        '_authenticationBoundaryCrossed = true;' in lifecycle and
+        '_locked = _hasPin;' in lifecycle and
         'await ' not in lifecycle
+    ),
+    'lock gate does not authenticate transient inactive/hidden': (
+        'AppLifecycleState.inactive || state == AppLifecycleState.hidden' in lifecycle and
+        'Do not mutate authentication' in lifecycle
     ),
     'notification timezone fails closed': 'Zona waktu perangkat tidak dapat dibaca' in notifications and 'tz.setLocalLocation(tz.UTC)' not in notifications,
     'notification init commits only after cleanup': notifications.index('await _cleanLegacyIdsOnce();') < notifications.index('_initialized = true;'),
