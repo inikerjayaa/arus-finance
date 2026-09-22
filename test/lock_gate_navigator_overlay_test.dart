@@ -22,7 +22,7 @@ class _PinSecurity extends SecurityService {
 
 void main() {
   testWidgets(
-    'security surface replaces an already-open root navigator dialog when locked',
+    'transient inactive keeps session while real background replaces sensitive routes',
     (tester) async {
       final security = _PinSecurity();
       var committed = 0;
@@ -71,11 +71,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
+      // Screenshot/system UI/image-picker style transient interruption must not
+      // create a new authentication boundary or discard in-progress UI.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
+      expect(find.text('SAKU terkunci'), findsNothing);
+      expect(find.text('Sensitive dialog'), findsOneWidget);
+      expect(committed, 0);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(find.text('SAKU terkunci'), findsNothing);
+      expect(find.text('Sensitive dialog'), findsOneWidget);
+
+      // A genuine background boundary is fail-closed: replace the financial
+      // navigator so an open sensitive route cannot remain composited beneath
+      // the lock surface or flash back on resume.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
       expect(find.text('SAKU terkunci'), findsOneWidget);
-      // Sensitive routes are deliberately unmounted, not left composited under
-      // the lock surface where a stale frame could expose financial data.
       expect(find.text('Sensitive dialog'), findsNothing);
       expect(committed, 0);
 
