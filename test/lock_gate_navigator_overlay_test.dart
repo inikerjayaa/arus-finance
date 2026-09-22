@@ -84,18 +84,19 @@ void main() {
       expect(find.text('SAKU terkunci'), findsNothing);
       expect(find.text('Sensitive dialog'), findsOneWidget);
 
-      // A genuine background boundary is fail-closed: replace the financial
-      // navigator so an open sensitive route cannot remain composited beneath
-      // the lock surface or flash back on resume.
+      // A genuine background boundary arms fail-closed authentication. Flutter
+      // deliberately does not render application frames while paused, so the
+      // security surface is asserted on the first resumed frame. The app-level
+      // privacy shield independently owns the background/Recent Apps cover.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      expect(committed, 0);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(find.text('SAKU terkunci'), findsOneWidget);
       expect(find.text('Sensitive dialog'), findsNothing);
       expect(committed, 0);
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pump();
-      await tester.pump();
       await tester.enterText(find.byType(TextField), '1234');
       await tester.tap(find.text('Buka'));
       await tester.pumpAndSettle();
