@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: controller,
             visible: controller.navigationIndex == 0,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           if (enabled.isEmpty)
             Card(
               child: Padding(
@@ -290,11 +290,12 @@ class _HomeGreeting extends StatelessWidget {
       header: true,
       child: Text(
         homeGreetingFor(DateTime.now(), name: name),
-        maxLines: 2,
+        maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -.35,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -.1,
         ),
       ),
     );
