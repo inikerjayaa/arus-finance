@@ -14,7 +14,6 @@ import '../activity/daily_activity_screen.dart';
 import '../transactions/transaction_detail_screen.dart';
 import 'customize_dashboard_screen.dart';
 import 'home_category_composition_card.dart';
-import 'home_greeting_insight.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
