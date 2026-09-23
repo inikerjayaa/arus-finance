@@ -68,9 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Expanded(
-                child: _HomeGreeting(
-                  profile: controller.userProfileService,
-                ),
+                child: _HomeGreeting(profile: controller.userProfileService),
               ),
               IconButton(
                 onPressed: _customize,
@@ -90,10 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 tooltip: 'Kalender aktivitas',
               ),
             ],
-          ),
-          HomeGreetingInsight(
-            controller: controller,
-            visible: controller.navigationIndex == 0,
           ),
           const SizedBox(height: 18),
           if (enabled.isEmpty)
@@ -153,10 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
         case 'spending_today':
           content = MetricCard(
             label: 'Hari ini',
-            value: Money.format(
-              data.spendingTodayMinor,
-              currency: data.currency,
-            ),
+            value: Money.format(data.spendingTodayMinor, currency: data.currency),
             icon: Icons.today_outlined,
           );
           break;
@@ -193,9 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: Text(
                       'Transaksi terbaru',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   TextButton(
@@ -218,10 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
               else
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     child: Column(
                       children: recent
                           .map<Widget>(
@@ -231,9 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 MaterialPageRoute(
                                   builder: (_) => AppScope(
                                     controller: controller,
-                                    child: TransactionDetailScreen(
-                                      transactionId: tx.id,
-                                    ),
+                                    child: TransactionDetailScreen(transactionId: tx.id),
                                   ),
                                 ),
                               ),
@@ -256,13 +240,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _customize() async {
-    final result = await Navigator.of(context)
-        .push<List<DashboardWidgetConfig>>(
+    final result = await Navigator.of(context).push<List<DashboardWidgetConfig>>(
       MaterialPageRoute(
-        builder: (_) => CustomizeDashboardScreen(
-          service: _prefs,
-          initial: _config!,
-        ),
+        builder: (_) => CustomizeDashboardScreen(service: _prefs, initial: _config!),
       ),
     );
     if (result != null && mounted) setState(() => _config = result);
@@ -331,16 +311,13 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label:
-          'Total saldo $totalLabel, pemasukan bulan ini $incomeLabel, pengeluaran bulan ini $spendingLabel',
+      label: 'Total saldo $totalLabel, pemasukan bulan ini $incomeLabel, pengeluaran bulan ini $spendingLabel',
       child: ExcludeSemantics(
         child: Container(
           decoration: BoxDecoration(
             color: background,
             borderRadius: const BorderRadius.all(SakuBrand.cardRadius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: dark ? .08 : .10),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: dark ? .08 : .10)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -349,19 +326,12 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 18,
-                      color: SakuBrand.vulcanico,
-                    ),
+                    const Icon(Icons.account_balance_wallet_outlined, size: 18, color: SakuBrand.vulcanico),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Total saldo',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: muted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: theme.textTheme.titleSmall?.copyWith(color: muted, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -377,17 +347,11 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: .12),
-                ),
+                Container(height: 1, color: Colors.white.withValues(alpha: .12)),
                 const SizedBox(height: 14),
                 Text(
                   'Bulan ini',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: muted,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.labelMedium?.copyWith(color: muted, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
                 LayoutBuilder(
@@ -409,21 +373,11 @@ class _PrimaryFinanceHighlightCard extends StatelessWidget {
                       muted: muted,
                     );
                     if (constraints.maxWidth < 330) {
-                      return Column(
-                        children: [
-                          income,
-                          const SizedBox(height: 12),
-                          spending,
-                        ],
-                      );
+                      return Column(children: [income, const SizedBox(height: 12), spending]);
                     }
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: income),
-                        const SizedBox(width: 18),
-                        Expanded(child: spending),
-                      ],
+                      children: [Expanded(child: income), const SizedBox(width: 18), Expanded(child: spending)],
                     );
                   },
                 ),
@@ -468,21 +422,12 @@ class _HighlightMetric extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: muted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text(label, style: theme.textTheme.labelMedium?.copyWith(color: muted, fontWeight: FontWeight.w500)),
               const SizedBox(height: 3),
               Text(
                 value,
                 softWrap: true,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.titleSmall?.copyWith(color: foreground, fontWeight: FontWeight.w700),
               ),
             ],
           ),
