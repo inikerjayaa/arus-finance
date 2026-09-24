@@ -16,6 +16,8 @@ void main() {
   testWidgets(
     'calendar opens a selected day with spending, incoming and neutral activity',
     (tester) async {
+      final semantics = tester.ensureSemantics();
+      addTearDown(semantics.dispose);
       final database = AppDatabase.inMemory();
       addTearDown(database.close);
       final repository = LocalFinanceRepository(
@@ -89,6 +91,8 @@ void main() {
   testWidgets(
     'calendar can move to the previous month without carrying selected-day totals',
     (tester) async {
+      final semantics = tester.ensureSemantics();
+      addTearDown(semantics.dispose);
       final database = AppDatabase.inMemory();
       addTearDown(database.close);
       final repository = LocalFinanceRepository(database);
