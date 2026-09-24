@@ -16,8 +16,6 @@ void main() {
   testWidgets(
     'calendar opens a selected day with spending, incoming and neutral activity',
     (tester) async {
-      final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       final database = AppDatabase.inMemory();
       addTearDown(database.close);
       final repository = LocalFinanceRepository(
@@ -73,7 +71,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Kalender SAKU'), findsOneWidget);
-      expect(find.bySemanticsLabel('15 September 2026, ada transaksi'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity-calendar-day-2026-9-15')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity-calendar-marker-2026-9-15')),
+        findsOneWidget,
+      );
 
       final list = find.byType(ListView).first;
       await tester.drag(list, const Offset(0, -520));
@@ -91,8 +96,6 @@ void main() {
   testWidgets(
     'calendar can move to the previous month without carrying selected-day totals',
     (tester) async {
-      final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       final database = AppDatabase.inMemory();
       addTearDown(database.close);
       final repository = LocalFinanceRepository(database);
@@ -116,7 +119,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Agustus 2026'), findsOneWidget);
-      expect(find.bySemanticsLabel('1 Agustus 2026'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity-calendar-day-2026-8-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity-calendar-marker-2026-8-1')),
+        findsNothing,
+      );
       await tester.drag(find.byType(ListView).first, const Offset(0, -620));
       await tester.pumpAndSettle();
       expect(
