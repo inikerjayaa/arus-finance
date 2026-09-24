@@ -39,3 +39,45 @@ class CategoryChoiceTile extends StatelessWidget {
     );
   }
 }
+
+/// Canonical category picker used by transaction-entry surfaces.
+///
+/// Keeping this in shared UI prevents Quick Add and future category pickers
+/// from drifting back to text-only/radio-only rows. It is deliberately small:
+/// no extra assets, animation, state manager, or dependency is introduced.
+Future<String?> showCategoryChoicePicker(
+  BuildContext context, {
+  required String title,
+  required List<Category> categories,
+  String? selectedId,
+}) {
+  return showModalBottomSheet<String>(
+    context: context,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => ListView(
+      shrinkWrap: true,
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: Theme.of(sheetContext)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...categories.map(
+          (category) => CategoryChoiceTile(
+            category: category,
+            selected: category.id == selectedId,
+            onTap: () => Navigator.pop(sheetContext, category.id),
+          ),
+        ),
+      ],
+    ),
+  );
+}
