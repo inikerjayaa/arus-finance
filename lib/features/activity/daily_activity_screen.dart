@@ -7,6 +7,7 @@ import '../../shared/app_scope.dart';
 import '../../shared/finance_widgets.dart';
 import '../../shared/money.dart';
 import '../transactions/transaction_detail_screen.dart';
+import 'activity_calendar.dart';
 import 'daily_activity.dart';
 
 class DailyActivityScreen extends StatefulWidget {
@@ -76,6 +77,16 @@ class _DailyActivityScreenState extends State<DailyActivityScreen> {
     }
   }
 
+  void _changeMonth(DateTime month) {
+    final today = DateTime.now();
+    final day = month.year == today.year && month.month == today.month
+        ? today.day
+        : 1;
+    final date = DateTime(month.year, month.month, day);
+    setState(() => _selectedDate = date);
+    _loadMonth(date);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -104,19 +115,11 @@ class _DailyActivityScreenState extends State<DailyActivityScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            Card(
-              clipBehavior: Clip.antiAlias,
-              child: CalendarDatePicker(
-                initialDate: _selectedDate,
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-                onDateChanged: (date) {
-                  final monthChanged = date.year != _selectedDate.year ||
-                      date.month != _selectedDate.month;
-                  setState(() => _selectedDate = date);
-                  if (monthChanged) _loadMonth(date);
-                },
-              ),
+            ActivityCalendar(
+              selectedDate: _selectedDate,
+              transactions: _monthTransactions,
+              onDateChanged: (date) => setState(() => _selectedDate = date),
+              onMonthChanged: _changeMonth,
             ),
             if (_loading) ...[
               const SizedBox(height: 10),

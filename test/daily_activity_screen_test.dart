@@ -71,6 +71,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Kalender SAKU'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity-calendar-day-2026-9-15')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity-calendar-marker-2026-9-15')),
+        findsOneWidget,
+      );
 
       final list = find.byType(ListView).first;
       await tester.drag(list, const Offset(0, -520));
@@ -104,18 +112,21 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final previousMonth = find.descendant(
-        of: find.byType(CalendarDatePicker),
-        matching: find.byIcon(Icons.chevron_left),
-      );
+      expect(find.text('September 2026'), findsOneWidget);
+      final previousMonth = find.byTooltip('Bulan sebelumnya');
       expect(previousMonth, findsOneWidget);
       await tester.tap(previousMonth);
       await tester.pumpAndSettle();
 
-      // Verify the framework calendar actually navigated away from September
-      // without coupling this app test to locale-specific header text.
-      final day15 = tester.widgetList<Text>(find.text('15')).first;
-      expect(day15.style?.color, isNotNull);
+      expect(find.text('Agustus 2026'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity-calendar-day-2026-8-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity-calendar-marker-2026-8-1')),
+        findsNothing,
+      );
       await tester.drag(find.byType(ListView).first, const Offset(0, -620));
       await tester.pumpAndSettle();
       expect(
