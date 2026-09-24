@@ -100,7 +100,9 @@ class ActivityCalendar extends StatelessWidget {
                 final date = DateTime(month.year, month.month, day);
                 final selected = day == selectedDate.day;
                 final hasActivity = activityDays.contains(day);
+                final dateKey = '${date.year}-${date.month}-${date.day}';
                 return Semantics(
+                  key: ValueKey('activity-calendar-day-$dateKey'),
                   button: true,
                   selected: selected,
                   label: '${DateFormat('d MMMM yyyy', 'id_ID').format(date)}${hasActivity ? ', ada transaksi' : ''}',
@@ -137,6 +139,7 @@ class ActivityCalendar extends StatelessWidget {
                             child: hasActivity
                                 ? Center(
                                     child: Container(
+                                      key: ValueKey('activity-calendar-marker-$dateKey'),
                                       width: 4,
                                       height: 4,
                                       decoration: BoxDecoration(
