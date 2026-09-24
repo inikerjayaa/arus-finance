@@ -45,12 +45,24 @@ class CategoryChoiceTile extends StatelessWidget {
 /// Keeping this in shared UI prevents Quick Add and future category pickers
 /// from drifting back to text-only/radio-only rows. It is deliberately small:
 /// no extra assets, animation, state manager, or dependency is introduced.
+///
+/// The keyboard is dismissed before the sheet opens. This preserves the
+/// existing Quick Add handoff behavior and avoids stacking the category sheet
+/// above a still-visible numeric keyboard on slower Android devices.
 Future<String?> showCategoryChoicePicker(
   BuildContext context, {
   required String title,
   required List<Category> categories,
   String? selectedId,
-}) {
+}) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  for (var i = 0; i < 16; i++) {
+    if (!context.mounted) return null;
+    if (MediaQuery.viewInsetsOf(context).bottom <= 0) break;
+    await Future<void>.delayed(const Duration(milliseconds: 25));
+  }
+  if (!context.mounted) return null;
+
   return showModalBottomSheet<String>(
     context: context,
     useSafeArea: true,
