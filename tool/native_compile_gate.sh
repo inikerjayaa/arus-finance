@@ -17,6 +17,7 @@ fi
 
 bash tool/native_toolchain_preflight.sh "$mode"
 python3 tool/native_hardening.py
+python3 tool/v49_lifecycle_native_patch.py
 flutter pub get --enforce-lockfile
 bash tool/run_all_audits.sh
 flutter analyze
