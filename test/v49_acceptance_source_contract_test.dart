@@ -15,13 +15,22 @@ void main() {
       expect(security, contains("_storage.write(key: _bioKey, value: '0')"));
     });
 
-    test('reachable settings contains approved Tentang SAKU origin copy', () {
+    test('reachable settings contains exact approved Tentang SAKU copy', () {
       final settings = File('lib/features/settings/settings_screen.dart').readAsStringSync();
+      const approved = 'SAKU berawal dari cerita sederhana. Dulu istriku suka ribet nyatat pengeluaran manual, jadi aku coba bikin sesuatu yang bisa mempermudah dia. Dari sana lahirlah SAKU: aplikasi catat keuangan yang simpel, cepat, dan tetap menjaga privasimu.';
 
       expect(settings, contains('Tentang SAKU'));
-      expect(settings, contains('SAKU berawal dari hal sederhana'));
-      expect(settings, contains('Istri saya biasa mencatat pengeluaran secara manual'));
-      expect(settings, contains('Data keuangan utama tetap tersimpan di perangkatmu'));
+      expect(settings, contains(approved));
+    });
+
+    test('Flutter splash and About share the canonical SAKU mark implementation', () {
+      final settings = File('lib/features/settings/settings_screen.dart').readAsStringSync();
+      final splash = File('lib/shared/saku_splash.dart').readAsStringSync();
+
+      expect(settings, contains('SakuBrandMark'));
+      expect(splash, contains('class SakuBrandMark'));
+      expect(splash, contains('SakuBrandMark(size: markSize)'));
+      expect(splash, isNot(contains('Image.network')));
     });
 
     test('V49 does not regress local-first security service semantics', () {
