@@ -246,7 +246,7 @@ def patch_ios() -> None:
         data = plistlib.load(fh)
     data.setdefault(
         'NSFaceIDUsageDescription',
-        'SAKU menggunakan Face ID hanya untuk membuka data keuangan lokal Anda.',
+        'Gunakan Face ID untuk membuka data keuangan SAKU yang tersimpan lokal di perangkat Anda.',
     )
     with info.open('wb') as fh:
         plistlib.dump(data, fh, sort_keys=False)
