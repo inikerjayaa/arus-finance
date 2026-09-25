@@ -4,6 +4,7 @@ import '../../app_controller.dart';
 import '../../domain/enums.dart';
 import '../../domain/models.dart';
 import '../../shared/app_scope.dart';
+import '../../shared/category_choice_tile.dart';
 import '../../shared/idr_input_formatter.dart';
 import '../../shared/money.dart';
 
@@ -30,7 +31,7 @@ class QuickAddSheet extends StatefulWidget {
 }
 
 class _QuickAddSheetState extends State<QuickAddSheet> {
-  int _mode = 0; // 0 expense, 1 income, 2 transfer
+  int _mode = 0;
   final _amount = TextEditingController();
   final _note = TextEditingController();
   String? _accountId;
@@ -57,10 +58,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   }
 
   List<Account> _eligibleAccounts(List<Account> all) {
-    if (_mode == 1) {
-      return all.where((a) => a.accountClass == AccountClass.asset).toList();
-    }
-    if (_mode == 2) {
+    if (_mode == 1 || _mode == 2) {
       return all.where((a) => a.accountClass == AccountClass.asset).toList();
     }
     return all
@@ -138,21 +136,9 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
               const SizedBox(height: 16),
               SegmentedButton<int>(
                 segments: const [
-                  ButtonSegment(
-                    value: 0,
-                    label: Text('Keluar'),
-                    icon: Icon(Icons.arrow_upward_rounded),
-                  ),
-                  ButtonSegment(
-                    value: 1,
-                    label: Text('Masuk'),
-                    icon: Icon(Icons.arrow_downward_rounded),
-                  ),
-                  ButtonSegment(
-                    value: 2,
-                    label: Text('Transfer'),
-                    icon: Icon(Icons.swap_horiz_rounded),
-                  ),
+                  ButtonSegment(value: 0, label: Text('Keluar'), icon: Icon(Icons.arrow_upward_rounded)),
+                  ButtonSegment(value: 1, label: Text('Masuk'), icon: Icon(Icons.arrow_downward_rounded)),
+                  ButtonSegment(value: 2, label: Text('Transfer'), icon: Icon(Icons.swap_horiz_rounded)),
                 ],
                 selected: {_mode},
                 onSelectionChanged: (value) => setState(() {
@@ -176,9 +162,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                 keyboardType: TextInputType.number,
                 inputFormatters: const [IdrInputFormatter()],
                 textInputAction: TextInputAction.next,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
                 decoration: InputDecoration(
                   prefixText: 'Rp ',
                   hintText: '0',
@@ -197,10 +181,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
               _selectionField(
                 context: context,
                 label: _mode == 2 ? 'Dari account' : 'Account',
-                value: eligibleAccounts
-                    .where((a) => a.id == _accountId)
-                    .firstOrNull
-                    ?.name,
+                value: eligibleAccounts.where((a) => a.id == _accountId).firstOrNull?.name,
                 errorText: _accountError,
                 onTap: eligibleAccounts.isEmpty
                     ? null
@@ -209,9 +190,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                           context,
                           title: _mode == 2 ? 'Pilih account asal' : 'Pilih account',
                           selected: _accountId,
-                          choices: eligibleAccounts
-                              .map((a) => _PickerChoice(a.id, a.name))
-                              .toList(growable: false),
+                          choices: eligibleAccounts.map((a) => _PickerChoice(a.id, a.name)).toList(growable: false),
                         );
                         if (!mounted || picked == null) return;
                         setState(() {
@@ -219,10 +198,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                           _accountId = picked;
                           _accountError = null;
                           if (_mode == 2 && _destinationId == picked) {
-                            _destinationId = eligibleAccounts
-                                .where((a) => a.id != picked)
-                                .firstOrNull
-                                ?.id;
+                            _destinationId = eligibleAccounts.where((a) => a.id != picked).firstOrNull?.id;
                           }
                         });
                       },
@@ -232,10 +208,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                 _selectionField(
                   context: context,
                   label: 'Ke account',
-                  value: eligibleAccounts
-                      .where((a) => a.id == _destinationId)
-                      .firstOrNull
-                      ?.name,
+                  value: eligibleAccounts.where((a) => a.id == _destinationId).firstOrNull?.name,
                   errorText: _destinationError,
                   onTap: eligibleAccounts.where((a) => a.id != _accountId).isEmpty
                       ? null
@@ -282,23 +255,18 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                 _selectionField(
                   context: context,
                   label: 'Kategori',
-                  value: categories
-                      .where((c) => c.id == _categoryId)
-                      .firstOrNull
-                      ?.name,
+                  value: categories.where((c) => c.id == _categoryId).firstOrNull?.name,
                   errorText: _categoryError,
                   onTap: categories.isEmpty
                       ? null
                       : () async {
-                          final picked = await _pickChoice(
+                          final picked = await showCategoryChoicePicker(
                             context,
                             title: _mode == 1
                                 ? 'Pilih kategori pemasukan'
                                 : 'Pilih kategori pengeluaran',
-                            selected: _categoryId,
-                            choices: categories
-                                .map((c) => _PickerChoice(c.id, c.name))
-                                .toList(growable: false),
+                            selectedId: _categoryId,
+                            categories: categories,
                           );
                           if (!mounted || picked == null) return;
                           setState(() {
@@ -320,24 +288,14 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   );
                   if (picked != null && mounted) {
                     final now = DateTime.now();
-                    setState(
-                      () {
-                        _dirty = true;
-                        _date = DateTime(
-                          picked.year,
-                          picked.month,
-                          picked.day,
-                          now.hour,
-                          now.minute,
-                        );
-                      },
-                    );
+                    setState(() {
+                      _dirty = true;
+                      _date = DateTime(picked.year, picked.month, picked.day, now.hour, now.minute);
+                    });
                   }
                 },
                 icon: const Icon(Icons.calendar_today_outlined),
-                label: Text(
-                  '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}',
-                ),
+                label: Text('${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}'),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -351,17 +309,12 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                 const SizedBox(height: 12),
                 Semantics(
                   liveRegion: true,
-                  child: Text(
-                    _submitError!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
+                  child: Text(_submitError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ),
               ],
               const SizedBox(height: 20),
               FilledButton.icon(
-                onPressed: controller.busy || _submitting || eligibleAccounts.isEmpty
-                    ? null
-                    : () => _save(context),
+                onPressed: controller.busy || _submitting || eligibleAccounts.isEmpty ? null : () => _save(context),
                 icon: const Icon(Icons.check_rounded),
                 label: Text(controller.busy || _submitting ? 'Menyimpan…' : 'Simpan'),
               ),
@@ -398,12 +351,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           isEmpty: value == null,
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  value ?? 'Pilih $label',
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              Expanded(child: Text(value ?? 'Pilih $label', overflow: TextOverflow.ellipsis)),
               const Icon(Icons.arrow_drop_down_rounded),
             ],
           ),
@@ -425,7 +373,6 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       await Future<void>.delayed(const Duration(milliseconds: 25));
     }
     if (!context.mounted) return null;
-
     return showModalBottomSheet<String>(
       context: context,
       useSafeArea: true,
@@ -438,20 +385,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             header: true,
             child: Text(
               title,
-              style: Theme.of(sheetContext)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
           ),
           const SizedBox(height: 8),
           ...choices.map(
             (choice) => ListTile(
-              leading: Icon(
-                choice.id == selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-              ),
+              leading: Icon(choice.id == selected ? Icons.radio_button_checked : Icons.radio_button_unchecked),
               title: Text(choice.label),
               onTap: () => Navigator.pop(sheetContext, choice.id),
             ),
@@ -477,18 +417,10 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Buang perubahan?'),
-          content: const Text(
-            'Transaksi ini belum disimpan. Jika ditutup sekarang, isian yang sudah dibuat akan hilang.',
-          ),
+          content: const Text('Transaksi ini belum disimpan. Jika ditutup sekarang, isian yang sudah dibuat akan hilang.'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Lanjut mengisi'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Buang isian'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Lanjut mengisi')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Buang isian')),
           ],
         ),
       );
@@ -506,21 +438,11 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     if (_submitting) return;
     final controller = AppScope.of(context);
     final amount = Money.parseIdr(_amount.text);
-    final amountError = amount == null || amount <= 0
-        ? 'Masukkan nominal lebih besar dari 0.'
-        : null;
+    final amountError = amount == null || amount <= 0 ? 'Masukkan nominal lebih besar dari 0.' : null;
     final accountError = _accountId == null ? 'Pilih account.' : null;
-    final categoryError = _mode != 2 && _categoryId == null
-        ? 'Pilih kategori.'
-        : null;
-    final destinationError = _mode == 2 && _destinationId == null
-        ? 'Pilih account tujuan.'
-        : null;
-    if (amountError != null ||
-        accountError != null ||
-        categoryError != null ||
-        destinationError != null ||
-        _feeError != null) {
+    final categoryError = _mode != 2 && _categoryId == null ? 'Pilih kategori.' : null;
+    final destinationError = _mode == 2 && _destinationId == null ? 'Pilih account tujuan.' : null;
+    if (amountError != null || accountError != null || categoryError != null || destinationError != null || _feeError != null) {
       setState(() {
         _amountError = amountError;
         _accountError = accountError;
@@ -530,12 +452,10 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       });
       return;
     }
-
     setState(() {
       _submitting = true;
       _submitError = null;
     });
-
     Object? result;
     if (_mode == 0) {
       result = await controller.run(
@@ -588,7 +508,6 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
 
 class _PickerChoice {
   const _PickerChoice(this.id, this.label);
-
   final String id;
   final String label;
 }
