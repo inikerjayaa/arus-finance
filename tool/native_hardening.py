@@ -54,17 +54,10 @@ def _patch_main_activity() -> None:
                 "setEnabled" -> {
                     val enabled = call.argument<Boolean>("enabled")
                     if (enabled == null) {
-                        result.error(
-                            "INVALID_ARGUMENT",
-                            "enabled boolean is required",
-                            null,
-                        )
+                        result.error("INVALID_ARGUMENT", "enabled boolean is required", null)
                     } else {
-                        if (enabled) {
-                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                        } else {
-                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                        }
+                        if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                         result.success(true)
                     }
                 }
@@ -74,188 +67,129 @@ def _patch_main_activity() -> None:
     }
 }
 '''
-
     for path in list(android.rglob('MainActivity.kt')):
-        text = path.read_text()
-        text = text.replace(
-            'import io.flutter.embedding.android.FlutterActivity',
-            'import io.flutter.embedding.android.FlutterFragmentActivity',
-        )
+        text = path.read_text().replace('import io.flutter.embedding.android.FlutterActivity', 'import io.flutter.embedding.android.FlutterFragmentActivity')
         text = re.sub(r'\bFlutterActivity\s*\(\)', 'FlutterFragmentActivity()', text)
-        for value in [
-            'android.app.KeyguardManager',
-            'android.content.Context',
-            'android.view.WindowManager',
-            'io.flutter.embedding.android.FlutterFragmentActivity',
-            'io.flutter.embedding.engine.FlutterEngine',
-            'io.flutter.plugin.common.MethodChannel',
-        ]:
+        for value in ['android.app.KeyguardManager','android.content.Context','android.view.WindowManager','io.flutter.embedding.android.FlutterFragmentActivity','io.flutter.embedding.engine.FlutterEngine','io.flutter.plugin.common.MethodChannel']:
             text = _kotlin_import(text, value)
-        class_start = re.search(
-            r'\bclass\s+MainActivity\s*:\s*FlutterFragmentActivity\(\)',
-            text,
-        )
-        if not class_start:
-            raise RuntimeError('Unsupported Kotlin MainActivity shape')
-        path.write_text(text[: class_start.start()] + kotlin_class)
+        class_start = re.search(r'\bclass\s+MainActivity\s*:\s*FlutterFragmentActivity\(\)', text)
+        if not class_start: raise RuntimeError('Unsupported Kotlin MainActivity shape')
+        path.write_text(text[:class_start.start()] + kotlin_class)
 
     java_class = '''public class MainActivity extends FlutterFragmentActivity {
     private static final String SCREEN_PROTECTION_CHANNEL = "arus.finance/screen_protection";
-
-    @Override
-    public void configureFlutterEngine(FlutterEngine flutterEngine) {
+    @Override public void configureFlutterEngine(FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
-        new MethodChannel(
-            flutterEngine.getDartExecutor().getBinaryMessenger(),
-            SCREEN_PROTECTION_CHANNEL
-        ).setMethodCallHandler((call, result) -> {
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), SCREEN_PROTECTION_CHANNEL).setMethodCallHandler((call, result) -> {
             switch (call.method) {
-                case "isSupported":
-                    result.success(true);
-                    break;
+                case "isSupported": result.success(true); break;
                 case "isDeviceLocked":
-                    KeyguardManager keyguard =
-                        (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-                    result.success(keyguard != null && keyguard.isDeviceLocked());
-                    break;
+                    KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                    result.success(keyguard != null && keyguard.isDeviceLocked()); break;
                 case "setEnabled":
                     Boolean enabled = call.argument("enabled");
-                    if (enabled == null) {
-                        result.error(
-                            "INVALID_ARGUMENT",
-                            "enabled boolean is required",
-                            null
-                        );
-                    } else {
-                        if (enabled) {
-                            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-                        } else {
-                            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-                        }
-                        result.success(true);
-                    }
+                    if (enabled == null) result.error("INVALID_ARGUMENT", "enabled boolean is required", null);
+                    else { if (enabled) getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE); else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE); result.success(true); }
                     break;
-                default:
-                    result.notImplemented();
+                default: result.notImplemented();
             }
         });
     }
 }
 '''
-
     for path in list(android.rglob('MainActivity.java')):
-        text = path.read_text()
-        text = text.replace(
-            'import io.flutter.embedding.android.FlutterActivity;',
-            'import io.flutter.embedding.android.FlutterFragmentActivity;',
-        )
-        text = re.sub(
-            r'extends\s+FlutterActivity\b',
-            'extends FlutterFragmentActivity',
-            text,
-        )
-        for value in [
-            'android.app.KeyguardManager',
-            'android.content.Context',
-            'android.view.WindowManager',
-            'io.flutter.embedding.android.FlutterFragmentActivity',
-            'io.flutter.embedding.engine.FlutterEngine',
-            'io.flutter.plugin.common.MethodChannel',
-        ]:
+        text = path.read_text().replace('import io.flutter.embedding.android.FlutterActivity;', 'import io.flutter.embedding.android.FlutterFragmentActivity;')
+        text = re.sub(r'extends\s+FlutterActivity\b', 'extends FlutterFragmentActivity', text)
+        for value in ['android.app.KeyguardManager','android.content.Context','android.view.WindowManager','io.flutter.embedding.android.FlutterFragmentActivity','io.flutter.embedding.engine.FlutterEngine','io.flutter.plugin.common.MethodChannel']:
             text = _java_import(text, value)
-        class_start = re.search(
-            r'\bpublic\s+class\s+MainActivity\s+extends\s+FlutterFragmentActivity',
-            text,
-        )
-        if not class_start:
-            raise RuntimeError('Unsupported Java MainActivity shape')
-        path.write_text(text[: class_start.start()] + java_class)
+        class_start = re.search(r'\bpublic\s+class\s+MainActivity\s+extends\s+FlutterFragmentActivity', text)
+        if not class_start: raise RuntimeError('Unsupported Java MainActivity shape')
+        path.write_text(text[:class_start.start()] + java_class)
 
 
 def _patch_launch_theme() -> None:
     res = ROOT / 'android/app/src/main/res'
-    if not res.exists():
-        return
+    if not res.exists(): return
     for styles in res.glob('values*/styles.xml'):
         text = styles.read_text()
-        text = re.sub(
-            r'(<style\s+name="LaunchTheme"\s+parent=")[^"]+("[^>]*>)',
-            r'\1Theme.AppCompat.DayNight\2',
-            text,
-        )
+        text = re.sub(r'(<style\s+name="LaunchTheme"\s+parent=")[^"]+("[^>]*>)', r'\1Theme.AppCompat.DayNight\2', text)
         styles.write_text(text)
 
 
 def patch_android() -> None:
     manifest = ROOT / 'android/app/src/main/AndroidManifest.xml'
-    if not manifest.exists():
-        return
+    if not manifest.exists(): return
     text = manifest.read_text()
-
     manifest_match = re.search(r'<manifest\b[^>]*>', text, re.S)
-    if not manifest_match:
-        raise RuntimeError('AndroidManifest.xml has no <manifest> root tag')
-    permissions = [
-        'android.permission.USE_BIOMETRIC',
-        'android.permission.POST_NOTIFICATIONS',
-        'android.permission.RECEIVE_BOOT_COMPLETED',
-    ]
-    additions = []
+    if not manifest_match: raise RuntimeError('AndroidManifest.xml has no <manifest> root tag')
+    permissions = ['android.permission.USE_BIOMETRIC','android.permission.POST_NOTIFICATIONS','android.permission.RECEIVE_BOOT_COMPLETED']
+    additions=[]
     for permission in permissions:
-        marker = f'<uses-permission android:name="{permission}"/>'
-        if marker not in text:
-            additions.append('    ' + marker)
-    if additions:
-        text = (
-            text[: manifest_match.end()]
-            + '\n'
-            + '\n'.join(additions)
-            + text[manifest_match.end() :]
-        )
+        marker=f'<uses-permission android:name="{permission}"/>'
+        if marker not in text: additions.append('    '+marker)
+    if additions: text=text[:manifest_match.end()]+'\n'+'\n'.join(additions)+text[manifest_match.end():]
 
-    if '<application' in text:
-        tag = re.search(r'<application\b[^>]*>', text, re.S)
-        if tag:
-            app = tag.group(0)
-            attrs = {
-                'android:allowBackup': 'false',
-                'android:fullBackupContent': '@xml/backup_rules',
-                'android:dataExtractionRules': '@xml/data_extraction_rules',
-            }
-            for key, value in attrs.items():
-                if re.search(rf'\s{re.escape(key)}="[^"]*"', app):
-                    app = re.sub(
-                        rf'\s{re.escape(key)}="[^"]*"',
-                        f' {key}="{value}"',
-                        app,
-                    )
-                else:
-                    app = app[:-1] + f' {key}="{value}">'
-            text = text[: tag.start()] + app + text[tag.end() :]
-
+    tag=re.search(r'<application\b[^>]*>', text, re.S)
+    if tag:
+        app=tag.group(0)
+        for key,value in {'android:allowBackup':'false','android:fullBackupContent':'@xml/backup_rules','android:dataExtractionRules':'@xml/data_extraction_rules'}.items():
+            if re.search(rf'\s{re.escape(key)}="[^"]*"', app): app=re.sub(rf'\s{re.escape(key)}="[^"]*"', f' {key}="{value}"', app)
+            else: app=app[:-1]+f' {key}="{value}">'
+        text=text[:tag.start()]+app+text[tag.end():]
+        receiver_block='''        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+'''
+        if 'ScheduledNotificationReceiver' not in text: text=text.replace('</application>', receiver_block+'    </application>')
     manifest.write_text(text)
-    _patch_main_activity()
-    _patch_launch_theme()
+
+    xml=ROOT/'android/app/src/main/res/xml'; xml.mkdir(parents=True, exist_ok=True)
+    (xml/'backup_rules.xml').write_text('<?xml version="1.0" encoding="utf-8"?>\n<full-backup-content>\n    <exclude domain="root" path="."/>\n    <exclude domain="file" path="."/>\n    <exclude domain="database" path="."/>\n    <exclude domain="sharedpref" path="."/>\n    <exclude domain="external" path="."/>\n</full-backup-content>\n')
+    (xml/'data_extraction_rules.xml').write_text('<?xml version="1.0" encoding="utf-8"?>\n<data-extraction-rules>\n    <cloud-backup><exclude domain="root" path="."/><exclude domain="file" path="."/><exclude domain="database" path="."/><exclude domain="sharedpref" path="."/><exclude domain="external" path="."/></cloud-backup>\n    <device-transfer><exclude domain="root" path="."/><exclude domain="file" path="."/><exclude domain="database" path="."/><exclude domain="sharedpref" path="."/><exclude domain="external" path="."/></device-transfer>\n</data-extraction-rules>\n')
+
+    gradle=ROOT/'android/app/build.gradle.kts'
+    if gradle.exists():
+        g=gradle.read_text()
+        g=re.sub(r'compileSdk\s*=\s*flutter\.compileSdkVersion','compileSdk = 36',g); g=re.sub(r'compileSdk\s*=\s*\d+','compileSdk = 36',g)
+        g=re.sub(r'targetSdk\s*=\s*flutter\.targetSdkVersion','targetSdk = 36',g); g=re.sub(r'targetSdk\s*=\s*\d+','targetSdk = 36',g)
+        g=re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion','minSdk = 24',g); g=re.sub(r'minSdk\s*=\s*\d+','minSdk = 24',g)
+        g=g.replace('JavaVersion.VERSION_11','JavaVersion.VERSION_17').replace('JavaVersion.VERSION_1_8','JavaVersion.VERSION_17')
+        g=re.sub(r'jvmTarget\s*=\s*"(?:1\.8|11)"','jvmTarget = "17"',g)
+        if 'isCoreLibraryDesugaringEnabled = true' not in g: g=g.replace('compileOptions {','compileOptions {\n        isCoreLibraryDesugaringEnabled = true',1)
+        if 'multiDexEnabled = true' not in g and 'defaultConfig {' in g: g=g.replace('defaultConfig {','defaultConfig {\n        multiDexEnabled = true',1)
+        deps=['coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")','implementation("androidx.appcompat:appcompat:1.8.0")']
+        missing=[d for d in deps if d not in g]
+        if missing:
+            if 'dependencies {' in g: g=g.replace('dependencies {','dependencies {\n'+'\n'.join('    '+d for d in missing),1)
+            else: g+='\n\ndependencies {\n'+'\n'.join('    '+d for d in missing)+'\n}\n'
+        gradle.write_text(g)
+    _patch_main_activity(); _patch_launch_theme()
 
 
 def patch_ios() -> None:
-    info = ROOT / 'ios/Runner/Info.plist'
-    if not info.exists():
-        return
-    with info.open('rb') as fh:
-        data = plistlib.load(fh)
-    data.setdefault(
-        'NSFaceIDUsageDescription',
-        'Gunakan Face ID untuk membuka data keuangan SAKU yang tersimpan lokal di perangkat Anda.',
-    )
-    with info.open('wb') as fh:
-        plistlib.dump(data, fh, sort_keys=False)
+    info=ROOT/'ios/Runner/Info.plist'
+    if info.exists():
+        with info.open('rb') as fh: data=plistlib.load(fh)
+        data['NSFaceIDUsageDescription']='Gunakan Face ID untuk membuka data keuangan SAKU yang tersimpan lokal di perangkat Anda.'
+        with info.open('wb') as fh: plistlib.dump(data,fh,sort_keys=False)
+    project=ROOT/'ios/Runner.xcodeproj/project.pbxproj'
+    if project.exists(): project.write_text(re.sub(r'IPHONEOS_DEPLOYMENT_TARGET\s*=\s*[0-9.]+;','IPHONEOS_DEPLOYMENT_TARGET = 15.0;',project.read_text()))
+    podfile=ROOT/'ios/Podfile'
+    if podfile.exists():
+        text=podfile.read_text()
+        if re.search(r'^\s*platform\s*:ios\s*,',text,re.M): text=re.sub(r'^\s*platform\s*:ios\s*,\s*[\'\"][0-9.]+[\'\"]',"platform :ios, '15.0'",text,flags=re.M)
+        else: text="platform :ios, '15.0'\n"+text
+        podfile.write_text(text)
 
 
 def main() -> None:
-    patch_android()
-    patch_ios()
+    patch_android(); patch_ios()
+    print('Native hardening applied (idempotent, biometric + reminder + lifecycle screen protection ready).')
 
-
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': main()
