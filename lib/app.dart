@@ -121,8 +121,13 @@ class _ArusAppState extends State<ArusApp> with WidgetsBindingObserver {
 
   void _controllerChanged() {
     final initializing = widget.controller.initializing;
-    final fatalRecovery = widget.controller.errorMessage != null && widget.controller.dashboardData == null;
-    if (initializing == _lastInitializing && fatalRecovery == _lastFatalRecovery) return;
+    final fatalRecovery =
+        widget.controller.errorMessage != null &&
+        widget.controller.dashboardData == null;
+    if (initializing == _lastInitializing &&
+        fatalRecovery == _lastFatalRecovery) {
+      return;
+    }
     _lastInitializing = initializing;
     _lastFatalRecovery = fatalRecovery;
     if (mounted) setState(() {});
