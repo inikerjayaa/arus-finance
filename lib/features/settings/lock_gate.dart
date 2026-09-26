@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/services/security_service.dart';
 import 'pin_recovery_panel.dart';
@@ -22,6 +24,8 @@ class LockGate extends StatefulWidget {
 }
 
 class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
+  static const _nativeSecurity = MethodChannel('arus.finance/screen_protection');
+
   bool _checking = true;
   bool _locked = false;
   bool _hasPin = false;
@@ -73,6 +77,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleGeneration++;
+    final generation = _lifecycleGeneration;
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
       if (_biometricSuccessPendingResume && _hasPin && mounted) {
@@ -90,9 +95,9 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       }
       _biometricSuccessPendingResume = false;
 
-      // `inactive` is a transient Android/iOS interruption (screenshot UI,
-      // system overlays, biometric UI, etc.), not an authentication boundary.
-      // Only a genuine paused/detached transition arms re-authentication.
+      // `inactive`, Android Recents and Android document/image pickers are not
+      // authentication boundaries. Android paused transitions are classified
+      // by native keyguard truth before this flag is armed.
       if (_authenticationBoundaryCrossed && _hasPin && !_locked && mounted) {
         setState(() {
           _locked = true;
@@ -104,7 +109,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       }
       if (!_authenticationBoundaryCrossed) return;
       if (_biometricInFlight) return;
-      unawaited(_refreshPinStateOnResume(_lifecycleGeneration));
+      unawaited(_refreshPinStateOnResume(generation));
       return;
     }
 
@@ -115,25 +120,68 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       return;
     }
 
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.paused) {
       _foreground = false;
-      _authenticationBoundaryCrossed = true;
       _biometricSuccessPendingResume = false;
       if (!_biometricInFlight) _biometricAutoSuppressed = false;
-      // Fail closed immediately for a real background/detach boundary. The
-      // financial navigator is replaced by the security surface, never merely
-      // covered, so no stale balance frame can flash on resume.
-      if (mounted) {
-        setState(() {
-          _locked = _hasPin;
-          _recovering = false;
-          _error = null;
-          _biometricError = null;
-          _pin.clear();
-        });
+      if (Platform.isAndroid) {
+        // Android emits paused for Recents and external pickers too. Query the
+        // OS keyguard while backgrounded; only a real device lock may arm PIN.
+        unawaited(_classifyAndroidPause(generation));
+      } else {
+        _armAuthenticationBoundary();
+      }
+      return;
+    }
+
+    if (state == AppLifecycleState.detached) {
+      _foreground = false;
+      _biometricSuccessPendingResume = false;
+      if (!_biometricInFlight) _biometricAutoSuppressed = false;
+      _armAuthenticationBoundary();
+    }
+  }
+
+  Future<void> _classifyAndroidPause(int generation) async {
+    // Keyguard can become active a fraction after Flutter receives paused.
+    // Sample briefly while still backgrounded. Returning from Recents/pickers
+    // invalidates generation, so a late sample cannot lock an active session.
+    for (final delay in <Duration>[
+      Duration.zero,
+      const Duration(milliseconds: 120),
+      const Duration(milliseconds: 350),
+    ]) {
+      if (delay != Duration.zero) await Future<void>.delayed(delay);
+      if (!mounted || _foreground || generation != _lifecycleGeneration) return;
+      try {
+        final locked =
+            await _nativeSecurity.invokeMethod<bool>('isDeviceLocked') ?? false;
+        if (!mounted || _foreground || generation != _lifecycleGeneration) return;
+        if (locked) {
+          _armAuthenticationBoundary();
+          return;
+        }
+      } on MissingPluginException {
+        // Security bridge missing on Android is a fail-closed condition.
+        _armAuthenticationBoundary();
+        return;
+      } on PlatformException {
+        _armAuthenticationBoundary();
+        return;
       }
     }
+  }
+
+  void _armAuthenticationBoundary() {
+    _authenticationBoundaryCrossed = true;
+    if (!mounted) return;
+    setState(() {
+      _locked = _hasPin;
+      _recovering = false;
+      _error = null;
+      _biometricError = null;
+      _pin.clear();
+    });
   }
 
   Future<void> _refreshPinStateOnResume(int generation) async {

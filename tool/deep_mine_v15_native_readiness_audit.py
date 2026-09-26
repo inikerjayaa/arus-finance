@@ -35,16 +35,20 @@ checks = {
     'lock gate tracks foreground lifecycle': 'bool _foreground = true;' in lock_gate,
     'lock gate prevents duplicate biometric prompts': 'bool _biometricInFlight = false;' in lock_gate,
     'lock gate uses lifecycle generation anti-race': 'int _lifecycleGeneration = 0;' in lock_gate and 'generation != _lifecycleGeneration' in lock_gate,
-    # V49 physical UAT refined the lifecycle contract: inactive/hidden can be
-    # transient system UI (screenshot, picker, biometric overlay) and therefore
-    # must not arm authentication. A real paused/detached boundary still locks
-    # synchronously and fail-closed; privacy shielding is tested separately.
-    'lock gate locks synchronously on real background boundary': (
+    # V49 physical UAT refined Android paused: Recents and external pickers also
+    # emit paused. Authentication may therefore be armed only after native
+    # keyguard classification. Detached/non-Android background remains direct.
+    'lock gate classifies Android paused before authentication boundary': (
         'AppLifecycleState.paused' in lifecycle and
+        'Platform.isAndroid' in lifecycle and
+        '_classifyAndroidPause(generation)' in lifecycle and
+        "invokeMethod<bool>('isDeviceLocked')" in lock_gate and
+        'if (locked)' in lock_gate and
+        '_armAuthenticationBoundary();' in lock_gate
+    ),
+    'lock gate detached remains fail-closed': (
         'AppLifecycleState.detached' in lifecycle and
-        '_authenticationBoundaryCrossed = true;' in lifecycle and
-        '_locked = _hasPin;' in lifecycle and
-        'await ' not in lifecycle
+        '_armAuthenticationBoundary();' in lifecycle
     ),
     'lock gate does not authenticate transient inactive/hidden': (
         'AppLifecycleState.inactive || state == AppLifecycleState.hidden' in lifecycle and

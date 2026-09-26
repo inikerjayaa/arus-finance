@@ -30,6 +30,7 @@ cp -a "$TMP_ROOT/arus_native_shell/android" ./android
 cp -a "$TMP_ROOT/arus_native_shell/ios" ./ios
 
 python3 tool/native_hardening.py
+python3 tool/v49_lifecycle_native_patch.py
 python3 tool/native_branding.py
 python3 tool/native_splash.py
 python3 tool/native_app_icon.py

@@ -154,6 +154,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _setPin(context),
                 ),
+                if (_hasPin == true) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    key: const Key('settings_disable_pin'),
+                    leading: Icon(
+                      Icons.lock_open_rounded,
+                      color: theme.colorScheme.error,
+                    ),
+                    title: Text(
+                      'Matikan PIN',
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    subtitle: const Text(
+                      'Perlu konfirmasi PIN saat ini. Biometrik ikut dimatikan.',
+                    ),
+                    onTap: () => _disablePin(context),
+                  ),
+                ],
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.key_rounded),
@@ -340,16 +358,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'SAKU berawal dari hal sederhana. Istri saya biasa mencatat pengeluaran secara manual, dan saya ingin membuat proses itu lebih mudah untuknya. Dari kebutuhan kecil di rumah itulah SAKU lahir: alat pencatat keuangan yang sederhana, cepat, dan tetap menjaga data di perangkat pengguna.',
+                    'SAKU berawal dari cerita sederhana. Dulu istriku suka ribet nyatat pengeluaran manual, jadi aku coba bikin sesuatu yang bisa mempermudah dia. Dari sana lahirlah SAKU: aplikasi catat keuangan yang simpel, cepat, dan tetap menjaga privasimu.',
                     style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Data keuangan utama tetap tersimpan di perangkatmu.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
                   ),
                 ],
               ),
@@ -545,6 +555,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
               : error.toString(),
         );
       }
+    }
+  }
+
+  Future<void> _disablePin(BuildContext context) async {
+    final current = await _askSecret(
+      context,
+      title: 'Matikan PIN',
+      label: 'Masukkan PIN saat ini',
+      obscure: true,
+    );
+    if (current == null || !context.mounted) return;
+    final verified = await widget.security.verifyPin(current);
+    if (!context.mounted) return;
+    if (!verified) {
+      _snack(context, 'PIN saat ini tidak cocok.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Matikan PIN?'),
+        content: const Text(
+          'PIN dan biometrik akan dimatikan. Data keuangan tetap tersimpan di perangkat.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Matikan PIN'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await widget.security.disablePin();
+      await _reloadSecurity();
+      if (context.mounted) {
+        _snack(context, 'PIN dan biometrik berhasil dimatikan.');
+      }
+    } catch (error) {
+      await _reloadSecurity();
+      if (context.mounted) _snack(context, error.toString());
     }
   }
 
