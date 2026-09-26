@@ -132,7 +132,7 @@ def patch_android() -> None:
     tag=re.search(r'<application\b[^>]*>', text, re.S)
     if tag:
         app=tag.group(0)
-        for key,value in {'android:allowBackup':'false','android:fullBackupContent':'@xml/backup_rules','android:dataExtractionRules':'@xml/data_extraction_rules'}.items():
+        for key,value in {'android:allowBackup': 'false','android:fullBackupContent': '@xml/backup_rules','android:dataExtractionRules': '@xml/data_extraction_rules'}.items():
             if re.search(rf'\s{re.escape(key)}="[^"]*"', app): app=re.sub(rf'\s{re.escape(key)}="[^"]*"', f' {key}="{value}"', app)
             else: app=app[:-1]+f' {key}="{value}">'
         text=text[:tag.start()]+app+text[tag.end():]
