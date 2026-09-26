@@ -61,11 +61,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
     final d = c.dashboardData;
     final theme = Theme.of(context);
     if (d == null) {
-      return const Center(
+      return Center(
         child: Semantics(
           label: 'Memuat insight',
           liveRegion: true,
-          child: CircularProgressIndicator(),
+          child: const CircularProgressIndicator(),
         ),
       );
     }
@@ -179,10 +179,10 @@ class _LocalInsightCard extends StatelessWidget {
                 future: future,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Semantics(
+                    return Semantics(
                       label: 'Menganalisis pola lokal',
                       liveRegion: true,
-                      child: LinearProgressIndicator(),
+                      child: const LinearProgressIndicator(),
                     );
                   }
                   final insight = snapshot.data;
