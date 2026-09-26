@@ -17,7 +17,7 @@ void main() {
     expect(source, contains('await Future<void>.delayed(remaining);'));
     expect(
       source,
-      contains('if (_isBooting) {\n      return _buildPrivacyProtectedHome(child);'),
+      contains('if (_isBooting) return _buildPrivacyProtectedHome(child);'),
     );
     expect(
       source,
@@ -25,7 +25,7 @@ void main() {
     );
     expect(
       source,
-      contains('if (_isBooting) {\n      return const SakuSplashScreen();'),
+      contains('if (_isBooting) return const SakuSplashScreen();'),
     );
   });
 }
