@@ -89,12 +89,19 @@ abstract final class SakuIconRegistry {
       final keywords = choice.keywords.map(_normalize).where((v) => v.isNotEmpty).toList(growable: false);
       final keywordPhrase = _normalize(choice.keywords.join(' '));
       var score = -1;
-      if (label == needle || key == needle) score = 100;
-      else if (keywordPhrase == needle || keywords.any((v) => v == needle)) score = 90;
-      else if (label.startsWith(needle) || key.startsWith(needle)) score = 80;
-      else if (keywordPhrase.startsWith(needle) || keywords.any((v) => v.startsWith(needle))) score = 70;
-      else if (label.contains(needle) || key.contains(needle)) score = 60;
-      else if (keywordPhrase.contains(needle) || keywords.any((v) => v.contains(needle))) score = 50;
+      if (label == needle || key == needle) {
+        score = 100;
+      } else if (keywordPhrase == needle || keywords.any((v) => v == needle)) {
+        score = 90;
+      } else if (label.startsWith(needle) || key.startsWith(needle)) {
+        score = 80;
+      } else if (keywordPhrase.startsWith(needle) || keywords.any((v) => v.startsWith(needle))) {
+        score = 70;
+      } else if (label.contains(needle) || key.contains(needle)) {
+        score = 60;
+      } else if (keywordPhrase.contains(needle) || keywords.any((v) => v.contains(needle))) {
+        score = 50;
+      }
       if (score >= 0) ranked.add((choice: choice, score: score));
     }
     ranked.sort((a, b) {
