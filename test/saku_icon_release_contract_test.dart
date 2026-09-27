@@ -30,10 +30,19 @@ void main() {
         'brand:health',
         'brand:education',
         'brand:other',
+        'brand:pbb',
+        'brand:vehicle_tax',
+        'brand:home_internet',
+        'brand:electricity',
+        'brand:water',
+        'brand:gas',
+        'brand:installment',
       ]) {
         expect(
           SakuIconRegistry.sourceFor(key),
           SakuResolvedIconSource.genericFallback,
+          reason: '$key is a concept/category and must use canonical SAKU '
+              'artwork rather than pretending to have a company logo.',
         );
       }
     });
