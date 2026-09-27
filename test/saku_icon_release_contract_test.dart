@@ -38,6 +38,17 @@ void main() {
       }
     });
 
+    test('all supported named brands have vetted bundled artwork before release', () {
+      final missing = SakuIconRegistry.missingOfficialBrandAssets;
+      expect(
+        missing,
+        isEmpty,
+        reason: 'V50 release is blocked while any supported real brand lacks '
+            'its vetted bundled asset. Missing: '
+            '${missing.map((choice) => choice.key).join(', ')}',
+      );
+    });
+
     test('release readiness only counts real named brands', () {
       final missing = SakuIconRegistry.missingOfficialBrandAssets;
       expect(missing.every((choice) => choice.requiresOfficialAsset), isTrue);
