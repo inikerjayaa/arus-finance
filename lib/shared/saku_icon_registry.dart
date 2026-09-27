@@ -15,6 +15,7 @@ class SakuIconChoice {
     required this.label,
     required this.group,
     required this.fallbackIcon,
+    required this.requiresOfficialAsset,
     this.keywords = const <String>[],
     this.assetPath,
   });
@@ -23,12 +24,12 @@ class SakuIconChoice {
   final String label;
   final SakuIconGroup group;
   final IconData fallbackIcon;
+  final bool requiresOfficialAsset;
   final List<String> keywords;
   final String? assetPath;
 
   bool get hasBundledAsset => assetPath != null && assetPath!.isNotEmpty;
   bool get isGeneric => group == SakuIconGroup.generic;
-  bool get requiresOfficialAsset => !isGeneric;
 }
 
 /// Canonical resolver for SAKU's A-I icon catalog.
@@ -36,8 +37,9 @@ class SakuIconChoice {
 /// Real named brands and generic SAKU concepts are deliberately different
 /// states. A known real brand without a vetted bundled asset is never reported
 /// as a valid generic fallback: it remains [missingBrandAsset] until its
-/// authentic local artwork is bundled. This keeps release audits honest and
-/// prevents a known company from silently shipping with a misleading icon.
+/// authentic local artwork is bundled. Generic concepts (including utility
+/// concepts such as tax, water, gas and installments) intentionally use SAKU
+/// category artwork and are not incorrectly treated as companies.
 /// Runtime networking is never required.
 abstract final class SakuIconRegistry {
   static const brandPrefix = 'brand:';
@@ -46,6 +48,23 @@ abstract final class SakuIconRegistry {
     r'^custom:[0-9a-f]{64}\.(png|jpg|webp)$',
   );
 
+  // These catalog entries are concepts/categories, not named organizations.
+  // Keeping this distinction here prevents the release gate from demanding a
+  // fake "official company logo" for a generic concept.
+  static const Set<String> _genericConceptIds = <String>{
+    'pbb',
+    'vehicle_tax',
+    'home_internet',
+    'electricity',
+    'water',
+    'gas',
+    'installment',
+  };
+
+  static bool _requiresOfficialAsset(SakuBrandIcon item) =>
+      item.group != SakuIconGroup.generic &&
+      !_genericConceptIds.contains(item.id);
+
   static final List<SakuIconChoice> choices = List<SakuIconChoice>.unmodifiable(
     SakuBrandIconCatalog.items.map(
       (item) => SakuIconChoice(
@@ -53,6 +72,7 @@ abstract final class SakuIconRegistry {
         label: item.name,
         group: item.group,
         fallbackIcon: _fallbackForGroup(item.group),
+        requiresOfficialAsset: _requiresOfficialAsset(item),
         keywords: item.keywords,
         assetPath: item.assetPath,
       ),
@@ -88,7 +108,7 @@ abstract final class SakuIconRegistry {
   /// Real named brands that are not release-ready yet.
   ///
   /// CI/release audits can require this to be empty without treating generic
-  /// SAKU categories as missing company logos.
+  /// SAKU categories/concepts as missing company logos.
   static List<SakuIconChoice> get missingOfficialBrandAssets => choices
       .where((choice) => choice.requiresOfficialAsset && !choice.hasBundledAsset)
       .toList(growable: false);
