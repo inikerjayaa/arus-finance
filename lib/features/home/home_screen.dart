@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(children: [Expanded(child: Text('Transaksi Terbaru', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))), TextButton(onPressed: () => controller.setNavigation(1), child: const Text('Lihat semua'))]),
             const SizedBox(height: 2),
             if (recent.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 18), child: Text('Belum ada transaksi. Tekan + untuk mencatat transaksi pertama.', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)))
-            else Column(children: recent.map((tx) => TransactionTile(transaction: tx, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AppScope(controller: controller, child: TransactionDetailScreen(transactionId: tx.id)))))).toList()),
+            else Material(type: MaterialType.transparency, child: Column(children: recent.map((tx) => TransactionTile(transaction: tx, onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AppScope(controller: controller, child: TransactionDetailScreen(transactionId: tx.id)))))).toList())),
           ]);
           break;
       }
