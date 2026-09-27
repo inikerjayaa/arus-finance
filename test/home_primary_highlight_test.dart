@@ -71,7 +71,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('TOTAL SALDO'), findsOneWidget);
+      expect(find.text('Total Saldo'), findsOneWidget);
       expect(find.text('Pemasukan'), findsOneWidget);
       expect(find.text('Pengeluaran'), findsOneWidget);
       expect(find.textContaining('3.465.000'), findsWidgets);
