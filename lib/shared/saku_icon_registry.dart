@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'brand_icon_catalog.dart';
 
-enum SakuResolvedIconSource { userCustom, bundledBrand, genericFallback }
+enum SakuResolvedIconSource {
+  userCustom,
+  bundledBrand,
+  genericFallback,
+  missingBrandAsset,
+}
 
 class SakuIconChoice {
   const SakuIconChoice({
@@ -22,14 +27,18 @@ class SakuIconChoice {
   final String? assetPath;
 
   bool get hasBundledAsset => assetPath != null && assetPath!.isNotEmpty;
+  bool get isGeneric => group == SakuIconGroup.generic;
+  bool get requiresOfficialAsset => !isGeneric;
 }
 
 /// Canonical resolver for SAKU's A-I icon catalog.
 ///
-/// Stable keys are deliberately independent from artwork. A brand can be
-/// selected before a vetted local logo asset is bundled; the UI renders the
-/// local Material fallback until the asset is available. Runtime networking is
-/// never required.
+/// Real named brands and generic SAKU concepts are deliberately different
+/// states. A known real brand without a vetted bundled asset is never reported
+/// as a valid generic fallback: it remains [missingBrandAsset] until its
+/// authentic local artwork is bundled. This keeps release audits honest and
+/// prevents a known company from silently shipping with a misleading icon.
+/// Runtime networking is never required.
 abstract final class SakuIconRegistry {
   static const brandPrefix = 'brand:';
   static const customPrefix = 'custom:';
@@ -67,12 +76,25 @@ abstract final class SakuIconRegistry {
 
   static SakuResolvedIconSource sourceFor(String? key) {
     if (isCustomKey(key)) return SakuResolvedIconSource.userCustom;
-    final brand = byKey(key);
-    if (brand?.hasBundledAsset == true) {
-      return SakuResolvedIconSource.bundledBrand;
+    final choice = byKey(key);
+    if (choice == null) return SakuResolvedIconSource.genericFallback;
+    if (choice.hasBundledAsset) return SakuResolvedIconSource.bundledBrand;
+    if (choice.requiresOfficialAsset) {
+      return SakuResolvedIconSource.missingBrandAsset;
     }
     return SakuResolvedIconSource.genericFallback;
   }
+
+  /// Real named brands that are not release-ready yet.
+  ///
+  /// CI/release audits can require this to be empty without treating generic
+  /// SAKU categories as missing company logos.
+  static List<SakuIconChoice> get missingOfficialBrandAssets => choices
+      .where((choice) => choice.requiresOfficialAsset && !choice.hasBundledAsset)
+      .toList(growable: false);
+
+  static bool get officialBrandAssetsReleaseReady =>
+      missingOfficialBrandAssets.isEmpty;
 
   static List<SakuIconChoice> search(
     String query, {
