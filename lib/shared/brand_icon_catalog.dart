@@ -36,7 +36,7 @@ abstract final class SakuBrandIconCatalog {
     SakuBrandIcon(id: 'bca', assetPath: 'assets/brands/bca.png', name: 'BCA', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'mandiri', assetPath: 'assets/brands/mandiri.png', name: 'Bank Mandiri', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'bri', name: 'BRI', group: SakuIconGroup.bank),
-    SakuBrandIcon(id: 'bni', name: 'BNI', group: SakuIconGroup.bank),
+    SakuBrandIcon(id: 'bni', assetPath: 'assets/brands/bni.png', name: 'BNI', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'btn', name: 'BTN', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'bsi', name: 'BSI', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'cimb_niaga', assetPath: 'assets/brands/cimb_niaga.png', name: 'CIMB Niaga', group: SakuIconGroup.bank),

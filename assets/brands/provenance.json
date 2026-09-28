@@ -830,6 +830,19 @@
       "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
       "review": "Official favicon visually verified against named service identity",
       "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "bni",
+      "official_page": "https://www.bni.co.id/ppid/informasi-publik/informasi-yang-diumumkan-secara-berkala/informasi-profil-bni",
+      "asset_url": "https://www.bni.co.id/Portals/6/bni-logo-id.png?ver=f1UrUlisTWi3t-IozhcSzA%3d%3d",
+      "resolved_asset_url": "https://www.bni.co.id/Portals/6/bni-logo-id.png?ver=f1UrUlisTWi3t-IozhcSzA%3d%3d",
+      "source_sha256": "7dff68ced04354ca48ee7a5b5a95cdb3b00ebff03245853d22ca1f946055aae9",
+      "asset_sha256": "7dff68ced04354ca48ee7a5b5a95cdb3b00ebff03245853d22ca1f946055aae9",
+      "asset_path": "assets/brands/bni.png",
+      "operation": "Original bytes unchanged",
+      "usage_status": "Official-site trademark used for service identification; no endorsement or unrestricted license claimed.",
+      "review": "Official page DOM linkage and original PNG identity visually inspected",
+      "retrieved_utc": "2026-09-28"
     }
   ]
 }
