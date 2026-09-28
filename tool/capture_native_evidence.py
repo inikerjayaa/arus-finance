@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_NAMES = {'key.properties'}
 EXCLUDED_SUFFIXES = {'.jks', '.keystore'}
 EXCLUDED_DIRS = {'build', '.dart_tool', '.git', 'Pods', '.symlinks', '__pycache__'}
-CANONICAL_ROOTS = {'lib', 'test', 'tool', 'docs', 'toolchain', '.github'}
+CANONICAL_ROOTS = {'lib', 'test', 'tool', 'docs', 'toolchain', '.github', 'assets', 'native_artwork'}
 CANONICAL_EXTRAS = {
     'pubspec.yaml',
     'pubspec.lock',

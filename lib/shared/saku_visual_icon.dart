@@ -51,13 +51,24 @@ class SakuVisualIcon extends StatelessWidget {
     final key = iconKey;
     final brand = SakuIconRegistry.byKey(key);
     if (brand != null && brand.hasBundledAsset) {
-      return Image.asset(
-        brand.assetPath!,
+      return Container(
         width: size,
         height: size,
-        fit: fit,
-        errorBuilder: (context, error, stackTrace) => _fallback(),
+        padding: EdgeInsets.all(size * .06),
+        decoration: BoxDecoration(
+          color: SakuIconRegistry.brandBackdropFor(key),
+          borderRadius: BorderRadius.circular(size * .15),
+        ),
+        child: Image.asset(
+          brand.assetPath!,
+          cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil().clamp(1, 512),
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => _missingBrand(brand.label),
+        ),
       );
+    }
+    if (brand != null && brand.requiresOfficialAsset) {
+      return _missingBrand(brand.label);
     }
     if (SakuIconRegistry.isCustomKey(key)) {
       return FutureBuilder<File?>(
@@ -80,6 +91,14 @@ class SakuVisualIcon extends StatelessWidget {
     }
     return _fallback();
   }
+
+  Widget _missingBrand(String label) => Semantics(
+        label: 'Logo $label belum tersedia',
+        child: Tooltip(
+          message: 'Logo $label belum tersedia',
+          child: Icon(Icons.broken_image_outlined, size: size, color: color),
+        ),
+      );
 
   Widget _fallback() => Icon(
         SakuVisualIconResolver.fallbackFor(iconKey),

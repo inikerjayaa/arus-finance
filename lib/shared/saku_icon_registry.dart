@@ -19,6 +19,11 @@ class SakuIconChoice {
 
 /// One offline source of truth for every brand-bearing SAKU surface.
 abstract final class SakuIconRegistry {
+  // Backdrop only; original brand pixels are never tinted.
+  static Color brandBackdropFor(String? key) => const {
+    'brand:cimb_niaga', 'brand:dana', 'brand:ovo', 'brand:vidio',
+  }.contains(key) ? const Color(0xFF001621) : Colors.white;
+
   static const brandPrefix = 'brand:';
   static const customPrefix = 'custom:';
   static final RegExp _customKeyPattern = RegExp(r'^custom:[0-9a-f]{64}\.(png|jpg|webp)$');
