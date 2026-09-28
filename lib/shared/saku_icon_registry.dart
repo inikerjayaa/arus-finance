@@ -21,7 +21,7 @@ class SakuIconChoice {
 abstract final class SakuIconRegistry {
   // Backdrop only; original brand pixels are never tinted.
   static Color brandBackdropFor(String? key) => const {
-    'brand:cimb_niaga', 'brand:dana', 'brand:ovo', 'brand:vidio',
+    'brand:bri', 'brand:cimb_niaga', 'brand:dana', 'brand:ovo', 'brand:vidio',
   }.contains(key) ? const Color(0xFF001621) : Colors.white;
 
   static const brandPrefix = 'brand:';
