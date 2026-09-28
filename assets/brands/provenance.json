@@ -701,6 +701,83 @@
       "review": "Official-page linkage and visible identity inspected during this task",
       "retrieved_utc": "2026-09-28",
       "asset_sha256": "3b0d46f4d2fa5a4d0178c376f39eb3a1464ca9cd3b912e452a84f1c49090b447"
+    },
+    {
+      "id": "claude",
+      "official_page": "https://claude.com",
+      "asset_url": "https://assets.claude.com/95a868946ac8a31e5ff832e2899f294aa368b836.png?w=32&h=32",
+      "resolved_asset_url": "https://assets.claude.com/95a868946ac8a31e5ff832e2899f294aa368b836.png?w=32&h=32",
+      "source_sha256": "4004381309500f25e49a1ae639912ce307ea81da74cc383954a1ac8b9d343fe6",
+      "asset_sha256": "4004381309500f25e49a1ae639912ce307ea81da74cc383954a1ac8b9d343fe6",
+      "asset_path": "assets/brands/claude.png",
+      "operation": "Original official asset bytes unchanged",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official source linkage and visible company/product identity checked",
+      "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "pln",
+      "official_page": "https://www.pln.co.id/tentang-kami-id/profil-perusahaan-id",
+      "asset_url": "https://www.pln.co.id/webapi/media/file/webkorp/asset/file080525_0858_423d.png",
+      "resolved_asset_url": "https://www.pln.co.id/webapi/media/file/webkorp/asset/file080525_0858_423d.png",
+      "source_sha256": "79aff0510df0cf55ec3e96268a3caf81f56797ea00e864459db63d5c01d6ee9d",
+      "asset_sha256": "79aff0510df0cf55ec3e96268a3caf81f56797ea00e864459db63d5c01d6ee9d",
+      "asset_path": "assets/brands/pln.png",
+      "operation": "Original official asset bytes unchanged",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official source linkage and visible company/product identity checked",
+      "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "uob",
+      "official_page": "https://www.uob.co.id/personal/index.page",
+      "asset_url": "https://www.uob.co.id/assets/web-resources/business/images/BrandAssets/UOB_Logo.svg",
+      "resolved_asset_url": "https://www.uob.co.id/assets/web-resources/business/images/BrandAssets/UOB_Logo.svg",
+      "source_sha256": "139bed79c5409437b22b737603686cebc1fd627796f09cb02208f4b2bec8da39",
+      "asset_path": "assets/brands/uob.png",
+      "operation": "Original pixels; SVG rasterization only where applicable",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official source linkage and visible company/product identity checked",
+      "retrieved_utc": "2026-09-28",
+      "asset_sha256": "72b535df5d508f74bb923a4b75a22a8847f60a4095ca29a1b8bbb9f4c0e48064"
+    },
+    {
+      "id": "sinarmas",
+      "official_page": "https://www.banksinarmas.com/id",
+      "asset_url": "https://www.banksinarmas.com/id/public/revamp/logoj.png",
+      "resolved_asset_url": "https://www.banksinarmas.com/id/public/revamp/logoj.png",
+      "source_sha256": "54dcb3420f5aa27118fa32cdc2b7715d593de8f28b700d7511c152dd0367a8dc",
+      "asset_path": "assets/brands/sinarmas.png",
+      "operation": "Original pixels; SVG rasterization only where applicable",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official source linkage and visible company/product identity checked",
+      "retrieved_utc": "2026-09-28",
+      "asset_sha256": "54dcb3420f5aa27118fa32cdc2b7715d593de8f28b700d7511c152dd0367a8dc"
+    },
+    {
+      "id": "digibank",
+      "official_page": "https://www.dbs.id/digibank/id/id/personal/default.page",
+      "asset_url": "https://www.dbs.id/id/iwov-resources/flp-digibank/images/digibank_logo.png?clear",
+      "resolved_asset_url": "https://www.dbs.id/id/iwov-resources/flp-digibank/images/digibank_logo.png?clear",
+      "source_sha256": "faedd54496203a027236f26550caf9b8a13ff5354612a8d5082bbad6aa3577aa",
+      "asset_path": "assets/brands/digibank.png",
+      "operation": "Original pixels; SVG rasterization only where applicable",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official source linkage and visible company/product identity checked",
+      "retrieved_utc": "2026-09-28",
+      "asset_sha256": "faedd54496203a027236f26550caf9b8a13ff5354612a8d5082bbad6aa3577aa"
+    },
+    {
+      "id": "github_copilot",
+      "official_page": "https://github.com/features/copilot",
+      "asset_url": "https://github.com/features/copilot#octicon-copilot",
+      "source_sha256": "3242b7d337359d276877f06f3f56c39e6cbc0c557c79ed993b78e33da14fe8f2",
+      "asset_path": "assets/brands/github_copilot.png",
+      "operation": "Exact inline official SVG paths rasterized; no redraw. SVG uses currentColor, rendered with default black on white backdrop.",
+      "usage_status": "Official GitHub Copilot trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official source linkage and visible company/product identity checked",
+      "retrieved_utc": "2026-09-28",
+      "asset_sha256": "c106b33c6722a6c30ee34b37777b72e5f450141c9c86232050af6814c2d1e803"
     }
   ]
 }
