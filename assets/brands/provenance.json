@@ -778,6 +778,58 @@
       "review": "Official source linkage and visible company/product identity checked",
       "retrieved_utc": "2026-09-28",
       "asset_sha256": "c106b33c6722a6c30ee34b37777b72e5f450141c9c86232050af6814c2d1e803"
+    },
+    {
+      "id": "adobe",
+      "official_page": "https://www.adobe.com",
+      "asset_url": "https://www.adobe.com/favicon.ico",
+      "resolved_asset_url": "https://www.adobe.com/favicon.ico",
+      "source_sha256": "5eed69e764f1d40b943a19b4b36aca72519b2626dd519891173d7728a74d821c",
+      "asset_sha256": "5ffe9d76fa5786fe266e4346563b4ae2bde6540de2cee2c885a8e94a845a7694",
+      "asset_path": "assets/brands/adobe.png",
+      "operation": "Official ICO losslessly decoded to PNG; original source retained, no other edits",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official favicon visually verified against named service identity",
+      "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "bank_jago",
+      "official_page": "https://www.jago.com",
+      "asset_url": "https://www.jago.com/favicon.ico",
+      "resolved_asset_url": "https://www.jago.com/favicon.ico",
+      "source_sha256": "dcd2d82ed007921d19033a28d7bac31171241626af457171c5603e0edfa084fb",
+      "asset_sha256": "3216fb6c60f07f0e2c1dc1eb88e19a7bf31640f24f221c657e497b2847cee92c",
+      "asset_path": "assets/brands/bank_jago.png",
+      "operation": "Official ICO losslessly decoded to PNG; original source retained, no other edits",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official favicon visually verified against named service identity",
+      "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "icloud",
+      "official_page": "https://www.icloud.com",
+      "asset_url": "https://www.icloud.com/favicon.ico",
+      "resolved_asset_url": "https://www.icloud.com/favicon.ico",
+      "source_sha256": "5abc82b050a4a03e9e7a2e7eed1806e79c04b46fe7c5791a02b7a3da788b50d0",
+      "asset_sha256": "5b1f8b2e26acd562ca0874950748ccab83b276f20104080e456902766111aed9",
+      "asset_path": "assets/brands/icloud.png",
+      "operation": "Official ICO losslessly decoded to PNG; original source retained, no other edits",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official favicon visually verified against named service identity",
+      "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "byu",
+      "official_page": "https://www.byu.id",
+      "asset_url": "https://www.byu.id/favicon.ico",
+      "resolved_asset_url": "https://www.byu.id/favicon.ico",
+      "source_sha256": "cc82414c857d7351023f464a6b7159887ce6726f0b999bb7d1b5dedd3f2e4237",
+      "asset_sha256": "063bdfb7ae6530b611e9fff1d8a48215181f64a5ec6869190652c980df52b297",
+      "asset_path": "assets/brands/byu.png",
+      "operation": "Official ICO losslessly decoded to PNG; original source retained, no other edits",
+      "usage_status": "Official-site trademark for identification; no endorsement or unrestricted license claimed",
+      "review": "Official favicon visually verified against named service identity",
+      "retrieved_utc": "2026-09-28"
     }
   ]
 }

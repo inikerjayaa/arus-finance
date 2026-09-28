@@ -46,7 +46,7 @@ abstract final class SakuBrandIconCatalog {
     SakuBrandIcon(id: 'maybank', assetPath: 'assets/brands/maybank.png', name: 'Maybank Indonesia', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'panin', assetPath: 'assets/brands/panin.png', name: 'Panin Bank', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'bank_mega', assetPath: 'assets/brands/bank_mega.png', name: 'Bank Mega', group: SakuIconGroup.bank),
-    SakuBrandIcon(id: 'bank_jago', name: 'Bank Jago', group: SakuIconGroup.bank),
+    SakuBrandIcon(id: 'bank_jago', assetPath: 'assets/brands/bank_jago.png', name: 'Bank Jago', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'seabank', assetPath: 'assets/brands/seabank.png', name: 'SeaBank', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'blu', assetPath: 'assets/brands/blu.png', name: 'blu by BCA Digital', group: SakuIconGroup.bank),
     SakuBrandIcon(id: 'neobank', name: 'neobank', group: SakuIconGroup.bank),
@@ -109,9 +109,9 @@ abstract final class SakuBrandIconCatalog {
     SakuBrandIcon(id: 'capcut', assetPath: 'assets/brands/capcut.png', name: 'CapCut', group: SakuIconGroup.subscription),
     SakuBrandIcon(id: 'zoom', assetPath: 'assets/brands/zoom.png', name: 'Zoom', group: SakuIconGroup.subscription),
     SakuBrandIcon(id: 'google_one', assetPath: 'assets/brands/google_one.png', name: 'Google One', group: SakuIconGroup.subscription),
-    SakuBrandIcon(id: 'icloud', name: 'iCloud', group: SakuIconGroup.subscription),
+    SakuBrandIcon(id: 'icloud', assetPath: 'assets/brands/icloud.png', name: 'iCloud', group: SakuIconGroup.subscription),
     SakuBrandIcon(id: 'microsoft_365', name: 'Microsoft 365', group: SakuIconGroup.subscription),
-    SakuBrandIcon(id: 'adobe', name: 'Adobe', group: SakuIconGroup.subscription),
+    SakuBrandIcon(id: 'adobe', assetPath: 'assets/brands/adobe.png', name: 'Adobe', group: SakuIconGroup.subscription),
     SakuBrandIcon(id: 'notion', assetPath: 'assets/brands/notion.png', name: 'Notion', group: SakuIconGroup.subscription),
 
     // F — AI tools
@@ -128,7 +128,7 @@ abstract final class SakuBrandIconCatalog {
 
     // G — Telco & internet
     SakuBrandIcon(id: 'telkomsel', assetPath: 'assets/brands/telkomsel.png', name: 'Telkomsel', group: SakuIconGroup.telco),
-    SakuBrandIcon(id: 'byu', name: 'by.U', group: SakuIconGroup.telco),
+    SakuBrandIcon(id: 'byu', assetPath: 'assets/brands/byu.png', name: 'by.U', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'im3', name: 'IM3', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'xl', assetPath: 'assets/brands/xl.png', name: 'XL', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'axis', assetPath: 'assets/brands/axis.png', name: 'AXIS', group: SakuIconGroup.telco),
