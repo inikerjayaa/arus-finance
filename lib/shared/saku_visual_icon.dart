@@ -67,7 +67,7 @@ class SakuVisualIcon extends StatelessWidget {
         ),
       );
     }
-    if (brand != null && brand.requiresOfficialAsset) {
+    if (brand != null && brand.requiresBundledAsset) {
       return _missingBrand(brand.label);
     }
     if (SakuIconRegistry.isCustomKey(key)) {

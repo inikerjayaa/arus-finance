@@ -1236,6 +1236,23 @@
       "usage_status": "Official-site trademark used for service identification; no endorsement or unrestricted license claimed.",
       "review": "Official public-page source linkage and original red IndiHome by Telkomsel artwork visually verified",
       "retrieved_utc": "2026-09-29"
+    },
+    {
+      "id": "pdam",
+      "artwork_kind": "user_approved_custom",
+      "official_page": null,
+      "asset_url": null,
+      "resolved_asset_url": null,
+      "source_path": "native_artwork/brand_sources/pdam-custom.svg",
+      "source_sha256": "258e7a50d4a86ab6c78a1e2af6580c9540b613c458a2e8cc0b6d410279ddde71",
+      "asset_path": "assets/brands/pdam.png",
+      "asset_sha256": "efe1cfa054e559fec297f9c9b2ae7bd03316f4ff94143c2e0cccbfbd03bd5f22",
+      "operation": "Original vector design authored for the user; SVG rendered with sharp to 512x512 transparent PNG. All geometry and lettering are vector paths; no fonts or runtime dependencies.",
+      "artwork_variant": "Blue water drop, white wave, PDAM lettering below",
+      "user_authorization": "User on 2026-09-29: untuk PDAM kita buat sendiri aja; logo air dan dibawahnya tulisan PDAM; warna biru (biar melambangkan air).",
+      "usage_status": "Original custom SAKU catalog artwork approved by user instruction. Not an official logo of any regional PDAM company or association.",
+      "review": "Rendered PNG visually inspected; colors, water motif and below-icon lettering match the requested design.",
+      "created_utc": "2026-09-29"
     }
   ]
 }

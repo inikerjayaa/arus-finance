@@ -5,12 +5,14 @@ import 'brand_icon_catalog.dart';
 enum SakuResolvedIconSource { userCustom, bundledBrand, genericFallback, missingBrandAsset }
 
 class SakuIconChoice {
-  const SakuIconChoice({required this.key, required this.label, required this.group, required this.fallbackIcon, required this.requiresOfficialAsset, this.keywords = const <String>[], this.assetPath});
+  const SakuIconChoice({required this.key, required this.label, required this.group, required this.fallbackIcon, required this.requiresBundledAsset, this.isUserApprovedArtwork = false, this.keywords = const <String>[], this.assetPath});
   final String key;
   final String label;
   final SakuIconGroup group;
   final IconData fallbackIcon;
-  final bool requiresOfficialAsset;
+  final bool requiresBundledAsset;
+  final bool isUserApprovedArtwork;
+  bool get requiresOfficialAsset => requiresBundledAsset && !isUserApprovedArtwork;
   final List<String> keywords;
   final String? assetPath;
   bool get hasBundledAsset => assetPath != null && assetPath!.isNotEmpty;
@@ -48,13 +50,14 @@ abstract final class SakuIconRegistry {
     'cash', 'bank_account', 'digital_wallet', 'credit_card',
   ];
 
-  static bool _requiresOfficialAsset(SakuBrandIcon item) =>
+  static bool _requiresBundledAsset(SakuBrandIcon item) =>
       item.group != SakuIconGroup.generic && !_genericConceptIds.contains(item.id);
 
   static final List<SakuIconChoice> choices = List<SakuIconChoice>.unmodifiable(
     SakuBrandIconCatalog.items.map((item) => SakuIconChoice(
       key: '$brandPrefix${item.id}', label: item.name, group: item.group,
-      fallbackIcon: _fallbackForGroup(item.group), requiresOfficialAsset: _requiresOfficialAsset(item),
+      fallbackIcon: _fallbackForGroup(item.group), requiresBundledAsset: _requiresBundledAsset(item),
+      isUserApprovedArtwork: item.isUserApprovedArtwork,
       keywords: item.keywords, assetPath: item.assetPath,
     )),
   );
@@ -74,9 +77,14 @@ abstract final class SakuIconRegistry {
     final choice = byKey(key);
     if (choice == null) return SakuResolvedIconSource.genericFallback;
     if (choice.hasBundledAsset) return SakuResolvedIconSource.bundledBrand;
-    if (choice.requiresOfficialAsset) return SakuResolvedIconSource.missingBrandAsset;
+    if (choice.requiresBundledAsset) return SakuResolvedIconSource.missingBrandAsset;
     return SakuResolvedIconSource.genericFallback;
   }
+
+  /// Includes approved custom PDAM: it must also have its actual bundled asset.
+  static List<SakuIconChoice> get missingRequiredBrandAssets => choices
+      .where((choice) => choice.requiresBundledAsset && !choice.hasBundledAsset).toList(growable: false);
+  static bool get brandAssetsReleaseReady => missingRequiredBrandAssets.isEmpty;
 
   static List<SakuIconChoice> get missingOfficialBrandAssets => choices
       .where((choice) => choice.requiresOfficialAsset && !choice.hasBundledAsset).toList(growable: false);

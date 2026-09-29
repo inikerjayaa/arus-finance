@@ -17,6 +17,7 @@ class SakuBrandIcon {
     required this.group,
     this.keywords = const <String>[],
     this.assetPath,
+    this.isUserApprovedArtwork = false,
   });
 
   final String id;
@@ -24,10 +25,12 @@ class SakuBrandIcon {
   final SakuIconGroup group;
   final List<String> keywords;
 
-  /// Bundled official local asset. Missing real-brand artwork is an explicit
-  /// unavailable state and a release blocker, never a generic fallback. Never fetch icons from
-  /// the network at runtime.
+  /// Vetted local asset. Official artwork is required unless the user has
+  /// explicitly approved an original custom design. Never fetch at runtime.
   final String? assetPath;
+
+  /// PDAM is the sole approved custom design (user request, 2026-09-29).
+  final bool isUserApprovedArtwork;
 }
 
 abstract final class SakuBrandIconCatalog {
@@ -141,7 +144,7 @@ abstract final class SakuBrandIconCatalog {
 
     // H — Utilities & bills
     SakuBrandIcon(id: 'pln', assetPath: 'assets/brands/pln.png', name: 'PLN', group: SakuIconGroup.utility),
-    SakuBrandIcon(id: 'pdam', name: 'PDAM', group: SakuIconGroup.utility),
+    SakuBrandIcon(id: 'pdam', assetPath: 'assets/brands/pdam.png', name: 'PDAM', group: SakuIconGroup.utility, isUserApprovedArtwork: true),
     SakuBrandIcon(id: 'bpjs', assetPath: 'assets/brands/bpjs.png', name: 'BPJS', group: SakuIconGroup.utility),
     SakuBrandIcon(id: 'pbb', name: 'PBB', group: SakuIconGroup.utility),
     SakuBrandIcon(id: 'vehicle_tax', name: 'Pajak Kendaraan', group: SakuIconGroup.utility),

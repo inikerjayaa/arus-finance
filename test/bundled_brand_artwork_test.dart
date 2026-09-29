@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('every mapped official logo decodes from bundle and matches provenance', () async {
+  test('every mapped vetted logo decodes from bundle and matches provenance', () async {
     final manifest = jsonDecode(File('assets/brands/provenance.json').readAsStringSync()) as Map<String, dynamic>;
     final entries = {for (final row in manifest['assets'] as List<dynamic>) (row as Map<String, dynamic>)['id'] as String: row};
     for (final choice in SakuIconRegistry.choices.where((c) => c.hasBundledAsset)) {
@@ -37,7 +37,7 @@ void main() {
     expect(find.byIcon(Icons.broken_image_outlined), findsNothing);
   });
   testWidgets('missing named logo is explicit and never generic', (tester) async {
-    final missing = SakuIconRegistry.missingOfficialBrandAssets;
+    final missing = SakuIconRegistry.missingRequiredBrandAssets;
     if (missing.isEmpty) return;
     final choice = missing.first;
     await tester.pumpWidget(MaterialApp(home: SakuVisualIcon(iconKey: choice.key)));

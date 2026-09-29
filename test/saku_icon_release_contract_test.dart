@@ -36,15 +36,27 @@ void main() {
       }
     });
 
-    test('all supported named brands have vetted bundled artwork before release', () {
-      final missing = SakuIconRegistry.missingOfficialBrandAssets;
-      expect(missing, isEmpty,
-        reason: 'V50 release is blocked while any supported real brand lacks its vetted bundled asset. Missing: ${missing.map((choice) => choice.key).join(', ')}');
+    test('PDAM is the sole approved custom artwork and remains required', () {
+      final approved = SakuIconRegistry.choices.where((choice) => choice.isUserApprovedArtwork);
+      expect(approved.map((choice) => choice.key), ['brand:pdam']);
+      final pdam = approved.single;
+      expect(pdam.requiresOfficialAsset, isFalse);
+      expect(pdam.requiresBundledAsset, isTrue);
+      expect(pdam.hasBundledAsset, isTrue);
+      expect(SakuIconRegistry.sourceFor(pdam.key), SakuResolvedIconSource.bundledBrand);
+      expect(SakuIconRegistry.choices.where((choice) => choice.requiresOfficialAsset), hasLength(90));
+      expect(SakuIconRegistry.choices.where((choice) => choice.requiresBundledAsset), hasLength(91));
     });
 
-    test('release readiness only counts real named brands', () {
-      final missing = SakuIconRegistry.missingOfficialBrandAssets;
-      expect(missing.every((choice) => choice.requiresOfficialAsset), isTrue);
+    test('all supported named brands have vetted bundled artwork before release', () {
+      final missing = SakuIconRegistry.missingRequiredBrandAssets;
+      expect(missing, isEmpty,
+        reason: 'V50 release is blocked while any required identity lacks its vetted bundled asset. Missing: ${missing.map((choice) => choice.key).join(', ')}');
+    });
+
+    test('release readiness counts all required identities including approved custom artwork', () {
+      final missing = SakuIconRegistry.missingRequiredBrandAssets;
+      expect(missing.every((choice) => choice.requiresBundledAsset), isTrue);
       expect(missing.every((choice) => !choice.isGeneric), isTrue);
     });
   });
