@@ -135,7 +135,7 @@ abstract final class SakuBrandIconCatalog {
     SakuBrandIcon(id: 'smartfren', assetPath: 'assets/brands/smartfren.png', name: 'Smartfren', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'tri', assetPath: 'assets/brands/tri.png', name: 'Tri', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'first_media', assetPath: 'assets/brands/first_media.png', name: 'First Media', group: SakuIconGroup.telco),
-    SakuBrandIcon(id: 'indihome', name: 'IndiHome', group: SakuIconGroup.telco),
+    SakuBrandIcon(id: 'indihome', assetPath: 'assets/brands/indihome.png', name: 'IndiHome', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'biznet', assetPath: 'assets/brands/biznet.png', name: 'Biznet', group: SakuIconGroup.telco),
     SakuBrandIcon(id: 'myrepublic', assetPath: 'assets/brands/myrepublic.png', name: 'MyRepublic', group: SakuIconGroup.telco),
 

@@ -1220,6 +1220,22 @@
       "usage_status": "Official Bank Indonesia QRIS mark used for service identification; no endorsement or unrestricted license claimed.",
       "review": "Original PDF and extracted artwork visually verified",
       "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "indihome",
+      "official_page": "https://www.telkomsel.com/landingpage/regular/404",
+      "asset_url": "https://www.telkomsel.com/landingpage/api/web/get-img?imgid=logo_indiHome.png",
+      "resolved_asset_url": "https://www.telkomsel.com/landingpage/api/web/get-img?imgid=logo_indiHome.png",
+      "source_sha256": "df9002d68c25c8974ecdc835a13f7322a266dcdb7ac4b46b91d787a585a211d6",
+      "asset_sha256": "df9002d68c25c8974ecdc835a13f7322a266dcdb7ac4b46b91d787a585a211d6",
+      "asset_path": "assets/brands/indihome.png",
+      "operation": "Original PNG bytes unchanged",
+      "artwork_variant": "IndiHome by Telkomsel official wordmark",
+      "source_linkage": "The public page references /landingpage/_next/static/chunks/3634-cb6ab96090a7f129.js; its logo navbar image src is /landingpage/api/web/get-img?imgid=logo_indiHome.png.",
+      "source_linkage_url": "https://www.telkomsel.com/landingpage/_next/static/chunks/3634-cb6ab96090a7f129.js",
+      "usage_status": "Official-site trademark used for service identification; no endorsement or unrestricted license claimed.",
+      "review": "Official public-page source linkage and original red IndiHome by Telkomsel artwork visually verified",
+      "retrieved_utc": "2026-09-29"
     }
   ]
 }
