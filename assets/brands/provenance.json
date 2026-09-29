@@ -1049,7 +1049,7 @@
       "review": "Publisher identity, official website linkage and visible app icon inspected",
       "publisher": "PerplexityAI",
       "publisher_website": "https://www.perplexity.ai/privacy",
-      "artwork_variant": "Perplexity \u2014 Ask Anything - Aplikasi di Google Play",
+      "artwork_variant": "Perplexity — Ask Anything - Aplikasi di Google Play",
       "retrieved_utc": "2026-09-28"
     },
     {
@@ -1197,6 +1197,28 @@
       "publisher": "PT. Bank Tabungan Negara (Persero), Tbk",
       "publisher_website": "https://www.btn.co.id/",
       "artwork_variant": "bale by BTN - Aplikasi di Google Play",
+      "retrieved_utc": "2026-09-28"
+    },
+    {
+      "id": "qris",
+      "official_page": "https://www.bi.go.id/id/edukasi/Documents/Bahan-Sosialisasi-QRIS.pdf",
+      "asset_url": "https://www.bi.go.id/id/edukasi/Documents/Bahan-Sosialisasi-QRIS.pdf",
+      "resolved_asset_url": "https://www.bi.go.id/id/edukasi/Documents/Bahan-Sosialisasi-QRIS.pdf",
+      "source_sha256": "600c834989236d89425bc6cfa378845d1a49b3227f5d96ffebbff546a9ff2604",
+      "asset_sha256": "668d24603fec09cdf34d5d91763943de98a536984785c032f577d1cc3b7f2c0b",
+      "asset_path": "assets/brands/qris.png",
+      "operation": "Rendered original PDF page 1 logo region [794,9,861,38] at scale 4. Original colors, geometry and source background retained; no tracing or redrawing.",
+      "source_page": 1,
+      "source_clip_points": [
+        794,
+        9,
+        861,
+        38
+      ],
+      "derived_source_path": "native_artwork/brand_sources/qris-page1.svg",
+      "derived_source_sha256": "ec7c4380bc911647785fec217870ebb4137d50dd44fbb0beafcf8802a417cddc",
+      "usage_status": "Official Bank Indonesia QRIS mark used for service identification; no endorsement or unrestricted license claimed.",
+      "review": "Original PDF and extracted artwork visually verified",
       "retrieved_utc": "2026-09-28"
     }
   ]

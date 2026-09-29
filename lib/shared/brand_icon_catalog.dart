@@ -79,7 +79,7 @@ abstract final class SakuBrandIconCatalog {
     SakuBrandIcon(id: 'sakuku', assetPath: 'assets/brands/sakuku.png', name: 'Sakuku', group: SakuIconGroup.wallet),
     SakuBrandIcon(id: 'astrapay', assetPath: 'assets/brands/astrapay.webp', name: 'AstraPay', group: SakuIconGroup.wallet),
     SakuBrandIcon(id: 'paypal', assetPath: 'assets/brands/paypal.png', name: 'PayPal', group: SakuIconGroup.wallet),
-    SakuBrandIcon(id: 'qris', name: 'QRIS', group: SakuIconGroup.wallet),
+    SakuBrandIcon(id: 'qris', assetPath: 'assets/brands/qris.png', name: 'QRIS', group: SakuIconGroup.wallet),
 
     // C — Transport, travel & lifestyle
     SakuBrandIcon(id: 'gojek', assetPath: 'assets/brands/gojek.png', name: 'Gojek', group: SakuIconGroup.transport),
