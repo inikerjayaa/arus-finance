@@ -1,0 +1,35 @@
+{
+  "approved_originals": [
+    {
+      "original_name": "Logo Saku dengan Ilustrasi Tangan di Saku.png",
+      "library_file_id": "libfile_433843f87fd88191a18bd90bb156974c",
+      "path": "assets/saku/stacked.png",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "efcb4ef382f7f2d584aa2b581858d934289b82ac5b20146c4123e0cbace3e301",
+      "operation": "Original bytes unchanged",
+      "role": "Canonical stacked logo; shared mark, live splash and launcher source"
+    },
+    {
+      "original_name": "Logo SAKU dengan Ilustrasi Saku Oranye.png",
+      "library_file_id": "libfile_6f550e5b2ca48191ab4fb50608c4eb2d",
+      "path": "assets/saku/horizontal.png",
+      "width": 1448,
+      "height": 1086,
+      "sha256": "91b253e1475da3dca808970127acf388fbc14b75e494ec369b6fd905e19d12e0",
+      "operation": "Original bytes unchanged",
+      "role": "Canonical horizontal lockup"
+    },
+    {
+      "original_name": "Layar Splash Minimalis SAKU.png",
+      "library_file_id": "libfile_1b4528b39ca08191b32835271f3f9372",
+      "path": "native_artwork/saku/splash-reference.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "45182e6f0407c6a8ef5ed463ae1c783992c99e4695b94785ea9fa68339bfa00f",
+      "operation": "Original bytes unchanged",
+      "role": "Approved layout reference; photographed status bar is not rendered in live UI"
+    }
+  ],
+  "native_launcher_policy": "Originals are never rewritten. OS-required launcher renditions are generated at native build time from stacked.png; no reconstructed geometry, crop, palette substitution or wordmark recreation."
+}

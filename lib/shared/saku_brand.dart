@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 abstract final class SakuBrand {
   static const appName = 'SAKU';
 
+  // Approved original image files: no tint, crop, or recreated wordmark.
+  static const stackedLogoAsset = 'assets/saku/stacked.png';
+  static const horizontalLogoAsset = 'assets/saku/horizontal.png';
+
   // Locked release palette.
   static const cyprus = Color(0xFF004741);
   static const noturno = Color(0xFF001621);

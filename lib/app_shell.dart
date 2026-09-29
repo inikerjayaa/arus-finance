@@ -14,7 +14,6 @@ import 'features/quick_add/quick_add_sheet.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/transactions/transactions_screen.dart';
 import 'shared/app_scope.dart';
-import 'shared/saku_brand.dart';
 import 'shared/saku_splash.dart';
 
 class AppShell extends StatelessWidget {
@@ -48,21 +47,7 @@ class AppShell extends StatelessWidget {
             title: Semantics(
               label: 'SAKU',
               header: true,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  SakuBrandMark(size: 30),
-                  SizedBox(width: 9),
-                  Text(
-                    'SAKU',
-                    style: TextStyle(
-                      fontFamily: SakuBrand.fontFamily,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.3,
-                    ),
-                  ),
-                ],
-              ),
+              child: const SakuBrandHorizontal(),
             ),
             centerTitle: false,
             actions: [

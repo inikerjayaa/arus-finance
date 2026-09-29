@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/services/user_profile_service.dart';
-import '../shared/saku_brand.dart';
 import '../shared/saku_splash.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -35,10 +34,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final wordmarkColor = theme.brightness == Brightness.dark
-        ? SakuBrand.sand
-        : SakuBrand.noturno;
 
     return Scaffold(
       body: SafeArea(
@@ -62,11 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: Semantics(
                           header: true,
                           label: 'SAKU',
-                          child: SakuBrandLockup(
-                            markSize: 128,
-                            wordmarkSize: 38,
-                            wordmarkColor: wordmarkColor,
-                          ),
+                          child: const SakuBrandLockup(markSize: 240),
                         ),
                       ),
                       const SizedBox(height: 42),

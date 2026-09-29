@@ -22,7 +22,8 @@ void main() {
     );
 
     expect(find.byType(SakuBrandLockup), findsOneWidget);
-    expect(find.text('SAKU'), findsOneWidget);
+    expect(find.byType(SakuBrandMark), findsOneWidget);
+    expect(find.text('SAKU'), findsNothing); // Wordmark comes from the original artwork.
     expect(find.byKey(const Key('onboarding_name_input')), findsOneWidget);
     expect(find.byKey(const Key('onboarding_create_button')), findsOneWidget);
     expect(find.byKey(const Key('onboarding_pin_input')), findsNothing);
