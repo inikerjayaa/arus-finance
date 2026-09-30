@@ -15,11 +15,7 @@ class SakuSplashScreen extends StatelessWidget {
             container: true,
             label: 'SAKU sedang dibuka',
             liveRegion: true,
-            child: const SakuBrandLockup(
-              markSize: 150,
-              wordmarkSize: 44,
-              wordmarkColor: SakuBrand.onNoturno,
-            ),
+            child: const SakuBrandLockup(markSize: 240),
           ),
         ),
       ),
@@ -27,28 +23,24 @@ class SakuSplashScreen extends StatelessWidget {
   }
 }
 
-/// Reusable SAKU mark without the wordmark.
-///
-/// Use this when a compact brand identifier is needed, such as the app bar.
-/// The mark is never fetched from the network.
+/// Approved original stacked identity, including its original wordmark.
+/// The historical class name is retained for existing shared-brand call sites.
 class SakuBrandMark extends StatelessWidget {
   const SakuBrandMark({super.key, this.size = 32});
-
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: size,
-      child: const CustomPaint(painter: _SakuPocketPainter()),
-    );
-  }
+  Widget build(BuildContext context) => Image.asset(
+        SakuBrand.stackedLogoAsset,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        semanticLabel: SakuBrand.appName,
+      );
 }
 
-/// Reusable SAKU mark + wordmark lockup.
-///
-/// The visual is drawn locally so onboarding/splash branding never depends on
-/// network assets and always stays consistent with SAKU's canonical palette.
+/// Complete original lockup. Color/wordmark parameters remain source-compatible
+/// with callers but never recolor or re-typeset the approved image.
 class SakuBrandLockup extends StatelessWidget {
   const SakuBrandLockup({
     super.key,
@@ -62,129 +54,20 @@ class SakuBrandLockup extends StatelessWidget {
   final Color wordmarkColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SakuBrandMark(size: markSize),
-        const SizedBox(height: 14),
-        Text(
-          'SAKU',
-          style: TextStyle(
-            color: wordmarkColor,
-            fontFamily: SakuBrand.fontFamily,
-            fontSize: wordmarkSize,
-            height: 1,
-            letterSpacing: 3.2,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => SakuBrandMark(size: markSize);
 }
 
-class _SakuPocketPainter extends CustomPainter {
-  const _SakuPocketPainter();
+/// Approved horizontal identity for shared header surfaces.
+class SakuBrandHorizontal extends StatelessWidget {
+  const SakuBrandHorizontal({super.key, this.height = 48});
+  final double height;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final dark = Paint()
-      ..color = SakuBrand.noturno
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final orange = Paint()..color = SakuBrand.vulcanico;
-    final orangeShade = Paint()..color = const Color(0xFFE83A02);
-    final skin = Paint()..color = const Color(0xFFFFB48F);
-    final white = Paint()..color = SakuBrand.onNoturno;
-
-    final pocket = Path()
-      ..moveTo(size.width * .20, size.height * .48)
-      ..quadraticBezierTo(size.width * .50, size.height * .38,
-          size.width * .80, size.height * .48)
-      ..lineTo(size.width * .78, size.height * .78)
-      ..quadraticBezierTo(size.width * .76, size.height * .91,
-          size.width * .52, size.height * .92)
-      ..lineTo(size.width * .38, size.height * .92)
-      ..quadraticBezierTo(size.width * .20, size.height * .90,
-          size.width * .19, size.height * .75)
-      ..close();
-    canvas.drawPath(pocket, orange);
-
-    final shade = Path()
-      ..moveTo(size.width * .70, size.height * .46)
-      ..quadraticBezierTo(size.width * .86, size.height * .60,
-          size.width * .75, size.height * .87)
-      ..quadraticBezierTo(size.width * .67, size.height * .93,
-          size.width * .59, size.height * .91)
-      ..quadraticBezierTo(size.width * .74, size.height * .68,
-          size.width * .70, size.height * .46)
-      ..close();
-    canvas.drawPath(shade, orangeShade);
-
-    final arm = Path()
-      ..moveTo(size.width * .38, size.height * .20)
-      ..lineTo(size.width * .63, size.height * .30)
-      ..lineTo(size.width * .61, size.height * .55)
-      ..quadraticBezierTo(size.width * .50, size.height * .62,
-          size.width * .35, size.height * .52)
-      ..close();
-    canvas.drawPath(arm, skin);
-
-    final cuff = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        size.width * .25,
-        size.height * .05,
-        size.width * .38,
-        size.height * .24,
-      ),
-      Radius.circular(size.width * .06),
-    );
-    canvas.save();
-    canvas.translate(size.width * .02, size.height * .05);
-    canvas.rotate(-.18);
-    canvas.drawRRect(cuff, white);
-    canvas.restore();
-
-    dark
-      ..strokeWidth = size.width * .035
-      ..color = SakuBrand.noturno;
-    final opening = Path()
-      ..moveTo(size.width * .23, size.height * .51)
-      ..quadraticBezierTo(size.width * .49, size.height * .61,
-          size.width * .77, size.height * .49);
-    canvas.drawPath(opening, dark);
-
-    dark.strokeWidth = size.width * .03;
-    for (var i = 0; i < 5; i++) {
-      final x = size.width * (.28 + i * .09);
-      final y = size.height * (.67 - i * .006);
-      canvas.drawLine(Offset(x, y), Offset(x + size.width * .045, y), dark);
-    }
-
-    canvas.drawCircle(
-      Offset(size.width * .72, size.height * .60),
-      size.width * .035,
-      Paint()..color = SakuBrand.noturno,
-    );
-
-    final accent = Paint()
-      ..color = SakuBrand.vulcanico
-      ..strokeWidth = size.width * .045
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(size.width * .72, size.height * .35),
-      Offset(size.width * .75, size.height * .27),
-      accent,
-    );
-    canvas.drawLine(
-      Offset(size.width * .79, size.height * .40),
-      Offset(size.width * .86, size.height * .35),
-      accent,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget build(BuildContext context) => Image.asset(
+        SakuBrand.horizontalLogoAsset,
+        width: height * 1448 / 1086,
+        height: height,
+        fit: BoxFit.contain,
+        semanticLabel: SakuBrand.appName,
+      );
 }

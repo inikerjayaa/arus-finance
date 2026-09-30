@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">PDAM — custom water icon</title>
+  <desc id="desc">Original blue water drop and PDAM lettering, requested for SAKU. Not the official logo of any water company.</desc>
+  <defs>
+    <clipPath id="drop"><path d="M256 32C237 64 142 163 142 230a114 114 0 0 0 228 0C370 163 275 64 256 32Z"/></clipPath>
+  </defs>
+  <path fill="#1479DB" d="M256 32C237 64 142 163 142 230a114 114 0 0 0 228 0C370 163 275 64 256 32Z"/>
+  <path fill="#0754A8" clip-path="url(#drop)" d="M126 246C175 211 213 218 256 239S335 269 386 227V352H126Z"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" d="M188 223C211 216 233 221 256 232S302 249 326 242"/>
+  <g fill="#0754A8" fill-rule="evenodd">
+    <path d="M58 384H96C116 384 129 396 129 416S116 448 96 448H79V480H58ZM79 403V429H94C104 429 108 425 108 416S104 403 94 403Z"/>
+    <path d="M144 384H178C207 384 224 401 224 432S207 480 178 480H144ZM165 404V460H177C194 460 203 450 203 432S194 404 177 404Z"/>
+    <path d="M263 384H288L325 480H302L295 459H256L249 480H226ZM276 404L262 440H289Z"/>
+    <path d="M336 384H361L392 443L423 384H448V480H427V421L401 469H383L357 421V480H336Z"/>
+  </g>
+</svg>

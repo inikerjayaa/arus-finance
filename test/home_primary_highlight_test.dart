@@ -14,7 +14,7 @@ void main() {
   });
 
   testWidgets(
-    'primary highlight shows total active assets with only income and spending below',
+    'approved dashboard hero shows total active assets with income and spending below',
     (tester) async {
       final database = AppDatabase.inMemory();
       addTearDown(database.close);
@@ -71,7 +71,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Total saldo'), findsOneWidget);
+      expect(find.text('Total Saldo'), findsOneWidget);
       expect(find.text('Pemasukan'), findsOneWidget);
       expect(find.text('Pengeluaran'), findsOneWidget);
       expect(find.textContaining('3.465.000'), findsWidgets);

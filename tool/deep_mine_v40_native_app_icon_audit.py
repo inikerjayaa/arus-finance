@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import struct
+from saku_artwork import verify_originals, STACKED
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "tool/native_app_icon.py"
@@ -30,21 +31,26 @@ def source_audit() -> None:
     source = GENERATOR.read_text()
     required = [
         "NOTURNO = (0x00, 0x16, 0x21)",
-        "VULCANICO = (0xFF, 0x41, 0x03)",
+        "verify_originals(ROOT)",
+        "read_rgb(ROOT / STACKED)",
+        "launcher_pixels",
         'mipmap-{density}/ic_launcher.png',
         'mipmap-{density}/ic_launcher_round.png',
         "ANDROID_ADAPTIVE_FOREGROUND",
         "mipmap-anydpi-v26",
         "saku_launcher_background",
-        'android:scaleX="0.72"',
+        'android:inset="14%"',
         "AppIcon.appiconset",
         "ios-marketing",
         "1024x1024",
-        "zlib.compress",
+        "write_png",
     ]
     for token in required:
         if token not in source:
             fail(f"launcher generator missing source invariant: {token}")
+    verify_originals(ROOT)
+    if "android:pathData" in source or "_render_icon" in source:
+        fail("launcher must use original artwork, never reconstructed geometry")
     lowered = source.lower()
     for forbidden in ("http://", "https://", "requests.", "urllib.", "pillow", "pil."):
         if forbidden in lowered:
@@ -85,8 +91,10 @@ def generated_android_audit() -> None:
     if not foreground.exists() or not colors.exists():
         fail("Android adaptive launcher foreground/background resources missing")
     foreground_text = foreground.read_text()
-    if 'android:scaleX="0.72"' not in foreground_text or 'android:scaleY="0.72"' not in foreground_text:
-        fail("Android adaptive launcher foreground must preserve 72% safe-area scale")
+    if 'android:inset="14%"' not in foreground_text or "@drawable/saku_approved_launcher" not in foreground_text:
+        fail("Android adaptive launcher must contain the full original in the safe area")
+    if (res / "drawable-nodpi/saku_approved_launcher.png").read_bytes() != (ROOT / STACKED).read_bytes():
+        fail("Android adaptive launcher original bytes changed")
     if "#001621" not in colors.read_text():
         fail("Android adaptive launcher background must remain Noturno #001621")
 

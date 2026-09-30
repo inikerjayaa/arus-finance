@@ -344,18 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const SakuBrandMark(size: 40),
-                      const SizedBox(width: 12),
-                      Text(
-                        'SAKU',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const SakuBrandHorizontal(height: 72),
                   const SizedBox(height: 16),
                   Text(
                     'SAKU berawal dari cerita sederhana. Dulu istriku suka ribet nyatat pengeluaran manual, jadi aku coba bikin sesuatu yang bisa mempermudah dia. Dari sana lahirlah SAKU: aplikasi catat keuangan yang simpel, cepat, dan tetap menjaga privasimu.',

@@ -23,7 +23,12 @@ LIB_TEXT = '\n'.join(
 checks = {
     'SAKU reserves Plus Jakarta Sans family': "fontFamily = 'PlusJakartaSans'" in BRAND,
     'theme consumes canonical SAKU font family': 'fontFamily: SakuBrand.fontFamily' in THEME,
-    'SAKU splash uses bundled bold weight 700': 'fontWeight: FontWeight.w700' in SPLASH,
+    'SAKU splash preserves the original image wordmark without re-typesetting': (
+        'Image.asset(' in SPLASH
+        and 'SakuBrand.stackedLogoAsset' in SPLASH
+        and "stackedLogoAsset = 'assets/saku/stacked.png'" in BRAND
+        and 'Text(' not in SPLASH
+    ),
     'SAKU splash does not request unbundled weight 800': 'FontWeight.w800' not in SPLASH,
     'official OFL is committed': LICENSE.exists() and 'SIL OPEN FONT LICENSE Version 1.1' in LICENSE.read_text(),
     'upstream source policy is committed': SOURCE.exists() and 'tokotype/PlusJakartaSans' in SOURCE.read_text(),

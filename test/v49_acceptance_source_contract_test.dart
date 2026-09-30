@@ -27,7 +27,7 @@ void main() {
       final settings = File('lib/features/settings/settings_screen.dart').readAsStringSync();
       final splash = File('lib/shared/saku_splash.dart').readAsStringSync();
 
-      expect(settings, contains('SakuBrandMark'));
+      expect(settings, contains('SakuBrandHorizontal'));
       expect(splash, contains('class SakuBrandMark'));
       expect(splash, contains('SakuBrandMark(size: markSize)'));
       expect(splash, isNot(contains('Image.network')));

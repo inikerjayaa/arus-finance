@@ -10,6 +10,7 @@ privacy=read('lib/features/settings/privacy_settings_screen.dart')
 docs=read('docs/PRIVACY_SHIELD_UAT_V23.md')
 checks={
  'Flutter privacy shield state exists':'_privacyShielded = false' in app,
+ 'shield observes reachable preference':'_screenProtection.addListener(_screenProtectionChanged)' in app,
  'shield activates on inactive':'state == AppLifecycleState.inactive' in app,
  'shield activates on hidden':'state == AppLifecycleState.hidden' in app,
  'shield activates on paused':'state == AppLifecycleState.paused' in app,
@@ -17,11 +18,18 @@ checks={
  'navigator security envelope overlays all routed sensitive UI':(
    'builder: (context, child) => _buildSecurityEnvelope(child)' in app and
    'Widget _buildSecurityEnvelope(Widget? routedChild)' in app and
-   'if (_privacyShielded)' in app
+   'if (_privacyShielded && _screenProtection.enabled)' in app
  ),
+ 'privacy OFF removes stale shield':'!_screenProtection.enabled && _privacyShielded' in app,
+ 'privacy ON gates background shield':'if (_screenProtection.enabled && !_privacyShielded && mounted)' in app,
+ 'Recent Apps visual state does not directly lock':'This visual state never itself locks the session.' in app,
+ 'resume delegates genuine lock classification':'widget.controller.processAppResume()' in app,
  'shield is opaque':'color: SakuBrand.noturno' in app,
  'shield has assistive label':'SAKU disembunyikan saat aplikasi tidak aktif' in app,
- 'app switcher shield is documented independent':'intentionally independent' in app,
+ 'app switcher shield is documented independent':(
+   'Authentication remains independent' in app and
+   'Recent Apps/pickers' in app
+ ),
  'Android hardener imports WindowManager':'android.view.WindowManager' in hardener,
  'Android does not force screenshot blocking before opt-in':'override fun onCreate' not in hardener,
  'Android runtime bridge channel':'arus.finance/screen_protection' in hardener,

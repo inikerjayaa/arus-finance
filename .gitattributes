@@ -18,3 +18,6 @@
 *.keystore binary
 *.p12 binary
 *.mobileprovision binary
+
+# Preserve original third-party SVG bytes.
+/native_artwork/brand_sources/*.svg binary
