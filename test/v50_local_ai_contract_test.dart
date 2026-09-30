@@ -37,5 +37,15 @@ void main() {
       expect(enhanced, contains('averageGap < 5 || averageGap > 45'));
       expect(enhanced, contains('recurring_expense_pattern'));
     });
+
+    test('category suggestion is local, evidence bounded and non-mutating', () {
+      final enhanced = File('lib/core/services/enhanced_local_insight_service.dart').readAsStringSync();
+
+      expect(enhanced, contains("kind: 'category_suggestion'"));
+      expect(enhanced, contains('occurrences>=5 AND active_days>=3'));
+      expect(enhanced, contains('90 hari terakhir'));
+      expect(enhanced, contains('tidak diubah otomatis'));
+      expect(enhanced, isNot(contains('UPDATE transactions')));
+    });
   });
 }
