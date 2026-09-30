@@ -4,7 +4,8 @@ import 'local_insight_service.dart';
 /// V50 extension of the deterministic local insight engine.
 ///
 /// Keeps the existing proven anomaly/cash-flow logic while adding recurring
-/// expense detection. This remains read-only and performs no network I/O.
+/// expense detection and evidence-bounded category suggestions. This remains
+/// read-only and performs no network I/O.
 class EnhancedLocalInsightService extends LocalInsightService {
   EnhancedLocalInsightService(this._database) : super(_database);
 
@@ -16,7 +17,44 @@ class EnhancedLocalInsightService extends LocalInsightService {
     final current = (now ?? DateTime.now()).toLocal();
     final recurring = _recurringExpensePattern(current);
     if (recurring != null) return recurring;
+    final categorySuggestion = _categorySuggestion(current);
+    if (categorySuggestion != null) return categorySuggestion;
     return super.build(now: current);
+  }
+
+  LocalInsight? _categorySuggestion(DateTime current) {
+    final start = _localDate(current.subtract(const Duration(days: 90)));
+    final rows = _database.readSnapshot(
+      (db) => db.select(
+        '''SELECT c.name AS category_name,
+                  COUNT(*) AS occurrences,
+                  COUNT(DISTINCT t.local_date) AS active_days
+           FROM transactions t
+           JOIN transaction_splits s ON s.transaction_id=t.id
+           JOIN categories c ON c.id=s.category_id
+           WHERE t.status='POSTED'
+             AND t.deleted_at IS NULL
+             AND t.type='EXPENSE'
+             AND t.local_date>=?
+             AND s.amount_minor>0
+           GROUP BY c.id
+           HAVING occurrences>=5 AND active_days>=3
+           ORDER BY occurrences DESC,active_days DESC,c.name COLLATE NOCASE
+           LIMIT 1''',
+        [start],
+      ),
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    final category = row['category_name'] as String;
+    final occurrences = row['occurrences'] as int;
+    final activeDays = row['active_days'] as int;
+    return LocalInsight(
+      kind: 'category_suggestion',
+      title: '$category sering kamu gunakan',
+      message:
+          'Dalam 90 hari terakhir ada $occurrences pengeluaran $category pada $activeDays hari berbeda. SAKU menyarankan kategori ini berdasarkan riwayat lokalmu; kategori transaksi tidak diubah otomatis.',
+    );
   }
 
   LocalInsight? _recurringExpensePattern(DateTime current) {
@@ -52,9 +90,6 @@ class EnhancedLocalInsightService extends LocalInsightService {
       final spanDays = last.difference(first).inDays;
       if (spanDays < 14 || occurrences < 3) continue;
       final averageGap = spanDays / (occurrences - 1);
-      // Recurring behavior should be plausibly weekly through monthly. Very
-      // dense purchases are ordinary habits, while very sparse matches are too
-      // weak to call recurring.
       if (averageGap < 5 || averageGap > 45) continue;
       final category = row['category_name'] as String;
       final cadence = averageGap >= 20
