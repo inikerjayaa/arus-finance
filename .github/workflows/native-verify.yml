@@ -62,7 +62,7 @@ jobs:
         run: flutter test
 
       - name: Upload immutable dependency lock evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arus-pubspec-lock-v26
           path: |
@@ -133,7 +133,7 @@ jobs:
           echo 'NOTE: this APK is for physical-device UAT only. It is not a Play Store release artifact.'
 
       - name: Upload Android compile evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arus-android-compile-evidence
           path: build/arus_evidence/android-compile.json
@@ -141,7 +141,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Android AAB compile artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arus-android-aab-compile-only
           path: build/app/outputs/bundle/release/app-release.aab
@@ -149,7 +149,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Android device-UAT APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arus-android-device-uat-apk-compile-only
           path: |
@@ -194,7 +194,7 @@ jobs:
         run: bash tool/native_compile_gate.sh ios
 
       - name: Upload iOS compile evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arus-ios-compile-evidence
           path: build/arus_evidence/ios-compile.json
@@ -202,7 +202,7 @@ jobs:
           retention-days: 30
 
       - name: Upload iOS Runner.app compile artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: arus-ios-runner-app-compile-only
           path: build/ios/iphoneos/Runner.app
